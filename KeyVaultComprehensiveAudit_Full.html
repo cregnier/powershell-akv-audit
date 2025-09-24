@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Azure Key Vault Enhanced Security & Compliance Audit</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Template Enhancement: Comprehensive CSS with animations, modern styling, and professional appearance -->
+    <style>
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    margin: 20px; 
+    background-color: #f5f5f5; 
+}
+.header { 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+    color: white; 
+    padding: 20px; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+}
+/* Template Enhancement: Test mode banner with animation for visual impact */
+.test-mode-banner { 
+    background: #dc3545; 
+    color: white; 
+    padding: 15px; 
+    text-align: center; 
+    font-weight: bold; 
+    font-size: 1.4em; 
+    border-radius: 8px; 
+    margin: 20px 0; 
+    animation: bloom 2s infinite; 
+}
+/* Template Enhancement: Partial results banner for checkpoint scenarios */
+.partial-results-banner { 
+    background: #e67e22; 
+    color: white; 
+    padding: 12px; 
+    text-align: center; 
+    font-weight: 600; 
+    font-size: 1.1em; 
+    border-radius: 6px; 
+    margin: 15px 0; 
+    border-left: 4px solid #d35400; 
+    opacity: 0.95; 
+}
+.summary { 
+    background: white; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+}
+/* Template Enhancement: Color-coded compliance status indicators */
+.compliant { color: #28a745; font-weight: bold; }
+.non-compliant { color: #dc3545; font-weight: bold; }
+.partially-compliant { color: #ffc107; font-weight: bold; }
+/* Template Enhancement: Responsive stats grid with hover effects */
+.stats-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+    gap: 15px; 
+    margin: 15px 0; 
+}
+.stat-card { 
+    background: white; 
+    padding: 15px; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+    text-align: center; 
+    position: relative; 
+}
+.stat-card:hover { 
+    transform: translateY(-2px); 
+    transition: transform 0.3s ease; 
+}
+.stat-number { 
+    font-size: 2em; 
+    font-weight: bold; 
+    color: #667eea; 
+}
+.stat-label { 
+    color: #666; 
+    margin-top: 5px; 
+}
+.stat-percentage { 
+    font-size: 0.9em; 
+    margin-top: 3px; 
+    font-weight: bold; 
+}
+/* Template Enhancement: Animated progress bars */
+.progress-bar { 
+    width: 100%; 
+    height: 8px; 
+    background: #e9ecef; 
+    border-radius: 4px; 
+    overflow: hidden; 
+    margin-top: 8px; 
+}
+.progress-fill { 
+    height: 100%; 
+    transition: width 0.8s ease; 
+    border-radius: 4px; 
+}
+/* Template Enhancement: Dual framework scoring display */
+.dual-framework { 
+    display: flex; 
+    gap: 10px; 
+    margin-top: 10px; 
+}
+.framework-score { 
+    flex: 1; 
+    padding: 8px; 
+    border-radius: 6px; 
+    text-align: center; 
+    font-size: 0.85em; 
+}
+.microsoft-framework { 
+    background: #e7f3ff; 
+    border: 1px solid #b8daff; 
+}
+.company-framework { 
+    background: #fff3cd; 
+    border: 1px solid #ffeaa7; 
+}
+/* Template Enhancement: Modern table styling with sticky headers */
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    background: white; 
+    border-radius: 8px; 
+    overflow: hidden; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+    margin: 20px 0; 
+    font-size: 0.8em; 
+}
+th { 
+    background: #343a40; 
+    color: white; 
+    padding: 6px; 
+    text-align: left; 
+    font-weight: 600; 
+    cursor: pointer; 
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+    font-size: 0.8em; 
+}
+td { 
+    padding: 4px; 
+    border-bottom: 1px solid #dee2e6; 
+    max-width: 120px; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+    font-size: 0.8em; 
+}
+tr:nth-child(even) { background-color: #f8f9fa; }
+tr:hover { background-color: #e9ecef; }
+/* Template Enhancement: Interactive filtering inputs */
+.filter-input { 
+    width: 90%; 
+    padding: 3px; 
+    margin-bottom: 3px; 
+    border: 1px solid #ccc; 
+    border-radius: 4px; 
+    font-size: 0.75em; 
+}
+/* Template Enhancement: Color-coded information sections */
+.identity-section { 
+    background: #e7f3ff; 
+    border: 1px solid #b8daff; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin: 20px 0; 
+}
+.security-section { 
+    background: #d4edda; 
+    border: 1px solid #c3e6cb; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin: 20px 0; 
+}
+.secrets-section { 
+    background: #fff3cd; 
+    border: 1px solid #ffeeba; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin: 20px 0; 
+}
+.quick-wins-section { 
+    background: #f8f9ff; 
+    border: 1px solid #e6e6ff; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin: 20px 0; 
+}
+.configuration-coverage-section { 
+    background: #f0f8ff; 
+    border: 1px solid #b8daff; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin: 20px 0; 
+}
+.compliance-legend-section { 
+    background: #f8f0ff; 
+    border: 1px solid #e6d7ff; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin: 20px 0; 
+}
+/* Template Enhancement: Interactive action items */
+.action-link { 
+    color: #007bff; 
+    cursor: pointer; 
+    text-decoration: underline; 
+    font-size: 0.8em; 
+}
+.action-details { 
+    display: none; 
+    background: #f8f9fa; 
+    border: 1px solid #dee2e6; 
+    padding: 8px; 
+    margin-top: 3px; 
+    border-radius: 4px; 
+    font-size: 0.75em; 
+}
+.legend-section { 
+    background: #e9ecef; 
+    border: 1px solid #dee2e6; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin: 20px 0; 
+}
+/* Template Enhancement: Interactive tooltips for additional information */
+.tooltip { 
+    position: relative; 
+    display: inline-block; 
+    cursor: help; 
+    color: #007bff; 
+    font-weight: bold; 
+}
+.tooltip .tooltiptext { 
+    visibility: hidden; 
+    width: 300px; 
+    background-color: #333; 
+    color: #fff; 
+    text-align: left; 
+    padding: 8px; 
+    border-radius: 6px; 
+    position: absolute; 
+    z-index: 1; 
+    bottom: 125%; 
+    left: 50%; 
+    margin-left: -150px; 
+    font-size: 0.8em; 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
+}
+.tooltip:hover .tooltiptext { visibility: visible; }
+/* Template Enhancement: Enhancement badges for new features */
+.enhancement-badge { 
+    display: inline-block; 
+    padding: 2px 8px; 
+    background: #667eea; 
+    color: white; 
+    border-radius: 12px; 
+    font-size: 0.7em; 
+    margin-left: 8px; 
+}
+/* Template Enhancement: Collapsible content controls */
+.collapsible-toggle { 
+    cursor: pointer; 
+    padding: 5px 10px; 
+    background: #f8f9fa; 
+    border: 1px solid #dee2e6; 
+    border-radius: 4px; 
+    font-size: 0.8em; 
+    margin-left: 10px; 
+    transition: all 0.3s ease; 
+}
+.collapsible-toggle:hover { background: #e9ecef; }
+.collapsible-content { margin-top: 10px; }
+/* Template Enhancement: Custom animations */
+@keyframes bloom { 
+    0%, 100% { transform: scale(1); } 
+    50% { transform: scale(1.1); } 
+}
+@keyframes progressAnimation { 
+    from { width: 0%; } 
+}
+/* Template Enhancement: Skipped/Error table styling for Resume template */
+.skipped-error-section { 
+    background: #f8d7da; 
+    border: 1px solid #f5c6cb; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin: 20px 0; 
+}
+    </style>
+    <!-- Template Enhancement: Comprehensive JavaScript for interactivity -->
+    <script>
+/* Template Enhancement: Table filtering functionality */
+function filterTable(input, col) {
+    var filter = input.value.toUpperCase();
+    var table = document.getElementById("vaultTable");
+    var trs = table.getElementsByTagName("tr");
+    for (var i = 2; i < trs.length; i++) {
+        var tds = trs[i].getElementsByTagName("td");
+        if (tds.length > col) {
+            var txt = tds[col].textContent || tds[col].innerText;
+            trs[i].style.display = txt.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+        }
+    }
+}
+
+/* Template Enhancement: Table sorting functionality */
+function sortTable(n) {
+    var table = document.getElementById("vaultTable");
+    var switching = true;
+    var dir = "asc";
+    var switchcount = 0;
+    while (switching) {
+        switching = false;
+        var rows = table.rows;
+        for (var i = 2; i < (rows.length - 1); i++) {
+            var shouldSwitch = false;
+            var x = rows[i].getElementsByTagName("TD")[n];
+            var y = rows[i + 1].getElementsByTagName("TD")[n];
+            if (dir == "asc") {
+                if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                    shouldSwitch = true;
+                    break;
+                }
+            } else if (dir == "desc") {
+                if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+        }
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount++;
+        } else {
+            if (switchcount == 0 && dir == "asc") {
+                dir = "desc";
+                switching = true;
+            }
+        }
+    }
+}
+
+/* Template Enhancement: Action items toggle functionality */
+function toggleActionItems(id) {
+    var element = document.getElementById(id);
+    if (element.style.display === "none" || element.style.display === "") {
+        element.style.display = "block";
+    } else {
+        element.style.display = "none";
+    }
+}
+
+/* Template Enhancement: Collapsible content functionality */
+function toggleCollapsible(elementId) {
+    var content = document.getElementById(elementId);
+    var toggle = content.previousElementSibling.querySelector('.collapsible-toggle');
+    
+    if (content.style.display === "none" || content.style.display === "") {
+        content.style.display = "block";
+        toggle.textContent = "Hide Details";
+        toggle.style.backgroundColor = "#007bff";
+        toggle.style.color = "white";
+    } else {
+        content.style.display = "none";
+        toggle.textContent = "Show Details";
+        toggle.style.backgroundColor = "#f8f9fa";
+        toggle.style.color = "#333";
+    }
+}
+    </script>
+</head>
+<body>
+    <!-- Template Enhancement: Dynamic header with user and timestamp placeholders -->
+    <div class="header">
+        <h1>🔐 Azure Key Vault Enhanced Security & Compliance Audit</h1>
+        <p><strong>Generated:</strong> {{GENERATION_TIMESTAMP}} by {{CURRENT_USER}}</p>
+        <p><strong>Script Version:</strong> {{SCRIPT_VERSION}} - Production Enterprise Edition</p>
+        <!-- Template Enhancement: Optional execution ID for audit trail -->
+        {{EXECUTION_ID_SECTION}}
+    </div>
+    
+    <!-- Template Enhancement: Test mode banner (conditional display) -->
+    {{TEST_MODE_BANNER}}
+    
+    <!-- Template Enhancement: Executive Summary section with dynamic stats -->
+    <div class="summary">
+        <h2>🎯 Executive Summary</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{TOTAL_KEY_VAULTS}}</div>
+                <div class="stat-label">Key Vaults Discovered</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%; background: #667eea; animation: progressAnimation 1.5s ease-out;"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{COMPLIANT_VAULTS}}</div>
+                <div class="stat-label">Fully Compliant</div>
+                <div class="stat-percentage {{COMPLIANCE_PERCENTAGE_CLASS}}">{{COMPLIANCE_PERCENTAGE}}%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{COMPLIANCE_PERCENTAGE}}%; background: {{COMPLIANCE_COLOR}}; animation: progressAnimation 2s ease-out;"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{AVERAGE_COMPLIANCE_SCORE}}</div>
+                <div class="stat-label">Average Score</div>
+                <div class="stat-percentage">Microsoft Framework</div>
+                <div class="dual-framework">
+                    <div class="framework-score microsoft-framework">
+                        <strong>MS:</strong> {{MS_AVERAGE_SCORE}}%
+                    </div>
+                    <div class="framework-score company-framework">
+                        <strong>Company:</strong> {{COMPANY_AVERAGE_SCORE}}%
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{HIGH_RISK_VAULTS}}</div>
+                <div class="stat-label">High Risk Vaults</div>
+                <div class="stat-percentage {{HIGH_RISK_CLASS}}">Require Attention</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{HIGH_RISK_PERCENTAGE}}%; background: #dc3545; animation: progressAnimation 2.5s ease-out;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Template Enhancement: Detailed Vault Analysis section with filterable table -->
+    <div class="summary">
+        <h2>📋 Detailed Vault Analysis</h2>
+        <p>Comprehensive analysis of all Key Vaults with compliance scoring, security configurations, and actionable recommendations.</p>
+        
+        <table id="vaultTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Subscription</th>
+                    <th onclick="sortTable(1)">Key Vault Name</th>
+                    <th onclick="sortTable(2)">Location</th>
+                    <th onclick="sortTable(3)">Resource Group</th>
+                    <th onclick="sortTable(4)">Compliance Status</th>
+                    <th onclick="sortTable(5)">MS Score</th>
+                    <th onclick="sortTable(6)">Company Score</th>
+                    <th onclick="sortTable(7)">Diagnostics</th>
+                    <th onclick="sortTable(8)">Log Categories</th>
+                    <th onclick="sortTable(9)">Log Analytics</th>
+                    <th onclick="sortTable(10)">Event Hub</th>
+                    <th onclick="sortTable(11)">Storage Account</th>
+                    <th onclick="sortTable(12)">Access Policies</th>
+                    <th onclick="sortTable(13)">RBAC Assignments</th>
+                    <th onclick="sortTable(14)">Service Principals</th>
+                    <th onclick="sortTable(15)">Managed Identities</th>
+                    <th onclick="sortTable(16)">System Identity</th>
+                    <th onclick="sortTable(17)">User Identities</th>
+                    <th onclick="sortTable(18)">Soft Delete</th>
+                    <th onclick="sortTable(19)">Purge Protection</th>
+                    <th onclick="sortTable(20)">Public Access</th>
+                    <th onclick="sortTable(21)">Private Endpoints</th>
+                    <th onclick="sortTable(22)">Secrets</th>
+                    <th onclick="sortTable(23)">Keys</th>
+                    <th onclick="sortTable(24)">Certificates</th>
+                    <th onclick="sortTable(25)">Workload Categories</th>
+                    <th onclick="sortTable(26)">Environment</th>
+                    <th onclick="sortTable(27)">Primary Workload</th>
+                    <th onclick="sortTable(28)">Security Insights</th>
+                    <th onclick="sortTable(29)">Optimization Recommendations</th>
+                    <th onclick="sortTable(30)">Total Items</th>
+                    <th onclick="sortTable(31)">Secret Versioning</th>
+                    <th onclick="sortTable(32)">Expiration Analysis</th>
+                    <th onclick="sortTable(33)">Rotation Analysis</th>
+                    <th onclick="sortTable(34)">App Service Integration</th>
+                    <th onclick="sortTable(35)">Action Items</th>
+                </tr>
+                <tr>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 0)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 1)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 2)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 3)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 4)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 5)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 6)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 7)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 8)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 9)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 10)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 11)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 12)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 13)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 14)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 15)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 16)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 17)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 18)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 19)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 20)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 21)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 22)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 23)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 24)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 25)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 26)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 27)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 28)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 29)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 30)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 31)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 32)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 33)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 34)' placeholder='Filter...'></th>
+                    <th><input type='text' class='filter-input' onkeyup='filterTable(this, 35)' placeholder='Filter...'></th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Template Enhancement: Dynamic vault data rows will be inserted here -->
+                {{VAULT_DATA_ROWS}}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Template Enhancement: Quick Wins Recommendations section -->
+    <div class="quick-wins-section">
+        <h3>🚀 Quick Wins Recommendations<span class="enhancement-badge">Enhanced</span></h3>
+        <p>Prioritized action items for immediate security improvements:</p>
+        <ul>
+            {{QUICK_WINS_RECOMMENDATIONS}}
+        </ul>
+    </div>
+    
+    <!-- Template Enhancement: Identity & Access Management Insights section -->
+    <div class="identity-section">
+        <h3>🔐 Identity & Access Management Insights</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{TOTAL_SERVICE_PRINCIPALS}}</div>
+                <div class="stat-label">Total Service Principals</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{TOTAL_MANAGED_IDENTITIES}}</div>
+                <div class="stat-label">Total Managed Identities</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{SYSTEM_ASSIGNED_IDENTITIES}}</div>
+                <div class="stat-label">System-Assigned Identities</div>
+                <div class="stat-percentage" style="color: {{SYSTEM_ASSIGNED_COLOR}};">{{SYSTEM_ASSIGNED_PERCENTAGE}}%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{USER_ASSIGNED_IDENTITIES}}</div>
+                <div class="stat-label">User-Assigned Identities</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{RBAC_USING_VAULTS}}</div>
+                <div class="stat-label">Using RBAC</div>
+                <div class="stat-percentage" style="color: {{RBAC_COLOR}};">{{RBAC_PERCENTAGE}}%</div>
+            </div>
+        </div>
+        
+        <h4>Key Identity Recommendations:</h4>
+        <ul>
+            <li><strong>Migrate to Managed Identities:</strong> Replace service principals with managed identities where possible for enhanced security</li>
+            <li><strong>Implement RBAC:</strong> Move from legacy access policies to Azure RBAC for fine-grained access control ({{RBAC_PERCENTAGE}}% currently using RBAC)</li>
+            <li><strong>Apply Least Privilege:</strong> Review and reduce over-privileged role assignments</li>
+            <li><strong>Enable System-Assigned Identities:</strong> Configure system-assigned managed identities on Key Vault resources ({{SYSTEM_ASSIGNED_COUNT}} of {{TOTAL_VAULTS}} vaults have system-assigned identities)</li>
+        </ul>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 4px;">
+            <h5>📝 Note on Service Principals vs System Identity:</h5>
+            <p><strong>Total Service Principals</strong> refers to external service principals assigned RBAC roles to access Key Vaults.</p>
+            <p><strong>System Identity</strong> refers to system-assigned managed identities directly on the Key Vault resource itself. These are separate concepts - a Key Vault can have external service principals accessing it while not having its own system-assigned identity enabled.</p>
+        </div>
+    </div>
+
+    <!-- Template Enhancement: Secrets Management Insights section -->
+    <div class="secrets-section">
+        <h3>🔑 Secrets Management Insights</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{VAULTS_STORING_SECRETS}}</div>
+                <div class="stat-label">Vaults Storing Secrets</div>
+                <div class="stat-percentage" style="color: #667eea;">{{SECRETS_PERCENTAGE}}%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{SECRET_ACCESS_MONITORING}}</div>
+                <div class="stat-label">Secret Access Monitoring</div>
+                <div class="stat-percentage" style="color: {{MONITORING_COLOR}};">{{MONITORING_PERCENTAGE}}%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{GRANULAR_SECRET_ACCESS}}</div>
+                <div class="stat-label">Granular Secret Access</div>
+                <div class="stat-percentage" style="color: {{GRANULAR_ACCESS_COLOR}};">{{GRANULAR_ACCESS_PERCENTAGE}}%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{SECRET_RECOVERY_PROTECTION}}</div>
+                <div class="stat-label">Secret Recovery Protection</div>
+                <div class="stat-percentage" style="color: {{RECOVERY_COLOR}};">{{RECOVERY_PERCENTAGE}}%</div>
+            </div>
+        </div>
+        
+        <h4>🔐 Secrets Management Terms & Best Practices:</h4>
+        <ul>
+            <li><strong>Secret Access Monitoring:</strong> Comprehensive logging and auditing of all secret access attempts, including who accessed what secrets, when, and from where. This enables detection of unauthorized access patterns and compliance reporting.</li>
+            <li><strong>Granular Secret Access:</strong> Fine-grained permissions using Azure RBAC instead of broad access policies. This allows specific roles like 'Key Vault Secrets User' for read access only, rather than full vault permissions.</li>
+            <li><strong>Secret Recovery Protection:</strong> Soft delete functionality that allows recovery of accidentally deleted secrets within the retention period (7-90 days), preventing permanent data loss.</li>
+            <li><strong>Secret Rotation:</strong> Microsoft recommends automated rotation every 90 days for high-value secrets. Consider implementing Azure Functions or Logic Apps for automated rotation workflows.</li>
+            <li><strong>Secret Versioning:</strong> Key Vault automatically versions secrets. Leverage this for rollback capabilities and audit trails.</li>
+            <li><strong>Application Integration:</strong> Use Key Vault references in Azure App Service and Azure Functions instead of hardcoding secrets in application configurations.</li>
+        </ul>
+        
+        <h4>📊 Compliance & Security Insights:</h4>
+        <ul>
+            <li><strong>Audit Trail:</strong> {{DIAGNOSTICS_PERCENTAGE}}% of vaults have diagnostic logging enabled, providing visibility into secret access patterns and potential security incidents.</li>
+            <li><strong>Network Isolation:</strong> {{PRIVATE_ENDPOINT_PERCENTAGE}}% of vaults use private endpoints, protecting secrets from unauthorized network access.</li>
+            <li><strong>Identity-Based Access:</strong> {{RBAC_USAGE_PERCENTAGE}}% of vaults use RBAC for granular secret permissions instead of legacy access policies.</li>
+            <li><strong>Secret Recovery:</strong> Soft delete is enabled on {{SOFT_DELETE_PERCENTAGE}}% of vaults, enabling secret recovery in case of accidental deletion.</li>
+        </ul>
+        
+        <h4>⚠️ Common Secrets Management Risks:</h4>
+        <ul>
+            <li><strong>Hardcoded Secrets:</strong> Avoid storing secrets directly in application code, configuration files, or environment variables.</li>
+            <li><strong>Over-Privileged Access:</strong> Applications with broad Key Vault permissions increase attack surface.</li>
+            <li><strong>Stale Secrets:</strong> Unused or forgotten secrets should be regularly audited and removed.</li>
+            <li><strong>Weak Secret Generation:</strong> Use cryptographically secure random generators for password and key generation.</li>
+            <li><strong>Cross-Environment Leakage:</strong> Ensure proper isolation between development, staging, and production secrets.</li>
+        </ul>
+    </div>
+
+    <!-- Template Enhancement: Security Enhancement Recommendations section -->
+    <div class="security-section">
+        <h3>🛡️ Security Enhancement Recommendations</h3>
+        
+        <h4>Network Security:</h4>
+        <ul>
+            <li><strong>Private Endpoints:</strong> {{PRIVATE_ENDPOINT_COUNT}} of {{TOTAL_VAULTS}} vaults ({{PRIVATE_ENDPOINT_PERCENTAGE}}%) have private endpoints configured</li>
+            <li><strong>Network ACLs:</strong> Implement network access control lists to restrict access</li>
+            <li><strong>Firewall Rules:</strong> Configure IP-based firewall rules for additional protection</li>
+        </ul>
+        
+        <h4>Monitoring & Compliance:</h4>
+        <ul>
+            <li><strong>Event Hub Integration:</strong> {{EVENT_HUB_COUNT}} of {{TOTAL_VAULTS}} vaults ({{EVENT_HUB_PERCENTAGE}}%) have Event Hub enabled for real-time monitoring</li>
+            <li><strong>Log Analytics Integration:</strong> {{LOG_ANALYTICS_COUNT}} of {{TOTAL_VAULTS}} vaults ({{LOG_ANALYTICS_PERCENTAGE}}%) have Log Analytics enabled for centralized query and alerting</li>
+            <li><strong>Storage Account Logging:</strong> {{STORAGE_COUNT}} of {{TOTAL_VAULTS}} vaults ({{STORAGE_PERCENTAGE}}%) have storage account logging configured</li>
+            <li><strong>Azure Sentinel Integration:</strong> Connect Key Vault logs to Azure Sentinel for advanced threat detection</li>
+            <li><strong>Azure Policy:</strong> Implement automated compliance enforcement</li>
+        </ul>
+    </div>
+
+    <!-- Template Enhancement: Compliance Score Calculation Legend -->
+    <div class="legend-section">
+        <h3>📊 Compliance Score Calculation Legend</h3>
+        <p>The compliance score is calculated based on Microsoft Security Baseline requirements:</p>
+        
+        <h4>🔒 Core Security Features (50 points total):</h4>
+        <ul>
+            <li><strong>Soft Delete Enabled:</strong> 10 points - Protects against accidental deletion</li>
+            <li><strong>Purge Protection Enabled:</strong> 15 points - Critical security baseline requirement</li>
+            <li><strong>Diagnostics Enabled:</strong> 15 points - Essential for monitoring and compliance</li>
+            <li><strong>Event Hub Integration:</strong> 10 points - Real-time security monitoring capability</li>
+        </ul>
+        
+        <h4>🔐 Access Control (30 points total):</h4>
+        <ul>
+            <li><strong>RBAC Enabled:</strong> 15 points - Modern role-based access control vs legacy policies</li>
+            <li><strong>Private Endpoints:</strong> 15 points - Network security and zero-trust architecture</li>
+        </ul>
+        
+        <h4>📊 Monitoring & Compliance (20 points total):</h4>
+        <ul>
+            <li><strong>Log Analytics Integration:</strong> 10 points - Advanced querying and alerting</li>
+            <li><strong>Audit Event Logging:</strong> 5 points - Security event tracking</li>
+            <li><strong>Policy Evaluation Logging:</strong> 5 points - Azure Policy compliance tracking</li>
+        </ul>
+        
+        <h4>🎯 Compliance Thresholds:</h4>
+        <ul>
+            <li><strong class="compliant">Fully Compliant:</strong> 90-100 points - Meets Microsoft security baselines</li>
+            <li><strong class="partially-compliant">Partially Compliant:</strong> 60-89 points - Some improvements needed</li>
+            <li><strong class="non-compliant">Non-Compliant:</strong> 0-59 points - Immediate action required</li>
+        </ul>
+    </div>
+    
+    <!-- Template Enhancement: Enhanced Compliance Framework section -->
+    <div style="margin-top: 30px; padding: 15px; background: #e9ecef; border-radius: 8px; font-size: 0.9em;">
+        <h3>📋 Enhanced Compliance Framework</h3>
+        <p>This comprehensive audit evaluates Key Vault configurations against current Microsoft security standards:</p>
+        <ul>
+            <li><strong>Azure Security Benchmark v3.0</strong> - Latest Microsoft cloud security recommendations <a href="https://learn.microsoft.com/security/benchmark/azure/" target="_blank">[Learn More]</a></li>
+            <li><strong>Key Vault Security Baseline 2024</strong> - Specific security controls and requirements <a href="https://learn.microsoft.com/azure/key-vault/general/security-baseline" target="_blank">[Learn More]</a></li>
+            <li><strong>Microsoft Cloud Security Best Practices</strong> - Identity and access management standards <a href="https://learn.microsoft.com/azure/security/fundamentals/best-practices-and-patterns" target="_blank">[Learn More]</a></li>
+            <li><strong>Zero Trust Architecture</strong> - Never trust, always verify principles <a href="https://learn.microsoft.com/security/zero-trust/" target="_blank">[Learn More]</a></li>
+            <li><strong>NIST Cybersecurity Framework</strong> - Industry-standard security practices <a href="https://www.nist.gov/cyberframework" target="_blank">[Learn More]</a></li>
+            <li><strong>Azure Well-Architected Framework</strong> - Security pillar recommendations <a href="https://learn.microsoft.com/azure/well-architected/security/" target="_blank">[Learn More]</a></li>
+        </ul>
+        
+        <h4>📊 Audit Statistics:</h4>
+        <ul>
+            <li>Subscriptions analyzed: {{SUBSCRIPTION_COUNT}}</li>
+            <li>Key Vaults discovered: {{TOTAL_KEY_VAULTS}}</li>
+            <li>Compliance rate: {{COMPLIANCE_RATE}}% ({{COMPLIANT_COUNT}} fully compliant)</li>
+            <li>RBAC adoption: {{RBAC_ADOPTION}}% ({{RBAC_COUNT}} vaults using RBAC)</li>
+            <li>Event Hub integration: {{EVENT_HUB_ADOPTION}}% ({{EVENT_HUB_COUNT}} vaults configured)</li>
+            <li>Log Analytics integration: {{LOG_ANALYTICS_ADOPTION}}% ({{LOG_ANALYTICS_COUNT}} vaults configured)</li>
+            <li>Storage Account logging: {{STORAGE_ADOPTION}}% ({{STORAGE_COUNT}} vaults configured)</li>
+            <li>Private endpoint adoption: {{PRIVATE_ENDPOINT_ADOPTION}}% ({{PRIVATE_ENDPOINT_COUNT}} vaults secured)</li>
+            <li>Total execution time: {{EXECUTION_TIME_MINUTES}} minutes</li>
+            <li>Authentication refreshes: {{AUTHENTICATION_REFRESHES}}</li>
+        </ul>
+        
+        <h4>📁 Generated Files:</h4>
+        <ul>
+            <li><strong>HTML Report:</strong> {{OUTPUT_PATH}}</li>
+            <li><strong>CSV Data:</strong> {{CSV_PATH}}</li>
+            <li><strong>Error Log:</strong> {{ERROR_LOG_PATH}}</li>
+            <li><strong>Permissions Log:</strong> {{PERMISSIONS_LOG_PATH}}</li>
+            <li><strong>Data Issues Log:</strong> {{DATA_ISSUES_LOG_PATH}}</li>
+        </ul>
+        
+        <h4>🔍 Enhanced Features Implemented:</h4>
+        <ul>
+            <li>✅ Comprehensive managed identity detection and analysis (System: {{SYSTEM_ASSIGNED_COUNT}}, User: {{USER_ASSIGNED_COUNT}})</li>
+            <li>✅ Advanced service principal analysis with over-privilege detection</li>
+            <li>✅ RBAC least-privilege recommendations based on current assignments</li>
+            <li>✅ Real-time compliance scoring with Microsoft baseline alignment</li>
+            <li>✅ Enhanced progress tracking with intelligent ETA calculations</li>
+            <li>✅ Automatic token refresh and seamless re-authentication (Refreshes: {{AUTHENTICATION_REFRESHES}})</li>
+            <li>✅ Comprehensive error handling and permissions logging</li>
+            <li>✅ Network security assessment including private endpoint analysis</li>
+            <li>✅ Complete diagnostic configuration analysis (Event Hub, Log Analytics, Storage)</li>
+            <li>✅ Executive-level reporting with actionable insights and percentages</li>
+            <li>✅ Secrets management insights with Microsoft best practices alignment</li>
+            <li>✅ Color-coded sliding scale percentages for visual impact assessment</li>
+            <li>✅ Reverse color logic for Non-Compliant metrics (0% = good, 100% = bad)</li>
+            <li>✅ Dynamic user authentication tracking from Azure login context</li>
+        </ul>
+    </div>
+    
+    <!-- Template Enhancement: Important Notes section -->
+    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeaa7;">
+        <h3>⚠️ Important Notes</h3>
+        <ul>
+            <li><strong>Permissions:</strong> Some data may be incomplete due to insufficient permissions. Check the permissions log for details.</li>
+            <li><strong>Best Practices:</strong> This audit reflects current Microsoft recommendations as of {{AUDIT_DATE}}.</li>
+            <li><strong>Continuous Improvement:</strong> Regular audits are recommended to maintain security posture.</li>
+            <li><strong>Authentication:</strong> Script performed {{AUTHENTICATION_REFRESHES}} token refresh(es) to maintain connectivity.</li>
+        </ul>
+    </div>
+    
+    <!-- Template Enhancement: Professional footer with comprehensive metadata -->
+    <footer style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center; color: #6c757d; border-top: 3px solid #667eea;">
+        <p><strong>Azure Key Vault Enhanced Security & Compliance Audit Report</strong></p>
+        <p>Generated by Script v{{SCRIPT_VERSION}} on {{GENERATION_TIMESTAMP}} by {{CURRENT_USER}}</p>
+        {{EXECUTION_ID_FOOTER}}
+        <p>For questions or support, contact your Azure security team.</p>
+    </footer>
+</body>
+</html>

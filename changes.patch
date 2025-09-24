@@ -1,0 +1,437 @@
+// ...existing code...
+function New-ComprehensiveHtmlReport {
+// ...existing code...
+        # Calculate statistics with enhanced handling for partial results
+        try {
+            Write-Host "DEBUG: Calculating report statistics..." -ForegroundColor Yellow
+            $totalVaults = if ($IsPartialResults -and $CheckpointData -and $CheckpointData.TotalVaults) { 
+                $CheckpointData.TotalVaults 
+            } elseif ($IsPartialResults -and $ExecutiveSummary.TotalDiscoveredVaults) {
+                $ExecutiveSummary.TotalDiscoveredVaults
+            } else {
+                if ($AuditResults) { $AuditResults.Count } else { 0 }
+            }
+            $processedVaults = if ($AuditResults) { $AuditResults.Count } else { 0 }
+            $completionPercentage = if ($totalVaults -gt 0) { 
+                [math]::Round(($processedVaults / $totalVaults) * 100, 1) 
+            } else { 100 }
+// ...existing code...
+        # Add vault data rows
+        $rowIndex = 0
+        $totalRecords = if ($AuditResults) { $AuditResults.Count } else { 0 }
+        foreach ($result in $AuditResults) {
+            $rowIndex++
+            
+// ...existing code...
+            $percentComplete = if ($totalRecords -gt 0) { [math]::Round(($rowIndex / $totalRecords) * 100, 1) } else { 100 }
+            Write-Progress -Activity "Generating HTML Report" -Status "Processing vault $rowIndex of $totalRecords" -PercentComplete $percentComplete
+            
+            # Determine compliance status class
+// ...existing code...
+        <ul>
+            <li><strong>Migrate to Managed Identities:</strong> Replace service principals with managed identities where possible for enhanced security</li>
+            <li><strong>Implement RBAC:</strong> Move from legacy access policies to Azure RBAC for fine-grained access control$(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round(($AuditStats.UsingRBAC / $AuditResults.Count) * 100, 1)
+                " ($percentage% currently using RBAC)"
+            })</li>
+            <li><strong>Apply Least Privilege:</strong> Review and reduce over-privileged role assignments</li>
+            <li><strong>Enable System-Assigned Identities:</strong> Configure system-assigned managed identities on Key Vault resources$(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $sysAssignedCount = ($AuditResults | Where-Object { $_.SystemAssignedIdentity -eq 'Yes' }).Count
+                $auditCount = $AuditResults.Count
+                " ($sysAssignedCount of $auditCount vaults have system-assigned identities)"
+            })</li>
+        </ul>
+        
+// ...existing code...
+        <h4>📊 Compliance & Security Insights:</h4>
+        <ul>
+            <li><strong>Audit Trail:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round((($AuditResults | Where-Object { $_.DiagnosticsEnabled -eq 'Yes' -or $_.DiagnosticsEnabled -eq $true }).Count / $AuditResults.Count) * 100, 1)
+                "$percentage% of vaults have diagnostic logging enabled"
+            } else { "Diagnostic logging status unknown for partial data" }), providing visibility into secret access patterns and potential security incidents.</li>
+            <li><strong>Network Isolation:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round((($AuditResults | Where-Object { $_.PrivateEndpointCount -gt 0 }).Count / $AuditResults.Count) * 100, 1)
+                "$percentage% of vaults use private endpoints"
+            } else { "Private endpoint usage unknown for partial data" }), protecting secrets from unauthorized network access.</li>
+            <li><strong>Identity-Based Access:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round((($AuditResults | Where-Object { $_.RBACAssignmentCount -gt 0 }).Count / $AuditResults.Count) * 100, 1)
+                "$percentage% of vaults use RBAC"
+            } else { "RBAC usage unknown for partial data" }) for granular secret permissions instead of legacy access policies.</li>
+            <li><strong>Secret Recovery:</strong> Soft delete is enabled on $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round((($AuditResults | Where-Object { $_.SoftDeleteEnabled -eq 'Yes' -or $_.SoftDeleteEnabled -eq $true }).Count / $AuditResults.Count) * 100, 1)
+                "$percentage% of vaults"
+            } else { "unknown percentage for partial data" }), enabling secret recovery in case of accidental deletion.</li>
+        </ul>
+        
+        <h4>⚠️ Common Secrets Management Risks:</h4>
+// ...existing code...
+        </ul>
+        
+        $(if ($IsPartialResults) { 
+            $auditResultsCount = if ($AuditResults) { $AuditResults.Count } else { 0 }
+            '<div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 4px;"><p><strong>⚠️ Partial Data Notice:</strong> These insights are based on ' + $auditResultsCount + ' processed vaults and may not reflect the complete organizational secrets management posture.</p></div>' 
+        })
+    </div>
+
+    <div class="security-section">
+// ...existing code...
+        
+        <h4>Network Security:</h4>
+        <ul>
+            <li><strong>Private Endpoints:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round((($AuditResults | Where-Object { $_.PrivateEndpointCount -gt 0 }).Count / $AuditResults.Count) * 100, 1)
+                " ($percentage%)"
+            } else { "Status unknown for partial data" }) have private endpoints configured</li>
+            <li><strong>Network ACLs:</strong> Implement network access control lists to restrict access</li>
+            <li><strong>Firewall Rules:</strong> Configure IP-based firewall rules for additional protection</li>
+// ...existing code...
+        
+        <h4>Monitoring & Compliance:</h4>
+        <ul>
+            <li><strong>Event Hub Integration:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $eventHubCount = ($AuditResults | Where-Object { $_.EventHubEnabled -eq 'Yes' -or $_.EventHubEnabled -eq $true }).Count
+                $auditCount = $AuditResults.Count
+                $percentage = [math]::Round(($eventHubCount / $auditCount) * 100, 1)
+                "$eventHubCount of $auditCount vaults ($percentage%)"
+            } else { "Status unknown for partial data" }) have Event Hub enabled for real-time monitoring</li>
+            <li><strong>Log Analytics Integration:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $logAnalyticsCount = ($AuditResults | Where-Object { $_.LogAnalyticsEnabled -eq 'Yes' -or $_.LogAnalyticsEnabled -eq $true }).Count
+                $auditCount = $AuditResults.Count
+                $percentage = [math]::Round(($logAnalyticsCount / $auditCount) * 100, 1)
+                "$logAnalyticsCount of $auditCount vaults ($percentage%)"
+            } else { "Status unknown for partial data" }) have Log Analytics enabled for centralized query and alerting</li>
+            <li><strong>Storage Account Logging:</strong> $(if ($AuditResults.Count -gt 0) { 
+                $storageCount = ($AuditResults | Where-Object { $_.StorageAccountEnabled -eq 'Yes' -or $_.StorageAccountEnabled -eq $true }).Count
+                $percentage = [math]::Round(($storageCount / $AuditResults.Count) * 100, 1)
+                "$storageCount of $($AuditResults.Count) vaults ($percentage%)"
+            } else { "Status unknown for partial data" }) have storage account logging configured</li>
+            <li><strong>Azure Sentinel Integration:</strong> Connect Key Vault logs to Azure Sentinel for advanced threat detection</li>
+            <li><strong>Azure Policy:</strong> Implement automated compliance enforcement</li>
+// ...existing code...
+            <li>Key Vaults $(if ($IsPartialResults) { "processed" } else { "discovered" }): $($AuditResults.Count)$(if ($IsPartialResults -and $CheckpointData -and $CheckpointData.TotalVaults) { " of $($CheckpointData.TotalVaults) total discovered" })</li>
+            <li>Compliance rate: $(if ($AuditResults.Count -gt 0) { 
+                $compliantCount = ($AuditResults | Where-Object { $_.ComplianceStatus -eq 'Fully Compliant' }).Count
+                $percentage = [math]::Round(($compliantCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($compliantCount fully compliant)"
+            } else { "N/A" })</li>
+            <li>RBAC adoption: $(if ($AuditResults.Count -gt 0) { 
+                $rbacCount = ($AuditResults | Where-Object { $_.RBACAssignmentCount -gt 0 }).Count
+                $percentage = [math]::Round(($rbacCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($rbacCount vaults using RBAC)"
+            } else { "N/A" })</li>
+            <li>Event Hub integration: $(if ($AuditResults.Count -gt 0) { 
+                $eventHubCount = ($AuditResults | Where-Object { $_.EventHubEnabled -eq 'Yes' -or $_.EventHubEnabled -eq $true }).Count
+                $percentage = [math]::Round(($eventHubCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($eventHubCount vaults configured)"
+            } else { "N/A" })</li>
+            <li>Log Analytics integration: $(if ($AuditResults.Count -gt 0) { 
+                $logAnalyticsCount = ($AuditResults | Where-Object { $_.LogAnalyticsEnabled -eq 'Yes' -or $_.LogAnalyticsEnabled -eq $true }).Count
+                $percentage = [math]::Round(($logAnalyticsCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($logAnalyticsCount vaults configured)"
+            } else { "N/A" })</li>
+            <li>Storage Account logging: $(if ($AuditResults.Count -gt 0) { 
+                $storageCount = ($AuditResults | Where-Object { $_.StorageAccountEnabled -eq 'Yes' -or $_.StorageAccountEnabled -eq $true }).Count
+                $percentage = [math]::Round(($storageCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($storageCount vaults configured)"
+            } else { "N/A" })</li>
+            <li>Private endpoint adoption: $(if ($AuditResults.Count -gt 0) { 
+                $privateEndpointCount = ($AuditResults | Where-Object { $_.PrivateEndpointCount -gt 0 }).Count
+                $percentage = [math]::Round(($privateEndpointCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($privateEndpointCount vaults secured)"
+            } else { "N/A" })</li>
+            $(if ($AuditStats -and $AuditStats.ExecutionTimeMinutes) { "<li>Total execution time: $($AuditStats.ExecutionTimeMinutes) minutes</li>" } else { "<li>Total execution time: $(if ($IsPartialResults) { 'N/A (partial data)' } else { 'N/A' })</li>" })
+            $(if ($AuditStats -and $AuditStats.AuthenticationRefreshes) { "<li>Authentication refreshes: $($AuditStats.AuthenticationRefreshes)</li>" } else { "<li>Authentication refreshes: $(if ($IsPartialResults) { 'N/A (partial data)' } else { '0' })</li>" })
+// ...existing code...
+        <h4>🔍 Enhanced Features Implemented:</h4>
+        <ul>
+            <li>✅ Comprehensive managed identity detection and analysis$(if ($AuditResults.Count -gt 0) { 
+                $sysAssignedCount = ($AuditResults | Where-Object { $_.SystemAssignedIdentity -eq 'Yes' }).Count
+                $userAssignedCount = ($AuditResults | Where-Object { $_.UserAssignedIdentityCount -gt 0 }).Count
+                " (System: $sysAssignedCount, User: $userAssignedCount)"
+            } else { " (Partial data: metrics unavailable)" })</li>
+            <li>✅ Advanced service principal analysis with over-privilege detection</li>
+            <li>✅ RBAC least-privilege recommendations based on current assignments</li>
+// ...existing code...
+// ...existing code...
+    try {
+        # Calculate defensive counts before hashtable creation to avoid syntax issues
+        $accessPolicyCountSafe = if (($accessPolicies | Get-Member -Name 'Count' -MemberType Properties)) { $accessPolicies.Count } else { ($accessPolicies | Measure-Object).Count }        
+        $rbacAssignmentCountSafe = if (($rbacAssignments | Get-Member -Name 'Count' -MemberType Properties)) { $rbacAssignments.Count } else { ($rbacAssignments | Measure-Object).Count }
+// ...existing code...
+        $groupCountSafe = if (($identityAnalysis.Groups | Get-Member -Name 'Count' -MemberType Properties)) { $identityAnalysis.Groups.Count } else { ($identityAnalysis.Groups | Measure-Object).Count }
+        $managedIdentityCountSafe = if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count }
+        
+        # Build comprehensive results (matching main audit structure exactly)
+// ...existing code...
+            SystemAssignedPrincipalId = $systemAssignedPrincipalId
+            UserAssignedIdentityCount = $userAssignedIdentityCount
+            UserAssignedIdentityIds = $userAssignedIdentityIds -join ","
+            ConnectedManagedIdentityCount = $(if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count })
+            ComplianceStatus = $complianceStatus
+            ComplianceScore = $complianceScore
+            CompanyComplianceScore = $companyComplianceScore
+// ...existing code...
+// ...existing code...
+        # Build executive summary for single vault with all required fields
+        $executiveSummary = @{
+            TotalVaults = 1
+            TotalKeyVaults = 1
+// ...existing code...
+            WithPrivateEndpoints = if ($networkConfig.PrivateEndpointCount -gt 0) { 1 } else { 0 }
+            UsingRBAC = if ($rbacAssignments.Count -gt 0) { 1 } else { 0 }
+            UsingAccessPolicies = if ($accessPolicies.Count -gt 0) { 1 } else { 0 }
+            TotalServicePrincipals = $identityAnalysis.ServicePrincipals.Count
+            TotalManagedIdentities = $(if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count })
+            UserManagedIdentities = $userAssignedIdentityCount
+            SystemManagedIdentities = if ($systemAssignedIdentity -eq "Yes") { 1 } else { 0 }
+            CompliancePercentage = $complianceScore
+// ...existing code...
+// ...existing code...
+        Write-Host "   Users: $($identityAnalysis.Users.Count)" -ForegroundColor Gray
+        Write-Host "   Groups: $($identityAnalysis.Groups.Count)" -ForegroundColor Gray
+        Write-Host "   Managed Identities: $($connectedManagedIdentities.Count)" -ForegroundColor Gray
+        Write-Host "   Over-privileged: $($overPrivileged.Count)" -ForegroundColor $(if ($overPrivileged.Count -gt 0) { 'Red' } else { 'Green' })
+        
+        Write-Host ""
+// ...existing code...
+// ...existing code...
+    while (-not $vaultProcessed -and $retryCount -lt $maxRetries) {
+        
+        try {
+            # Calculate defensive counts before hashtable creation to avoid syntax issues
+            $accessPolicyCountSafe2 = if (($accessPolicies | Get-Member -Name 'Count' -MemberType Properties)) { $accessPolicies.Count } else { ($accessPolicies | Measure-Object).Count }
+            $rbacAssignmentCountSafe2 = if (($rbacAssignments | Get-Member -Name 'Count' -MemberType Properties)) { $rbacAssignments.Count } else { ($rbacAssignments | Measure-Object).Count }
+// ...existing code...
+            $groupCountSafe2 = if (($identityAnalysis.Groups | Get-Member -Name 'Count' -MemberType Properties)) { $identityAnalysis.Groups.Count } else { ($identityAnalysis.Groups | Measure-Object).Count }
+            $managedIdentityCountSafe2 = if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count }
+            
+            # Build result record
+            $result = [PSCustomObject]@{
+// ...existing code...
+                SystemAssignedPrincipalId = $systemAssignedPrincipalId
+                UserAssignedIdentityCount = $userAssignedIdentityCount
+                UserAssignedIdentityIds = $userAssignedIdentityIds -join ","
+                ConnectedManagedIdentityCount = $managedIdentityCountSafe2
+                ComplianceStatus = $complianceStatus
+                ComplianceScore = $complianceScore
+                CompanyComplianceScore = $companyComplianceScore
+// ...existing code...
+```// filepath: c:\Scripts\Get-AKV_Roles-SecAuditCompliance.ps1
+// ...existing code...
+function New-ComprehensiveHtmlReport {
+// ...existing code...
+        # Calculate statistics with enhanced handling for partial results
+        try {
+            Write-Host "DEBUG: Calculating report statistics..." -ForegroundColor Yellow
+            $totalVaults = if ($IsPartialResults -and $CheckpointData -and $CheckpointData.TotalVaults) { 
+                $CheckpointData.TotalVaults 
+            } elseif ($IsPartialResults -and $ExecutiveSummary.TotalDiscoveredVaults) {
+                $ExecutiveSummary.TotalDiscoveredVaults
+            } else {
+                if ($AuditResults) { $AuditResults.Count } else { 0 }
+            }
+            $processedVaults = if ($AuditResults) { $AuditResults.Count } else { 0 }
+            $completionPercentage = if ($totalVaults -gt 0) { 
+                [math]::Round(($processedVaults / $totalVaults) * 100, 1) 
+            } else { 100 }
+// ...existing code...
+        # Add vault data rows
+        $rowIndex = 0
+        $totalRecords = if ($AuditResults) { $AuditResults.Count } else { 0 }
+        foreach ($result in $AuditResults) {
+            $rowIndex++
+            
+// ...existing code...
+            $percentComplete = if ($totalRecords -gt 0) { [math]::Round(($rowIndex / $totalRecords) * 100, 1) } else { 100 }
+            Write-Progress -Activity "Generating HTML Report" -Status "Processing vault $rowIndex of $totalRecords" -PercentComplete $percentComplete
+            
+            # Determine compliance status class
+// ...existing code...
+        <ul>
+            <li><strong>Migrate to Managed Identities:</strong> Replace service principals with managed identities where possible for enhanced security</li>
+            <li><strong>Implement RBAC:</strong> Move from legacy access policies to Azure RBAC for fine-grained access control$(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round(($AuditStats.UsingRBAC / $AuditResults.Count) * 100, 1)
+                " ($percentage% currently using RBAC)"
+            })</li>
+            <li><strong>Apply Least Privilege:</strong> Review and reduce over-privileged role assignments</li>
+            <li><strong>Enable System-Assigned Identities:</strong> Configure system-assigned managed identities on Key Vault resources$(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $sysAssignedCount = ($AuditResults | Where-Object { $_.SystemAssignedIdentity -eq 'Yes' }).Count
+                $auditCount = $AuditResults.Count
+                " ($sysAssignedCount of $auditCount vaults have system-assigned identities)"
+            })</li>
+        </ul>
+        
+// ...existing code...
+        <h4>📊 Compliance & Security Insights:</h4>
+        <ul>
+            <li><strong>Audit Trail:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round((($AuditResults | Where-Object { $_.DiagnosticsEnabled -eq 'Yes' -or $_.DiagnosticsEnabled -eq $true }).Count / $AuditResults.Count) * 100, 1)
+                "$percentage% of vaults have diagnostic logging enabled"
+            } else { "Diagnostic logging status unknown for partial data" }), providing visibility into secret access patterns and potential security incidents.</li>
+            <li><strong>Network Isolation:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round((($AuditResults | Where-Object { $_.PrivateEndpointCount -gt 0 }).Count / $AuditResults.Count) * 100, 1)
+                "$percentage% of vaults use private endpoints"
+            } else { "Private endpoint usage unknown for partial data" }), protecting secrets from unauthorized network access.</li>
+            <li><strong>Identity-Based Access:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round((($AuditResults | Where-Object { $_.RBACAssignmentCount -gt 0 }).Count / $AuditResults.Count) * 100, 1)
+                "$percentage% of vaults use RBAC"
+            } else { "RBAC usage unknown for partial data" }) for granular secret permissions instead of legacy access policies.</li>
+            <li><strong>Secret Recovery:</strong> Soft delete is enabled on $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round((($AuditResults | Where-Object { $_.SoftDeleteEnabled -eq 'Yes' -or $_.SoftDeleteEnabled -eq $true }).Count / $AuditResults.Count) * 100, 1)
+                "$percentage% of vaults"
+            } else { "unknown percentage for partial data" }), enabling secret recovery in case of accidental deletion.</li>
+        </ul>
+        
+        <h4>⚠️ Common Secrets Management Risks:</h4>
+// ...existing code...
+        </ul>
+        
+        $(if ($IsPartialResults) { 
+            $auditResultsCount = if ($AuditResults) { $AuditResults.Count } else { 0 }
+            '<div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 4px;"><p><strong>⚠️ Partial Data Notice:</strong> These insights are based on ' + $auditResultsCount + ' processed vaults and may not reflect the complete organizational secrets management posture.</p></div>' 
+        })
+    </div>
+
+    <div class="security-section">
+// ...existing code...
+        
+        <h4>Network Security:</h4>
+        <ul>
+            <li><strong>Private Endpoints:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $percentage = [math]::Round((($AuditResults | Where-Object { $_.PrivateEndpointCount -gt 0 }).Count / $AuditResults.Count) * 100, 1)
+                " ($percentage%)"
+            } else { "Status unknown for partial data" }) have private endpoints configured</li>
+            <li><strong>Network ACLs:</strong> Implement network access control lists to restrict access</li>
+            <li><strong>Firewall Rules:</strong> Configure IP-based firewall rules for additional protection</li>
+// ...existing code...
+        
+        <h4>Monitoring & Compliance:</h4>
+        <ul>
+            <li><strong>Event Hub Integration:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $eventHubCount = ($AuditResults | Where-Object { $_.EventHubEnabled -eq 'Yes' -or $_.EventHubEnabled -eq $true }).Count
+                $auditCount = $AuditResults.Count
+                $percentage = [math]::Round(($eventHubCount / $auditCount) * 100, 1)
+                "$eventHubCount of $auditCount vaults ($percentage%)"
+            } else { "Status unknown for partial data" }) have Event Hub enabled for real-time monitoring</li>
+            <li><strong>Log Analytics Integration:</strong> $(if ($AuditResults -and $AuditResults.Count -gt 0) { 
+                $logAnalyticsCount = ($AuditResults | Where-Object { $_.LogAnalyticsEnabled -eq 'Yes' -or $_.LogAnalyticsEnabled -eq $true }).Count
+                $auditCount = $AuditResults.Count
+                $percentage = [math]::Round(($logAnalyticsCount / $auditCount) * 100, 1)
+                "$logAnalyticsCount of $auditCount vaults ($percentage%)"
+            } else { "Status unknown for partial data" }) have Log Analytics enabled for centralized query and alerting</li>
+            <li><strong>Storage Account Logging:</strong> $(if ($AuditResults.Count -gt 0) { 
+                $storageCount = ($AuditResults | Where-Object { $_.StorageAccountEnabled -eq 'Yes' -or $_.StorageAccountEnabled -eq $true }).Count
+                $percentage = [math]::Round(($storageCount / $AuditResults.Count) * 100, 1)
+                "$storageCount of $($AuditResults.Count) vaults ($percentage%)"
+            } else { "Status unknown for partial data" }) have storage account logging configured</li>
+            <li><strong>Azure Sentinel Integration:</strong> Connect Key Vault logs to Azure Sentinel for advanced threat detection</li>
+            <li><strong>Azure Policy:</strong> Implement automated compliance enforcement</li>
+// ...existing code...
+            <li>Key Vaults $(if ($IsPartialResults) { "processed" } else { "discovered" }): $($AuditResults.Count)$(if ($IsPartialResults -and $CheckpointData -and $CheckpointData.TotalVaults) { " of $($CheckpointData.TotalVaults) total discovered" })</li>
+            <li>Compliance rate: $(if ($AuditResults.Count -gt 0) { 
+                $compliantCount = ($AuditResults | Where-Object { $_.ComplianceStatus -eq 'Fully Compliant' }).Count
+                $percentage = [math]::Round(($compliantCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($compliantCount fully compliant)"
+            } else { "N/A" })</li>
+            <li>RBAC adoption: $(if ($AuditResults.Count -gt 0) { 
+                $rbacCount = ($AuditResults | Where-Object { $_.RBACAssignmentCount -gt 0 }).Count
+                $percentage = [math]::Round(($rbacCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($rbacCount vaults using RBAC)"
+            } else { "N/A" })</li>
+            <li>Event Hub integration: $(if ($AuditResults.Count -gt 0) { 
+                $eventHubCount = ($AuditResults | Where-Object { $_.EventHubEnabled -eq 'Yes' -or $_.EventHubEnabled -eq $true }).Count
+                $percentage = [math]::Round(($eventHubCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($eventHubCount vaults configured)"
+            } else { "N/A" })</li>
+            <li>Log Analytics integration: $(if ($AuditResults.Count -gt 0) { 
+                $logAnalyticsCount = ($AuditResults | Where-Object { $_.LogAnalyticsEnabled -eq 'Yes' -or $_.LogAnalyticsEnabled -eq $true }).Count
+                $percentage = [math]::Round(($logAnalyticsCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($logAnalyticsCount vaults configured)"
+            } else { "N/A" })</li>
+            <li>Storage Account logging: $(if ($AuditResults.Count -gt 0) { 
+                $storageCount = ($AuditResults | Where-Object { $_.StorageAccountEnabled -eq 'Yes' -or $_.StorageAccountEnabled -eq $true }).Count
+                $percentage = [math]::Round(($storageCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($storageCount vaults configured)"
+            } else { "N/A" })</li>
+            <li>Private endpoint adoption: $(if ($AuditResults.Count -gt 0) { 
+                $privateEndpointCount = ($AuditResults | Where-Object { $_.PrivateEndpointCount -gt 0 }).Count
+                $percentage = [math]::Round(($privateEndpointCount / $AuditResults.Count) * 100, 1)
+                "$percentage% ($privateEndpointCount vaults secured)"
+            } else { "N/A" })</li>
+            $(if ($AuditStats -and $AuditStats.ExecutionTimeMinutes) { "<li>Total execution time: $($AuditStats.ExecutionTimeMinutes) minutes</li>" } else { "<li>Total execution time: $(if ($IsPartialResults) { 'N/A (partial data)' } else { 'N/A' })</li>" })
+            $(if ($AuditStats -and $AuditStats.AuthenticationRefreshes) { "<li>Authentication refreshes: $($AuditStats.AuthenticationRefreshes)</li>" } else { "<li>Authentication refreshes: $(if ($IsPartialResults) { 'N/A (partial data)' } else { '0' })</li>" })
+// ...existing code...
+        <h4>🔍 Enhanced Features Implemented:</h4>
+        <ul>
+            <li>✅ Comprehensive managed identity detection and analysis$(if ($AuditResults.Count -gt 0) { 
+                $sysAssignedCount = ($AuditResults | Where-Object { $_.SystemAssignedIdentity -eq 'Yes' }).Count
+                $userAssignedCount = ($AuditResults | Where-Object { $_.UserAssignedIdentityCount -gt 0 }).Count
+                " (System: $sysAssignedCount, User: $userAssignedCount)"
+            } else { " (Partial data: metrics unavailable)" })</li>
+            <li>✅ Advanced service principal analysis with over-privilege detection</li>
+            <li>✅ RBAC least-privilege recommendations based on current assignments</li>
+// ...existing code...
+// ...existing code...
+    try {
+        # Calculate defensive counts before hashtable creation to avoid syntax issues
+        $accessPolicyCountSafe = if (($accessPolicies | Get-Member -Name 'Count' -MemberType Properties)) { $accessPolicies.Count } else { ($accessPolicies | Measure-Object).Count }        
+        $rbacAssignmentCountSafe = if (($rbacAssignments | Get-Member -Name 'Count' -MemberType Properties)) { $rbacAssignments.Count } else { ($rbacAssignments | Measure-Object).Count }
+// ...existing code...
+        $groupCountSafe = if (($identityAnalysis.Groups | Get-Member -Name 'Count' -MemberType Properties)) { $identityAnalysis.Groups.Count } else { ($identityAnalysis.Groups | Measure-Object).Count }
+        $managedIdentityCountSafe = if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count }
+        
+        # Build comprehensive results (matching main audit structure exactly)
+// ...existing code...
+            SystemAssignedPrincipalId = $systemAssignedPrincipalId
+            UserAssignedIdentityCount = $userAssignedIdentityCount
+            UserAssignedIdentityIds = $userAssignedIdentityIds -join ","
+            ConnectedManagedIdentityCount = $(if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count })
+            ComplianceStatus = $complianceStatus
+            ComplianceScore = $complianceScore
+            CompanyComplianceScore = $companyComplianceScore
+// ...existing code...
+// ...existing code...
+        # Build executive summary for single vault with all required fields
+        $executiveSummary = @{
+            TotalVaults = 1
+            TotalKeyVaults = 1
+// ...existing code...
+            WithPrivateEndpoints = if ($networkConfig.PrivateEndpointCount -gt 0) { 1 } else { 0 }
+            UsingRBAC = if ($rbacAssignments.Count -gt 0) { 1 } else { 0 }
+            UsingAccessPolicies = if ($accessPolicies.Count -gt 0) { 1 } else { 0 }
+            TotalServicePrincipals = $identityAnalysis.ServicePrincipals.Count
+            TotalManagedIdentities = $(if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count })
+            UserManagedIdentities = $userAssignedIdentityCount
+            SystemManagedIdentities = if ($systemAssignedIdentity -eq "Yes") { 1 } else { 0 }
+            CompliancePercentage = $complianceScore
+// ...existing code...
+// ...existing code...
+        Write-Host "   Users: $($identityAnalysis.Users.Count)" -ForegroundColor Gray
+        Write-Host "   Groups: $($identityAnalysis.Groups.Count)" -ForegroundColor Gray
+        Write-Host "   Managed Identities: $($connectedManagedIdentities.Count)" -ForegroundColor Gray
+        Write-Host "   Over-privileged: $($overPrivileged.Count)" -ForegroundColor $(if ($overPrivileged.Count -gt 0) { 'Red' } else { 'Green' })
+        
+        Write-Host ""
+// ...existing code...
+// ...existing code...
+    while (-not $vaultProcessed -and $retryCount -lt $maxRetries) {
+        
+        try {
+            # Calculate defensive counts before hashtable creation to avoid syntax issues
+            $accessPolicyCountSafe2 = if (($accessPolicies | Get-Member -Name 'Count' -MemberType Properties)) { $accessPolicies.Count } else { ($accessPolicies | Measure-Object).Count }
+            $rbacAssignmentCountSafe2 = if (($rbacAssignments | Get-Member -Name 'Count' -MemberType Properties)) { $rbacAssignments.Count } else { ($rbacAssignments | Measure-Object).Count }
+// ...existing code...
+            $groupCountSafe2 = if (($identityAnalysis.Groups | Get-Member -Name 'Count' -MemberType Properties)) { $identityAnalysis.Groups.Count } else { ($identityAnalysis.Groups | Measure-Object).Count }
+            $managedIdentityCountSafe2 = if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count }
+            
+            # Build result record
+            $result = [PSCustomObject]@{
+// ...existing code...
+                SystemAssignedPrincipalId = $systemAssignedPrincipalId
+                UserAssignedIdentityCount = $userAssignedIdentityCount
+                UserAssignedIdentityIds = $userAssignedIdentityIds -join ","
+                ConnectedManagedIdentityCount = $managedIdentityCountSafe2
+                ComplianceStatus = $complianceStatus
+                ComplianceScore = $complianceScore
+                CompanyComplianceScore = $companyComplianceScore
+// ...existing code...
