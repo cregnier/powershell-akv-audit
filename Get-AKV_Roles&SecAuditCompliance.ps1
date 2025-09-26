@@ -782,6 +782,64 @@ function Write-VerboseEnvironmentInfo {
     }
 }
 
+function Get-SafeProperty {
+    <#
+    .SYNOPSIS
+    Safely retrieves a property value from an object with fallback handling
+    .DESCRIPTION
+    Provides safe access to object properties with proper error handling and default values.
+    Prevents errors when properties are missing, null, or have unexpected values.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [object]$Object,
+        
+        [Parameter(Mandatory)]
+        [string]$PropertyName,
+        
+        [Parameter()]
+        [object]$DefaultValue = "N/A"
+    )
+    
+    try {
+        if ($null -eq $Object) {
+            return $DefaultValue
+        }
+        
+        # Handle PSCustomObject properties
+        if ($Object -is [PSCustomObject]) {
+            if ($Object.PSObject.Properties[$PropertyName]) {
+                $value = $Object.PSObject.Properties[$PropertyName].Value
+                return if ($null -eq $value -or $value -eq '') { $DefaultValue } else { $value }
+            } else {
+                return $DefaultValue
+            }
+        }
+        
+        # Handle hashtable
+        if ($Object -is [hashtable]) {
+            if ($Object.ContainsKey($PropertyName)) {
+                $value = $Object[$PropertyName]
+                return if ($null -eq $value -or $value -eq '') { $DefaultValue } else { $value }
+            } else {
+                return $DefaultValue
+            }
+        }
+        
+        # Handle regular objects with properties
+        if ($Object | Get-Member -Name $PropertyName -ErrorAction SilentlyContinue) {
+            $value = $Object.$PropertyName
+            return if ($null -eq $value -or $value -eq '') { $DefaultValue } else { $value }
+        } else {
+            return $DefaultValue
+        }
+    } catch {
+        Write-Verbose "Get-SafeProperty error accessing '$PropertyName': $($_.Exception.Message)"
+        return $DefaultValue
+    }
+}
+
 function Register-InterruptionHandler {
     <#
     .SYNOPSIS
@@ -2837,30 +2895,33 @@ function Use-HtmlTemplate {
     } else { $AuditResults.Count }
     
     $compliantVaults = ($AuditResults | Where-Object { 
-        $_.ComplianceStatus -eq "Fully Compliant" -or ([int]($_.ComplianceScore -replace '%', '') -ge 80) 
+        $_.ComplianceStatus -eq "Fully Compliant" -or (try { [int]($_.ComplianceScore -replace '%', '') -ge 80 } catch { $false }) 
     }).Count
     
     $highRiskVaults = ($AuditResults | Where-Object { 
-        [int]($_.ComplianceScore -replace '%', '') -lt 60 
+        try { [int]($_.ComplianceScore -replace '%', '') -lt 60 } catch { $false }
     }).Count
     
     $compliancePercentage = if ($totalVaults -gt 0) { [math]::Round(($compliantVaults / $totalVaults) * 100, 1) } else { 0 }
     
     $averageScore = if ($AuditResults.Count -gt 0) {
-        $scores = @($AuditResults | ForEach-Object { [int]($_.ComplianceScore -replace '%', '') })
+        $scores = @($AuditResults | ForEach-Object { try { [int]($_.ComplianceScore -replace '%', '') } catch { 0 } })
         [math]::Round(($scores | Measure-Object -Average).Average, 1)
     } else { 0 }
     
     $companyAverageScore = if ($AuditResults.Count -gt 0) {
-        $scores = @($AuditResults | ForEach-Object { [int]($_.CompanyComplianceScore -replace '%', '') })
+        $scores = @($AuditResults | ForEach-Object { try { [int]($_.CompanyComplianceScore -replace '%', '') } catch { 0 } })
         [math]::Round(($scores | Measure-Object -Average).Average, 1)
     } else { 0 }
     
     # Generate vault data rows
     $vaultDataRows = ($AuditResults | ForEach-Object {
-        $complianceClass = if ([int]($_.ComplianceScore -replace '%', '') -ge 80) { "compliant" } 
-                          elseif ([int]($_.ComplianceScore -replace '%', '') -ge 60) { "partially-compliant" } 
+        $complianceScore = try { [int]($_.ComplianceScore -replace '%', '') } catch { 0 }
+        $complianceClass = if ($complianceScore -ge 80) { "compliant" } 
+                          elseif ($complianceScore -ge 60) { "partially-compliant" } 
                           else { "non-compliant" }
+        
+        $privateEndpointCount = try { [int]$_.PrivateEndpointCount } catch { 0 }
         
         "<tr class='$complianceClass'>" +
         "<td>$($_.KeyVaultName)</td>" +
@@ -2872,7 +2933,7 @@ function Use-HtmlTemplate {
         "<td>$($_.RBACAssignmentCount)</td>" +
         "<td>$($_.ServicePrincipalCount)</td>" +
         "<td>$($_.ManagedIdentityCount)</td>" +
-        "<td>$(if ($_.PrivateEndpointCount -gt 0) { '✅' } else { '❌' })</td>" +
+        "<td>$(if ($privateEndpointCount -gt 0) { '✅' } else { '❌' })</td>" +
         "</tr>"
     }) -join "`n"
     
@@ -3561,17 +3622,17 @@ function Import-PartialResultsFromCsv {
             $csvExecutiveSummary = @{
                 TotalKeyVaults = $global:auditResults.Count
                 CompliantVaults = ($global:auditResults | Where-Object { 
-                    [int]($_.ComplianceScore -replace '%', '') -ge 90 
+                    try { [int]($_.ComplianceScore -replace '%', '') -ge 90 } catch { $false }
                 }).Count
                 CompliancePercentage = if ($global:auditResults.Count -gt 0) { 
                     $compliantCount = ($global:auditResults | Where-Object { 
-                        [int]($_.ComplianceScore -replace '%', '') -ge 90 
+                        try { [int]($_.ComplianceScore -replace '%', '') -ge 90 } catch { $false }
                     }).Count
                     [math]::Round(($compliantCount / $global:auditResults.Count) * 100, 1) 
                 } else { 0 }
                 AverageComplianceScore = if ($global:auditResults.Count -gt 0) { 
                     $scores = @($global:auditResults | ForEach-Object { 
-                        [int]($_.ComplianceScore -replace '%', '') 
+                        try { [int]($_.ComplianceScore -replace '%', '') } catch { 0 }
                     } | Where-Object { $null -ne $_ })
                     if ($scores.Count -gt 0) {
                         [math]::Round(($scores | Measure-Object -Average).Average, 1) 
@@ -3579,14 +3640,14 @@ function Import-PartialResultsFromCsv {
                 } else { 0 }
                 CompanyAverageScore = if ($global:auditResults.Count -gt 0) { 
                     $scores = @($global:auditResults | ForEach-Object { 
-                        [int]($_.CompanyComplianceScore -replace '%', '') 
+                        try { [int]($_.CompanyComplianceScore -replace '%', '') } catch { 0 }
                     } | Where-Object { $null -ne $_ })
                     if ($scores.Count -gt 0) {
                         [math]::Round(($scores | Measure-Object -Average).Average, 1) 
                     } else { 0 }
                 } else { 0 }
                 HighRiskVaults = ($global:auditResults | Where-Object { 
-                    [int]($_.ComplianceScore -replace '%', '') -lt 60 
+                    try { [int]($_.ComplianceScore -replace '%', '') -lt 60 } catch { $false } 
                 }).Count
             }
             
@@ -9904,6 +9965,68 @@ foreach ($kvItem in $vaultsToProcess) {
                 Write-Host "❌ Failed to process $($kv.VaultName) after $maxRetries attempts. Skipping..." -ForegroundColor Red
                 $global:auditStats.ProcessingErrors++
                 $global:auditStats.SkippedVaults++
+                
+                # Add a comprehensive failure record to ensure reports can be generated even if all vaults fail
+                $global:auditResults += [PSCustomObject]@{
+                    SubscriptionId = Get-SafeProperty -Object $kvItem -PropertyName 'SubscriptionId'
+                    SubscriptionName = Get-SafeProperty -Object $kvItem -PropertyName 'SubscriptionName'
+                    KeyVaultName = Get-SafeProperty -Object $kv -PropertyName 'VaultName'
+                    ResourceId = Get-SafeProperty -Object $kv -PropertyName 'ResourceId'
+                    Location = Get-SafeProperty -Object $kv -PropertyName 'Location'
+                    ResourceGroupName = Get-SafeProperty -Object $kv -PropertyName 'ResourceGroupName'
+                    ComplianceStatus = "Collection Failed"
+                    ComplianceScore = 0
+                    ErrorsEncountered = "Failed to collect data after $maxRetries retries. Last error: $errorMessage"
+                    LastAuditDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                    SoftDeleteEnabled = "Error"
+                    PurgeProtectionEnabled = "Error"
+                    DiagnosticsEnabled = "Error"
+                    EnabledLogCategories = "Error"
+                    EnabledMetricCategories = "Error"
+                    LogAnalyticsEnabled = "Error"
+                    LogAnalyticsWorkspaceName = "Error"
+                    EventHubEnabled = "Error"
+                    EventHubNamespace = "Error"
+                    EventHubName = "Error"
+                    StorageAccountEnabled = "Error"
+                    StorageAccountName = "Error"
+                    AccessPolicyCount = 0
+                    AccessPolicyDetails = "Error"
+                    RBACRoleAssignments = "Error"
+                    RBACAssignmentCount = 0
+                    TotalIdentitiesWithAccess = 0
+                    ServicePrincipalCount = 0
+                    UserCount = 0
+                    GroupCount = 0
+                    ManagedIdentityCount = 0
+                    ServicePrincipalDetails = "Error"
+                    ManagedIdentityDetails = "Error"
+                    PublicNetworkAccess = "Error"
+                    NetworkAclsConfigured = "Error"
+                    PrivateEndpointCount = 0
+                    SystemAssignedIdentity = "Error"
+                    SystemAssignedPrincipalId = "Error"
+                    UserAssignedIdentityCount = 0
+                    UserAssignedIdentityIds = "Error"
+                    ConnectedManagedIdentityCount = 0
+                    CompanyComplianceScore = 0
+                    CompanyComplianceStatus = "Collection Failed"
+                    ComplianceIssues = "Collection Failed"
+                    ComplianceRecommendations = "Data collection failed, no recommendations available."
+                    VaultRecommendations = "Data collection failed"
+                    SecurityEnhancements = "Data collection failed"
+                    RBACRecommendations = "Data collection failed"
+                    OverPrivilegedAssignments = "Error"
+                    SecretCount = 0
+                    KeyCount = 0
+                    CertificateCount = 0
+                    WorkloadCategories = "Error"
+                    EnvironmentType = "Error"
+                    PrimaryWorkload = "Error"
+                    SecurityInsights = "Error"
+                    OptimizationRecommendations = "Error"
+                    TotalItems = 0
+                }
                 continue
             }
         }
