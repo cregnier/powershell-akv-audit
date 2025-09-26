@@ -10983,6 +10983,68 @@ foreach ($kvItem in $vaultsToProcess) {
                 Write-Host "❌ Failed to process $($kv.VaultName) after $maxRetries attempts. Skipping..." -ForegroundColor Red
                 $global:auditStats.ProcessingErrors++
                 $global:auditStats.SkippedVaults++
+                
+                # Add a comprehensive failure record to ensure reports can be generated even if all vaults fail
+                $global:auditResults += [PSCustomObject]@{
+                    SubscriptionId = Get-SafeProperty -Object $kvItem -PropertyName 'SubscriptionId'
+                    SubscriptionName = Get-SafeProperty -Object $kvItem -PropertyName 'SubscriptionName'
+                    KeyVaultName = Get-SafeProperty -Object $kv -PropertyName 'VaultName'
+                    ResourceId = Get-SafeProperty -Object $kv -PropertyName 'ResourceId'
+                    Location = Get-SafeProperty -Object $kv -PropertyName 'Location'
+                    ResourceGroupName = Get-SafeProperty -Object $kv -PropertyName 'ResourceGroupName'
+                    ComplianceStatus = "Collection Failed"
+                    ComplianceScore = 0
+                    ErrorsEncountered = "Failed to collect data after $maxRetries retries. Last error: $errorMessage"
+                    LastAuditDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                    SoftDeleteEnabled = "Error"
+                    PurgeProtectionEnabled = "Error"
+                    DiagnosticsEnabled = "Error"
+                    EnabledLogCategories = "Error"
+                    EnabledMetricCategories = "Error"
+                    LogAnalyticsEnabled = "Error"
+                    LogAnalyticsWorkspaceName = "Error"
+                    EventHubEnabled = "Error"
+                    EventHubNamespace = "Error"
+                    EventHubName = "Error"
+                    StorageAccountEnabled = "Error"
+                    StorageAccountName = "Error"
+                    AccessPolicyCount = 0
+                    AccessPolicyDetails = "Error"
+                    RBACRoleAssignments = "Error"
+                    RBACAssignmentCount = 0
+                    TotalIdentitiesWithAccess = 0
+                    ServicePrincipalCount = 0
+                    UserCount = 0
+                    GroupCount = 0
+                    ManagedIdentityCount = 0
+                    ServicePrincipalDetails = "Error"
+                    ManagedIdentityDetails = "Error"
+                    PublicNetworkAccess = "Error"
+                    NetworkAclsConfigured = "Error"
+                    PrivateEndpointCount = 0
+                    SystemAssignedIdentity = "Error"
+                    SystemAssignedPrincipalId = "Error"
+                    UserAssignedIdentityCount = 0
+                    UserAssignedIdentityIds = "Error"
+                    ConnectedManagedIdentityCount = 0
+                    CompanyComplianceScore = 0
+                    CompanyComplianceStatus = "Collection Failed"
+                    ComplianceIssues = "Collection Failed"
+                    ComplianceRecommendations = "Data collection failed, no recommendations available."
+                    VaultRecommendations = "Data collection failed"
+                    SecurityEnhancements = "Data collection failed"
+                    RBACRecommendations = "Data collection failed"
+                    OverPrivilegedAssignments = "Error"
+                    SecretCount = 0
+                    KeyCount = 0
+                    CertificateCount = 0
+                    WorkloadCategories = "Error"
+                    EnvironmentType = "Error"
+                    PrimaryWorkload = "Error"
+                    SecurityInsights = "Error"
+                    OptimizationRecommendations = "Error"
+                    TotalItems = 0
+                }
                 continue
             }
         }
