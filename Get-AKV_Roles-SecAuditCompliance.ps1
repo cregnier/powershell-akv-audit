@@ -576,8 +576,10 @@
 
 function Main {
     [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     param(
-        [Parameter(HelpMessage = "Run in test mode with limited Key Vaults for validation")]
+        [switch]$enableOneDriveUpload,
+        [Parameter(HelpMessage = "Target folder path in OneDrive/SharePoint for file uploads")]
         [string]$CloudUploadPath,
         [Parameter(HelpMessage = "Client ID for Microsoft Graph app-only authentication")]
         [string]$GraphClientId,
@@ -587,7 +589,7 @@ function Main {
         [string]$GraphClientSecret,
         [Parameter(HelpMessage = "Override automatic Microsoft Graph authentication mode selection")]
         [ValidateSet('Interactive','App','DeviceCode','Auto')]
-        [string]$GraphAuthMode = 'Auto',
+        [string]$GraphAuthMode,
         [Parameter(HelpMessage = "Determines Microsoft Graph permission scopes requested")]
         [ValidateSet('Files','Sites','Full')]
         [string]$GraphScopeScenario = 'Files',
@@ -599,6 +601,53 @@ function Main {
         [string]$SubscriptionName
     )
 
+    if (-not $GraphAuthMode) { $GraphAuthMode = 'Auto' }
+    
+    function Write-UserMessage {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]$Message,
+    
+            [Parameter(Mandatory = $false)]
+            [ValidateSet('Info', 'Warning', 'Error', 'Success', 'Debug', 'Progress')]
+            [string]$Type = 'Info'
+        )
+    
+        # This function provides a standardized way to output messages.
+        switch ($Type) {
+            'Info'    { Write-Host $Message -ForegroundColor Gray }
+            'Warning' { Write-Warning $Message }
+            'Error'   { Write-Error -Message $Message }
+            'Success' { Write-Host $Message -ForegroundColor Green }
+            'Debug'   { Write-Debug -Message $Message }
+            'Progress' { Write-Progress -Activity "Auditing Key Vaults" -Status $Message }
+        }
+}
+
+# --- Script Initialization ---
+# --- Version Information ---
+    [Parameter(HelpMessage = "Run in test mode with limited Key Vaults for validation")]
+    [string]$CloudUploadPath,
+    [Parameter(HelpMessage = "Client ID for Microsoft Graph app-only authentication")]
+        [string]$GraphClientId,
+        [Parameter(HelpMessage = "Tenant ID for Microsoft Graph app-only authentication")]
+        [string]$GraphTenantId,
+        [Parameter(HelpMessage = "Client Secret for Microsoft Graph app-only authentication")]
+        [string]$GraphClientSecret,
+        [Parameter(HelpMessage = "Override automatic Microsoft Graph authentication mode selection")]
+        [ValidateSet('Interactive','App','DeviceCode','Auto')]
+        [string]$GraphAuthMode,
+        [Parameter(HelpMessage = "Determines Microsoft Graph permission scopes requested")]
+        [ValidateSet('Files','Sites','Full')]
+        [string]$GraphScopeScenario = 'Files',
+        [Parameter(HelpMessage = "Run targeted diagnostics scan for a single Key Vault (prompts for vault name)")]
+        [switch]$SingleVault,
+        [Parameter(HelpMessage = "Key Vault name for single vault mode (optional - will prompt if not provided)")]
+        [string]$VaultName,
+        [Parameter(HelpMessage = "Subscription name or ID for single vault mode (optional - will prompt if not provided)")]
+        [string]$SubscriptionName
+
     # ...existing code for script logic goes here...
     return $true
 }
@@ -607,8 +656,11 @@ function Main {
 Set-StrictMode -Version Latest
 
 # Global variables for tracking execution context
- $global:ScriptExecutionContext = @{
-    StartTime = Get-Date
+$global:startTime = Get-Date
+$global:RunspaceId = [System.Guid]::NewGuid().ToString()
+$global:ScriptExecutionContext = @{
+    StartTime = $global:startTime
+    RunspaceId = $global:RunspaceId
     IsInterrupted = $false
     EnvironmentDetection = @{}
     AuthenticationFlow = @{}
@@ -619,8 +671,6 @@ Set-StrictMode -Version Latest
 $global:dataIssuesPath = $null
 $global:errPath = $null  
 $global:permissionsPath = $null
-
-. .\Write-UserMessage.ps1
 
 # Helper function for safe property access in PowerShell 7
 function Get-SafeProperty {
@@ -6662,13 +6712,13 @@ if ($PSBoundParameters.ContainsKey('Resume') -or $PSBoundParameters.ContainsKey(
     Write-Host ""
 }
 
-$global:startTime = Get-Date
-$global:subscriptionCount = 0
-$global:serviceProviderCount = 0
-$global:managedIdentityCount = 0
-$global:userManagedIdentityCount = 0
-$global:systemManagedIdentityCount = 0
-$global:accessPolicyCount = 0
+$global:ScriptExecutionContext.StartTime = Get-Date
+$global:ScriptExecutionContext.SubscriptionCount = 0
+$global:ScriptExecutionContext.ServiceProviderCount = 0
+$global:ScriptExecutionContext.ManagedIdentityCount = 0
+$global:ScriptExecutionContext.UserManagedIdentityCount = 0
+$global:ScriptExecutionContext.SystemManagedIdentityCount = 0
+$global:ScriptExecutionContext.AccessPolicyCount = 0
 $global:IsPartialResults = $false
 $global:auditStats = @{
     TokenRefreshCount = 0
@@ -11373,7 +11423,8 @@ $executiveSummary.TotalManagedIdentities = $global:systemManagedIdentityCount + 
 $executiveSummary.UserManagedIdentities = $global:userManagedIdentityCount
 $executiveSummary.SystemManagedIdentities = $global:systemManagedIdentityCount
 
-$executionTime = (Get-Date) - $global:startTime
+$global:ScriptExecutionContext.EndTime = Get-Date
+$executionTime = $global:ScriptExecutionContext.EndTime - $global:ScriptExecutionContext.StartTime
 $executionTimeMinutes = [math]::Round($executionTime.TotalMinutes, 2)
 $executionTimeFormatted = "{0:mm}m {0:ss}s" -f $executionTime
 Write-Host ""
@@ -11404,12 +11455,61 @@ Write-Host "📊 Generating comprehensive HTML report..." -ForegroundColor Cyan
 # Use the comprehensive HTML generation function for consistent formatting
 Write-Host "DEBUG: About to call New-ComprehensiveHtmlReport..." -ForegroundColor Magenta
 
-# Defensive check before HTML generation
-if (-not $global:auditResults) {
-    Write-Warning "Global auditResults is null - initializing empty array"
-    $global:auditResults = @()
+# Defensive check to prevent crash when no vaults are processed
+if (-not $global:auditResults -or $global:auditResults.Count -eq 0) {
+    Write-Warning "No vault data was successfully processed. Generating a failure report."
+    
+    # Ensure variables exist before trying to access them in the failure report
+    if (-not $executionTime) { $executionTime = New-TimeSpan -Start $global:startTime }
+    if (-not $vaultsToProcess) { $vaultsToProcess = @() }
+
+    $failureReport = [PSCustomObject]@{
+        KeyVaultName                  = "No Vaults Processed"
+        KeyVaultUri                   = "N/A"
+        ResourceGroup                 = "N/A"
+        Location                      = "N/A"
+        SubscriptionId                = "N/A"
+        SubscriptionName              = "N/A"
+        TenantId                      = "N/A"
+        Sku                           = "N/A"
+        DiagSettings                  = "N/A"
+        ActivityLogs                  = "N/A"
+        Certificates                  = "N/A"
+        Keys                          = "N/A"
+        Secrets                       = "N/A"
+        SecretProperties              = "N/A"
+        AccessPolicies                = "N/A"
+        NetworkAcls                   = "N/A"
+        RoleAssignments               = "N/A"
+        PrivateEndpoints              = "N/A"
+        Tags                          = "N/A"
+        Content                       = "N/A"
+        ErrorsEncountered             = "Critical: No vaults were successfully analyzed. This can happen due to lack of permissions, invalid vault names, or network connectivity issues. Please check the terminal for specific error messages that occurred during the analysis phase."
+        PSComputerName                = $env:COMPUTERNAME
+        RunspaceId                    = $global:RunspaceId
+        ScriptVersion                 = $SCRIPT_VERSION
+        PSVersion                     = $PSVersionTable.PSVersion.ToString()
+        ExecutionTime                 = $executionTime
+        StartTime                     = $global:startTime
+        EndTime                       = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        Username                      = $env:USERNAME
+        TotalVaults                   = $vaultsToProcess.Count
+        SuccessfulVaults              = 0
+        FailedVaults                  = $vaultsToProcess.Count
+        Cmdlet                        = $MyInvocation.MyCommand.Name
+        Parameters                    = $PSBoundParameters
+        ComputerName                  = $env:COMPUTERNAME
+        OSVersion                     = [System.Runtime.InteropServices.RuntimeInformation]::OSDescription
+        UserAgent                     = $userAgent
+        ReportTitle                   = "Key Vault Comprehensive Security Audit Failure Report"
+        ReportDate                    = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        ReportGeneratedBy             = "$env:USERNAME on $env:COMPUTERNAME"
+        ReportColor                   = "#FF0000"
+        ReportStatus                  = "Failure"
+        ReportSummary                 = "No Key Vaults were successfully analyzed."
+    }
+    $global:auditResults = @($failureReport)
 }
-Write-Host "DEBUG: auditResults count: $(if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A') { $global:auditResults.Count } else { 'N/A' })" -ForegroundColor Magenta
 
 $htmlGenerated = New-ComprehensiveHtmlReport -OutputPath $htmlPath -AuditResults $global:auditResults -ExecutiveSummary $executiveSummary -AuditStats $global:auditStats -IsPartialResults $IsPartialResults
 Write-Host "DEBUG: New-ComprehensiveHtmlReport call completed" -ForegroundColor Magenta
@@ -11646,29 +11746,7 @@ try {
     $finalToken = Get-AzAccessToken -ErrorAction SilentlyContinue
     if ($finalToken) {
         # Final token status with enhanced managed identity support
-        $finalExpiry = $null
-        try {
-            if ($finalToken.ExpiresOn -is [DateTime]) {
-                $finalExpiry = $finalToken.ExpiresOn
-            } elseif ($finalToken.ExpiresOn -is [DateTimeOffset]) {
-                $finalExpiry = $finalToken.ExpiresOn.DateTime
-            } elseif ($finalToken.ExpiresOn -and $finalToken.ExpiresOn.ToString() -match '^\d+$') {
-                # Handle Unix timestamp format (common with managed identity)
-                $finalExpiry = [DateTimeOffset]::FromUnixTimeSeconds([long]$finalToken.ExpiresOn).DateTime
-            } elseif ($finalToken.ExpiresOn) {
-                # Try to parse as string
-                $finalExpiry = [DateTimeOffset]::Parse($finalToken.ExpiresOn.ToString()).DateTime
-            } else {
-                # ExpiresOn is null or empty - common issue with managed identity
-                $finalExpiry = (Get-Date).AddHours(1)  # Assume 1 hour validity for managed identity
-                Write-ErrorLog "FinalToken" "Final token ExpiresOn property is null/invalid - using default assumption for managed identity"
-            }
-        } catch {
-            # Handle managed identity ExpiresOn format issues in final status
-            $finalExpiry = (Get-Date).AddHours(1)  # Assume 1 hour validity for managed identity
-            Write-ErrorLog "FinalToken" "Final token ExpiresOn parsing failed: $($_.Exception.Message) - using default assumption"
-        }
-        $timeUntilFinalExpiry = $finalExpiry - (Get-Date)
+        $timeUntilFinalExpiry = $finalToken.ExpiresOn - (Get-Date)
         Write-Host ""
         Write-Host "🔐 Final Token Status: Valid for $([math]::Round($timeUntilFinalExpiry.TotalMinutes, 1)) more minutes" -ForegroundColor Gray
         Write-Host "👤 Authenticated User: $($global:currentUser)" -ForegroundColor Gray
@@ -11708,4 +11786,4 @@ try {
 Write-Host "Script execution completed at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') UTC" -ForegroundColor Gray
 Write-Host "Thank you for using the Enhanced Azure Key Vault Comprehensive Audit Tool!" -ForegroundColor Green
 
-# End of script
+#End of Script
