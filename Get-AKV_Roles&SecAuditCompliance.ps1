@@ -3001,22 +3001,6 @@ function New-ComprehensiveHtmlReport {
             $AuditStats = @{}
         }
         
-        # Determine which template to use
-        $templateFileName = if ($IsPartialResults) { 
-            "KeyVaultComprehensiveAudit_Resume.html" 
-        } else { 
-            "KeyVaultComprehensiveAudit_Full.html" 
-        }
-        
-        # Generate HTML content using template
-        Write-Verbose "Using template: $templateFileName"
-        $htmlContent = Use-HtmlTemplate -TemplateName $templateFileName -AuditResults $AuditResults -ExecutiveSummary $ExecutiveSummary -AuditStats $AuditStats -IsPartialResults $IsPartialResults -CheckpointData $CheckpointData
-        
-        # Write the processed content to file
-        $htmlContent | Out-File -FilePath $OutputPath -Encoding UTF8
-        Write-Host "✅ Comprehensive HTML report generated using external template: $(Split-Path $OutputPath -Leaf)" -ForegroundColor Green
-        return $true
-        
         # Convert AuditStats to hashtable if it's a PSCustomObject (defensive programming for checkpoint restore)
         if ($AuditStats -and $AuditStats -isnot [hashtable]) {
             try {
