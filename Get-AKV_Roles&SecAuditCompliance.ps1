@@ -11137,35 +11137,20 @@ if ($htmlGenerated) {
 } else {
     Write-Host "❌ Failed to generate HTML report" -ForegroundColor Red
     Write-ErrorLog "Export" "Failed to generate comprehensive HTML report"
-}
+# --- Generate Enhanced HTML Report with All Requested Features ---
+# Use the comprehensive HTML generation function for consistent output
 
-# --- Upload Final Reports to OneDrive/SharePoint ---
-if (Get-Command Initialize-GraphAuth -ErrorAction SilentlyContinue) {
-    try {
-        Write-Host "☁️ Uploading final reports to OneDrive..." -ForegroundColor Cyan
-        
-        if (Initialize-GraphAuth -Verbose:($VerbosePreference -eq 'Continue')) {
-            $uploadResults = Send-FinalReports -CsvFilePath $csvPath -HtmlPath $htmlPath
-            
-            if ($uploadResults -and $uploadResults.Count -gt 0) {
-                Write-Host "✅ Final reports uploaded to OneDrive: $($uploadResults.Count) files" -ForegroundColor Green
-                
-                # Log final artifact URLs for reference
-                foreach ($result in $uploadResults) {
-                    if ($result.Url) {
-                        Write-UploadLog "Artifact" "Final report available" -FileName $result.FileName -ArtifactUrl $result.Url
-                    }
-                }
-            } else {
-                Write-Host "⚠️ Final report upload completed with warnings - check upload logs" -ForegroundColor Yellow
-            }
-        } else {
-            Write-Host "⚠️ OneDrive authentication not available - reports saved locally only" -ForegroundColor Yellow
-        }
-    } catch {
-        Write-UploadLog "Error" "Final upload failed but audit completed successfully: $_" -Context "NonCritical"
-        Write-Host "⚠️ Upload failed but audit completed - reports available locally" -ForegroundColor Yellow
-    }
+# Generate comprehensive HTML report using the unified function
+Write-Host "📊 Generating comprehensive HTML report..." -ForegroundColor Cyan
+
+# Use the comprehensive HTML generation function for consistent formatting
+$htmlGenerated = New-ComprehensiveHtmlReport -OutputPath $htmlPath -AuditResults $global:auditResults -ExecutiveSummary $executiveSummary -AuditStats $global:auditStats -IsPartialResults $false
+
+if ($htmlGenerated) {
+    Write-Host "✅ HTML report: $htmlPath" -ForegroundColor Green
+} else {
+    Write-Host "❌ Failed to generate HTML report" -ForegroundColor Red
+    Write-ErrorLog "Export" "Failed to generate comprehensive HTML report"
 }
 
 # --- Final Summary ---
