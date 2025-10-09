@@ -11137,20 +11137,6 @@ if ($htmlGenerated) {
 } else {
     Write-Host "❌ Failed to generate HTML report" -ForegroundColor Red
     Write-ErrorLog "Export" "Failed to generate comprehensive HTML report"
-# --- Generate Enhanced HTML Report with All Requested Features ---
-# Use the comprehensive HTML generation function for consistent output
-
-# Generate comprehensive HTML report using the unified function
-Write-Host "📊 Generating comprehensive HTML report..." -ForegroundColor Cyan
-
-# Use the comprehensive HTML generation function for consistent formatting
-$htmlGenerated = New-ComprehensiveHtmlReport -OutputPath $htmlPath -AuditResults $global:auditResults -ExecutiveSummary $executiveSummary -AuditStats $global:auditStats -IsPartialResults $false
-
-if ($htmlGenerated) {
-    Write-Host "✅ HTML report: $htmlPath" -ForegroundColor Green
-} else {
-    Write-Host "❌ Failed to generate HTML report" -ForegroundColor Red
-    Write-ErrorLog "Export" "Failed to generate comprehensive HTML report"
 }
 
 # --- Final Summary ---
