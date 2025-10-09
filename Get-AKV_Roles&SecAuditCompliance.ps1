@@ -3017,13 +3017,6 @@ function New-ComprehensiveHtmlReport {
         Write-Host "✅ Comprehensive HTML report generated using external template: $(Split-Path $OutputPath -Leaf)" -ForegroundColor Green
         return $true
         
-    } catch {
-        Write-Host "❌ Failed to generate comprehensive HTML report: $_" -ForegroundColor Red
-        Write-ErrorLog "ComprehensiveHTML" "Failed to generate comprehensive HTML report: $($_.Exception.Message)"
-        return $false
-    }
-}
-        
         # Convert AuditStats to hashtable if it's a PSCustomObject (defensive programming for checkpoint restore)
         if ($AuditStats -and $AuditStats -isnot [hashtable]) {
             try {
