@@ -2690,20 +2690,33 @@ function Invoke-PartialResults {
         
         # Generate comprehensive HTML report for partial results using the new function
         try {
-            # Calculate executive summary for partial results
+            # Calculate executive summary for partial results with null-safe property access
             $partialExecutiveSummary = @{
                 TotalKeyVaults = $global:auditResults.Count
-                CompliantVaults = ($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 }).Count
+                CompliantVaults = ($global:auditResults | Where-Object { 
+                    try { $_.ComplianceScore -and $_.ComplianceScore -ge 90 } catch { $false }
+                }).Count
                 CompliancePercentage = if ($global:auditResults.Count -gt 0) { 
-                    [math]::Round((($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 }).Count / $global:auditResults.Count) * 100, 1) 
+                    $compliantCount = ($global:auditResults | Where-Object { 
+                        try { $_.ComplianceScore -and $_.ComplianceScore -ge 90 } catch { $false }
+                    }).Count
+                    [math]::Round(($compliantCount / $global:auditResults.Count) * 100, 1) 
                 } else { 0 }
                 AverageComplianceScore = if ($global:auditResults.Count -gt 0) { 
-                    [math]::Round(($global:auditResults | Measure-Object -Property ComplianceScore -Average).Average, 1) 
+                    $scores = @($global:auditResults | Where-Object { $_.ComplianceScore } | ForEach-Object { 
+                        try { [double]$_.ComplianceScore } catch { 0 }
+                    })
+                    if ($scores.Count -gt 0) { [math]::Round(($scores | Measure-Object -Average).Average, 1) } else { 0 }
                 } else { 0 }
                 CompanyAverageScore = if ($global:auditResults.Count -gt 0) { 
-                    [math]::Round(($global:auditResults | Measure-Object -Property CompanyComplianceScore -Average).Average, 1) 
+                    $scores = @($global:auditResults | Where-Object { $_.CompanyComplianceScore } | ForEach-Object { 
+                        try { [double]$_.CompanyComplianceScore } catch { 0 }
+                    })
+                    if ($scores.Count -gt 0) { [math]::Round(($scores | Measure-Object -Average).Average, 1) } else { 0 }
                 } else { 0 }
-                HighRiskVaults = ($global:auditResults | Where-Object { $_.ComplianceScore -lt 60 }).Count
+                HighRiskVaults = ($global:auditResults | Where-Object { 
+                    try { $_.ComplianceScore -and $_.ComplianceScore -lt 60 } catch { $false }
+                }).Count
             }
             
             # Use the comprehensive HTML generation function
@@ -2793,158 +2806,17 @@ function Invoke-PartialResults {
     }
 }
 
-function Use-HtmlTemplate {
-    <#
-    .SYNOPSIS
-    Load HTML template and replace placeholders with actual data
-    .DESCRIPTION
-    Loads either Full or Resume template and performs comprehensive placeholder replacement
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$TemplateName,
-        
-        [Parameter(Mandatory)]
-        [array]$AuditResults,
-        
-        [Parameter()]
-        [hashtable]$ExecutiveSummary = @{},
-        
-        [Parameter()]
-        [hashtable]$AuditStats = @{},
-        
-        [Parameter()]
-        [bool]$IsPartialResults = $false,
-        
-        [Parameter()]
-        [object]$CheckpointData = $null
-    )
-    
-    # Get script directory and load template
-    $scriptDir = Split-Path -Parent $PSCommandPath
-    $templatePath = Join-Path $scriptDir $TemplateName
-    
-    if (-not (Test-Path $templatePath)) {
-        throw "Template file not found: $templatePath"
-    }
-    
-    $templateContent = Get-Content -Path $templatePath -Raw -Encoding UTF8
-    
-    # Calculate comprehensive statistics
-    $totalVaults = if ($IsPartialResults -and $CheckpointData -and $CheckpointData.TotalVaults) { 
-        $CheckpointData.TotalVaults 
-    } else { $AuditResults.Count }
-    
-    $compliantVaults = ($AuditResults | Where-Object { 
-        $_.ComplianceStatus -eq "Fully Compliant" -or ([int]($_.ComplianceScore -replace '%', '') -ge 80) 
-    }).Count
-    
-    $highRiskVaults = ($AuditResults | Where-Object { 
-        [int]($_.ComplianceScore -replace '%', '') -lt 60 
-    }).Count
-    
-    $compliancePercentage = if ($totalVaults -gt 0) { [math]::Round(($compliantVaults / $totalVaults) * 100, 1) } else { 0 }
-    
-    $averageScore = if ($AuditResults.Count -gt 0) {
-        $scores = @($AuditResults | ForEach-Object { [int]($_.ComplianceScore -replace '%', '') })
-        [math]::Round(($scores | Measure-Object -Average).Average, 1)
-    } else { 0 }
-    
-    $companyAverageScore = if ($AuditResults.Count -gt 0) {
-        $scores = @($AuditResults | ForEach-Object { [int]($_.CompanyComplianceScore -replace '%', '') })
-        [math]::Round(($scores | Measure-Object -Average).Average, 1)
-    } else { 0 }
-    
-    # Generate vault data rows
-    $vaultDataRows = ($AuditResults | ForEach-Object {
-        $complianceClass = if ([int]($_.ComplianceScore -replace '%', '') -ge 80) { "compliant" } 
-                          elseif ([int]($_.ComplianceScore -replace '%', '') -ge 60) { "partially-compliant" } 
-                          else { "non-compliant" }
-        
-        "<tr class='$complianceClass'>" +
-        "<td>$($_.KeyVaultName)</td>" +
-        "<td>$($_.SubscriptionName)</td>" +
-        "<td>$($_.Location)</td>" +
-        "<td>$($_.ComplianceScore)</td>" +
-        "<td>$($_.CompanyComplianceScore)</td>" +
-        "<td>$(if ($_.DiagnosticsEnabled -eq $true -or $_.DiagnosticsEnabled -eq 'Yes') { '✅' } else { '❌' })</td>" +
-        "<td>$($_.RBACAssignmentCount)</td>" +
-        "<td>$($_.ServicePrincipalCount)</td>" +
-        "<td>$($_.ManagedIdentityCount)</td>" +
-        "<td>$(if ($_.PrivateEndpointCount -gt 0) { '✅' } else { '❌' })</td>" +
-        "</tr>"
-    }) -join "`n"
-    
-    # Build placeholder replacement map
-    $placeholders = @{
-        "{{GENERATION_TIMESTAMP}}" = Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC'
-        "{{CURRENT_USER}}" = if ($global:currentUser) { $global:currentUser } else { "System" }
-        "{{SCRIPT_VERSION}}" = "2.2"
-        "{{EXECUTION_ID_SECTION}}" = if ($global:executionId) { "<p><strong>Execution ID:</strong> $($global:executionId)</p>" } else { "" }
-        "{{TEST_MODE_BANNER}}" = if ($TestMode) { "<div class='test-mode-banner'>🧪 TEST MODE - Limited Analysis</div>" } else { "" }
-        "{{TOTAL_KEY_VAULTS}}" = $totalVaults
-        "{{COMPLIANT_VAULTS}}" = $compliantVaults
-        "{{COMPLIANCE_PERCENTAGE}}" = $compliancePercentage
-        "{{COMPLIANCE_COLOR}}" = if ($compliancePercentage -ge 80) { "#28a745" } elseif ($compliancePercentage -ge 60) { "#ffc107" } else { "#dc3545" }
-        "{{AVERAGE_COMPLIANCE_SCORE}}" = $averageScore
-        "{{MS_AVERAGE_SCORE}}" = $averageScore
-        "{{COMPANY_AVERAGE_SCORE}}" = $companyAverageScore
-        "{{HIGH_RISK_VAULTS}}" = $highRiskVaults
-        "{{HIGH_RISK_PERCENTAGE}}" = if ($totalVaults -gt 0) { [math]::Round(($highRiskVaults / $totalVaults) * 100, 1) } else { 0 }
-        "{{VAULT_DATA_ROWS}}" = $vaultDataRows
-        "{{QUICK_WINS_RECOMMENDATIONS}}" = "Enable RBAC authorization model</li><li>Implement network access restrictions</li><li>Enable diagnostic logging</li><li>Review access permissions</li><li>Replace hardcoded secrets with Key Vault references"
-        "{{TOTAL_SERVICE_PRINCIPALS}}" = ($AuditResults | Measure-Object -Property ServicePrincipalCount -Sum).Sum
-        "{{TOTAL_MANAGED_IDENTITIES}}" = ($AuditResults | Measure-Object -Property ManagedIdentityCount -Sum).Sum
-        "{{SYSTEM_ASSIGNED_COUNT}}" = ($AuditResults | Where-Object { $_.SystemAssignedIdentity -eq "Yes" }).Count
-        "{{USER_ASSIGNED_COUNT}}" = ($AuditResults | Measure-Object -Property UserAssignedIdentityCount -Sum).Sum
-        "{{AUTHENTICATION_REFRESHES}}" = if ($AuditStats -and $AuditStats.AuthenticationRefreshes) { $AuditStats.AuthenticationRefreshes } else { "0" }
-        "{{AUDIT_DATE}}" = Get-Date -Format 'MMMM yyyy'
-        "{{EXECUTION_ID_FOOTER}}" = if ($global:executionId) { "<p><strong>Execution ID:</strong> $($global:executionId)</p>" } else { "" }
-    }
-    
-    # Add partial results specific placeholders
-    if ($IsPartialResults) {
-        $processedVaults = $AuditResults.Count
-        $completionPercentage = if ($totalVaults -gt 0) { [math]::Round(($processedVaults / $totalVaults) * 100, 1) } else { 100 }
-        
-        $placeholders["{{PROCESSED_VAULTS}}"] = $processedVaults
-        $placeholders["{{TOTAL_DISCOVERED_VAULTS}}"] = $totalVaults
-        $placeholders["{{COMPLETION_PERCENTAGE}}"] = $completionPercentage
-        $placeholders["{{PARTIAL_DATA_SOURCE}}"] = "checkpoint"
-        $placeholders["{{DATA_SOURCE_TYPE}}"] = "Checkpoint Recovery"
-        $placeholders["{{CHECKPOINT_METADATA_HEADER}}"] = "<div class='partial-results-banner'>⚠️ PARTIAL RESULTS - $completionPercentage% Complete</div>"
-        
-        if ($CheckpointData) {
-            $placeholders["{{ORIGINAL_EXECUTION_ID}}"] = $CheckpointData.ExecutionId
-            $placeholders["{{ORIGINAL_TIMESTAMP}}"] = $CheckpointData.Timestamp
-        }
-    }
-    
-    # Replace all placeholders
-    $htmlContent = $templateContent
-    foreach ($placeholder in $placeholders.GetEnumerator()) {
-        $htmlContent = $htmlContent -replace [regex]::Escape($placeholder.Key), $placeholder.Value
-    }
-    
-    # Replace any remaining unreplaced placeholders with empty strings
-    $htmlContent = $htmlContent -replace '\{\{[^}]+\}\}', ''
-    
-    return $htmlContent
-}
-
 function New-ComprehensiveHtmlReport {
     <#
     .SYNOPSIS
-    Generate comprehensive HTML report using external template files
+    Generate comprehensive HTML report with inline HTML generation
     .DESCRIPTION
-    Creates detailed HTML audit reports using KeyVaultComprehensiveAudit_Full.html or 
-    KeyVaultComprehensiveAudit_Resume.html templates with placeholder replacement.
+    Creates detailed HTML audit reports with fully inline HTML generation (no external templates).
     
     Supports:
-    - Full audit results using KeyVaultComprehensiveAudit_Full.html
-    - Partial/resume results using KeyVaultComprehensiveAudit_Resume.html
-    - Complete placeholder replacement for all required fields
+    - Full audit results with complete feature set
+    - Partial/resume results with clear status indicators
+    - Executive insights, compliance statistics, and actionable recommendations
     - Consistent feature-rich reporting regardless of audit mode
     #>
     [CmdletBinding()]
@@ -3569,13 +3441,17 @@ function toggleCollapsible(elementId) {
             $percentComplete = if ($totalRecords -gt 0) { [math]::Round(($rowIndex / $totalRecords) * 100, 1) } else { 100 }
             Write-Progress -Activity "Generating HTML Report" -Status "Processing vault $rowIndex of $totalRecords" -PercentComplete $percentComplete
             
-            # Determine compliance status class
-            $complianceClass = if ($result.ComplianceScore -ge 90) { "compliant" } 
-                              elseif ($result.ComplianceScore -ge 60) { "partially-compliant" } 
+            # Determine compliance status class with null-safety
+            $resultScore = if ($result.ComplianceScore) { 
+                try { [int]$result.ComplianceScore } catch { 0 }
+            } else { 0 }
+            
+            $complianceClass = if ($resultScore -ge 90) { "compliant" } 
+                              elseif ($resultScore -ge 60) { "partially-compliant" } 
                               else { "non-compliant" }
             
-            $scoreColor = if ($result.ComplianceScore -ge 90) { "#28a745" } 
-                          elseif ($result.ComplianceScore -ge 60) { "#ffc107" } 
+            $scoreColor = if ($resultScore -ge 90) { "#28a745" } 
+                          elseif ($resultScore -ge 60) { "#ffc107" } 
                           else { "#dc3545" }
             
             $htmlContent += "<tr>"
@@ -3586,9 +3462,13 @@ function toggleCollapsible(elementId) {
             $htmlContent += "<td><span class='$complianceClass'>$($result.ComplianceStatus)</span></td>"
             $htmlContent += "<td><span style='color: $scoreColor; font-weight: bold;'>$($result.ComplianceScore)%</span></td>"
             
-            # Add Company compliance score with appropriate color coding
-            $companyScoreColor = if ($result.CompanyComplianceScore -ge 95) { "#28a745" } 
-                                elseif ($result.CompanyComplianceScore -ge 75) { "#ffc107" } 
+            # Add Company compliance score with appropriate color coding and null-safety
+            $companyScore = if ($result.CompanyComplianceScore) { 
+                try { [int]$result.CompanyComplianceScore } catch { 0 }
+            } else { 0 }
+            
+            $companyScoreColor = if ($companyScore -ge 95) { "#28a745" } 
+                                elseif ($companyScore -ge 75) { "#ffc107" } 
                                 else { "#dc3545" }
             $htmlContent += "<td><span style='color: $companyScoreColor; font-weight: bold;' title='Company Framework Score'>$($result.CompanyComplianceScore)%</span></td>"
             $htmlContent += "<td>$($result.DiagnosticsEnabled)</td>"
@@ -3634,7 +3514,8 @@ function toggleCollapsible(elementId) {
             }
             
             $htmlContent += "</ul>"
-            if ($result.ComplianceScore -lt 90) {
+            # Use the already calculated resultScore for consistency
+            if ($resultScore -lt 90) {
                 $htmlContent += "<p><strong>Impact:</strong> Implementing these recommendations will improve security posture and compliance score.</p>"
             }
             $htmlContent += "</div>"
@@ -11258,36 +11139,17 @@ if ($htmlGenerated) {
     Write-ErrorLog "Export" "Failed to generate comprehensive HTML report"
 }
 
-# --- Upload Final Reports to OneDrive/SharePoint ---
-if (Get-Command Initialize-GraphAuth -ErrorAction SilentlyContinue) {
-    try {
-        Write-Host "☁️ Uploading final reports to OneDrive..." -ForegroundColor Cyan
-        
-        if (Initialize-GraphAuth -Verbose:($VerbosePreference -eq 'Continue')) {
-            $uploadResults = Send-FinalReports -CsvFilePath $csvPath -HtmlPath $htmlPath
-            
-            if ($uploadResults -and $uploadResults.Count -gt 0) {
-                Write-Host "✅ Final reports uploaded to OneDrive: $($uploadResults.Count) files" -ForegroundColor Green
-                
-                # Log final artifact URLs for reference
-                foreach ($result in $uploadResults) {
-                    if ($result.Url) {
-                        Write-UploadLog "Artifact" "Final report available" -FileName $result.FileName -ArtifactUrl $result.Url
-                    }
-                }
-            } else {
-                Write-Host "⚠️ Final report upload completed with warnings - check upload logs" -ForegroundColor Yellow
-            }
-        } else {
-            Write-Host "⚠️ OneDrive authentication not available - reports saved locally only" -ForegroundColor Yellow
-        }
-    } catch {
-        Write-UploadLog "Error" "Final upload failed but audit completed successfully: $_" -Context "NonCritical"
-        Write-Host "⚠️ Upload failed but audit completed - reports available locally" -ForegroundColor Yellow
-    }
-}
-
 # --- Final Summary ---
+
+# Calculate percentage statistics for summary table
+$totalVaultsForPercentage = [math]::Max($executiveSummary.TotalKeyVaults, 1)
+$rbacPercentage = [math]::Round(($executiveSummary.UsingRBAC / $totalVaultsForPercentage) * 100, 1)
+$diagnosticsPercentage = [math]::Round(($executiveSummary.WithDiagnostics / $totalVaultsForPercentage) * 100, 1)
+$eventHubPercentage = [math]::Round(($executiveSummary.WithEventHub / $totalVaultsForPercentage) * 100, 1)
+$logAnalyticsPercentage = [math]::Round(($executiveSummary.WithLogAnalytics / $totalVaultsForPercentage) * 100, 1)
+$storageAccountPercentage = [math]::Round(($executiveSummary.WithStorageAccount / $totalVaultsForPercentage) * 100, 1)
+$privateEndpointsPercentage = [math]::Round(($executiveSummary.WithPrivateEndpoints / $totalVaultsForPercentage) * 100, 1)
+$compliancePercentage = [math]::Round(($executiveSummary.FullyCompliant / $totalVaultsForPercentage) * 100, 1)
 
 Write-Host ""
 Write-Host "🎯 AUDIT COMPLETE" -ForegroundColor Green -BackgroundColor Black
@@ -11299,11 +11161,11 @@ $summaryData = @(
     @{Metric="Total Subscriptions"; Value=$executiveSummary.TotalSubscriptions; Percentage="N/A"}
     @{Metric="Skipped Subscriptions"; Value=$global:auditStats.SkippedSubscriptions; Percentage="N/A"}
     @{Metric="Total Key Vaults"; Value=$executiveSummary.TotalKeyVaults; Percentage="N/A"}
-    @{Metric="Fully Compliant"; Value=$executiveSummary.FullyCompliant; Percentage="$([math]::Round(($executiveSummary.FullyCompliant / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1))%"}
-    @{Metric="Partially Compliant"; Value=$executiveSummary.PartiallyCompliant; Percentage="$([math]::Round(($executiveSummary.PartiallyCompliant / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1))%"}
-    @{Metric="Non-Compliant"; Value=$executiveSummary.NonCompliant; Percentage="$([math]::Round(($executiveSummary.NonCompliant / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1))%"}
+    @{Metric="Fully Compliant"; Value=$executiveSummary.FullyCompliant; Percentage="$([math]::Round(($executiveSummary.FullyCompliant / $totalVaultsForPercentage) * 100, 1))%"}
+    @{Metric="Partially Compliant"; Value=$executiveSummary.PartiallyCompliant; Percentage="$([math]::Round(($executiveSummary.PartiallyCompliant / $totalVaultsForPercentage) * 100, 1))%"}
+    @{Metric="Non-Compliant"; Value=$executiveSummary.NonCompliant; Percentage="$([math]::Round(($executiveSummary.NonCompliant / $totalVaultsForPercentage) * 100, 1))%"}
     @{Metric="Using RBAC"; Value=$executiveSummary.UsingRBAC; Percentage="$rbacPercentage%"}
-    @{Metric="Using Access Policies"; Value=$executiveSummary.UsingAccessPolicies; Percentage="$([math]::Round(($executiveSummary.UsingAccessPolicies / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1))%"}
+    @{Metric="Using Access Policies"; Value=$executiveSummary.UsingAccessPolicies; Percentage="$([math]::Round(($executiveSummary.UsingAccessPolicies / $totalVaultsForPercentage) * 100, 1))%"}
     @{Metric="Total Service Principals"; Value=$executiveSummary.TotalServicePrincipals; Percentage="N/A"}
     @{Metric="Total Managed Identities"; Value=$executiveSummary.TotalManagedIdentities; Percentage="N/A"}
     @{Metric="With Diagnostics"; Value=$executiveSummary.WithDiagnostics; Percentage="$diagnosticsPercentage%"}
@@ -11311,7 +11173,7 @@ $summaryData = @(
     @{Metric="Log Analytics"; Value=$executiveSummary.WithLogAnalytics; Percentage="$logAnalyticsPercentage%"}
     @{Metric="Storage Logging"; Value=$executiveSummary.WithStorageAccount; Percentage="$storageAccountPercentage%"}
     @{Metric="Private Endpoints"; Value=$executiveSummary.WithPrivateEndpoints; Percentage="$privateEndpointsPercentage%"}
-    @{Metric="System Identities"; Value=$executiveSummary.SystemManagedIdentities; Percentage="$([math]::Round(($executiveSummary.SystemManagedIdentities / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1))%"}
+    @{Metric="System Identities"; Value=$executiveSummary.SystemManagedIdentities; Percentage="$([math]::Round(($executiveSummary.SystemManagedIdentities / $totalVaultsForPercentage) * 100, 1))%"}
 )
 
 $summaryData | Format-Table -Property @{Label="Metric"; Expression={$_.Metric}; Width=25}, 
