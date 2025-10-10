@@ -1515,9 +1515,9 @@ function Test-GraphAuthenticationPrerequisites {
     .SYNOPSIS
     Test that required modules and environment are ready for Graph authentication with enhanced logging
     #>
+    [CmdletBinding()]
     param(
-        [string]$AuthMode,
-        [switch]$Verbose
+        [string]$AuthMode
     )
     
     $prerequisites = @{
@@ -1528,7 +1528,8 @@ function Test-GraphAuthenticationPrerequisites {
     }
     
     try {
-        if ($Verbose) {
+        $verboseEnabled = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
+        if ($verboseEnabled) {
             Write-Host "🔍 Checking Microsoft Graph authentication prerequisites..." -ForegroundColor Cyan
         }
         
@@ -1540,12 +1541,12 @@ function Test-GraphAuthenticationPrerequisites {
                 if ($moduleAvailable) {
                     $prerequisites.Messages += "Microsoft Graph module '$module' is available (v$($moduleAvailable[0].Version))"
                     $prerequisites.DetectedCapabilities += "GraphModule-$($module.Replace('Microsoft.Graph.',''))"
-                    if ($Verbose) {
+                    if ($verboseEnabled) {
                         Write-Host "   ✅ $module available (v$($moduleAvailable[0].Version))" -ForegroundColor Green
                     }
                 } else {
                     $prerequisites.Warnings += "Microsoft Graph module '$module' not installed - will attempt auto-installation"
-                    if ($Verbose) {
+                    if ($verboseEnabled) {
                         Write-Host "   ⚠️ $module not available - will attempt auto-installation" -ForegroundColor Yellow
                     }
                 }
@@ -1558,12 +1559,12 @@ function Test-GraphAuthenticationPrerequisites {
             if ($msalModule) {
                 $prerequisites.Messages += "MSAL.PS module is available (v$($msalModule[0].Version))"
                 $prerequisites.DetectedCapabilities += "MSAL.PS"
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "   ✅ MSAL.PS available (v$($msalModule[0].Version))" -ForegroundColor Green
                 }
             } else {
                 $prerequisites.Warnings += "MSAL.PS module not installed - will attempt auto-installation"
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "   ⚠️ MSAL.PS not available - will attempt auto-installation" -ForegroundColor Yellow
                 }
             }
@@ -1580,12 +1581,12 @@ function Test-GraphAuthenticationPrerequisites {
             if (-not [string]::IsNullOrWhiteSpace($value)) {
                 $envVarsPresent++
                 $envDetails += "$var (present)"
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "   ✅ $var is set" -ForegroundColor Green
                 }
             } else {
                 $envDetails += "$var (not set)"
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "   ⚠️ $var is not set" -ForegroundColor Yellow
                 }
             }
@@ -1594,16 +1595,16 @@ function Test-GraphAuthenticationPrerequisites {
         if ($envVarsPresent -eq 3) {
             $prerequisites.Messages += "Complete app credentials found in environment variables"
             $prerequisites.DetectedCapabilities += "AppCredentials-Environment"
-            if ($Verbose) {
+            if ($verboseEnabled) {
                 Write-Host "   ✅ Complete app credentials available from environment" -ForegroundColor Green
             }
         } elseif ($envVarsPresent -gt 0) {
             $prerequisites.Warnings += "Partial app credentials in environment variables (have $envVarsPresent of 3: $($envDetails -join ', '))"
-            if ($Verbose) {
+            if ($verboseEnabled) {
                 Write-Host "   ⚠️ Partial app credentials ($envVarsPresent/3): $($envDetails -join ', ')" -ForegroundColor Yellow
             }
         } else {
-            if ($Verbose) {
+            if ($verboseEnabled) {
                 Write-Host "   ℹ️ No app credentials in environment variables" -ForegroundColor Cyan
             }
         }
@@ -1617,19 +1618,19 @@ function Test-GraphAuthenticationPrerequisites {
             if ($msiEndpoint -or $identityEndpoint -or $imdsEndpoint) {
                 $prerequisites.Messages += "Managed Identity endpoints detected - MSI authentication may be available"
                 $prerequisites.DetectedCapabilities += "ManagedIdentity"
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "   ✅ Managed Identity environment detected" -ForegroundColor Green
                     if ($msiEndpoint) { Write-Host "      - MSI_ENDPOINT: present" -ForegroundColor Gray }
                     if ($identityEndpoint) { Write-Host "      - IDENTITY_ENDPOINT: present" -ForegroundColor Gray }
                     if ($imdsEndpoint) { Write-Host "      - IMDS_ENDPOINT: present" -ForegroundColor Gray }
                 }
             } else {
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "   ℹ️ No Managed Identity endpoints detected" -ForegroundColor Cyan
                 }
             }
         } catch {
-            if ($Verbose) {
+            if ($verboseEnabled) {
                 Write-Host "   ⚠️ Could not check Managed Identity endpoints: $($_.Exception.Message)" -ForegroundColor Yellow
             }
         }
@@ -1639,7 +1640,7 @@ function Test-GraphAuthenticationPrerequisites {
     } catch {
         $prerequisites.Success = $false
         $prerequisites.Messages += "Prerequisites check failed: $($_.Exception.Message)"
-        if ($Verbose) {
+        if ($verboseEnabled) {
             Write-Host "   ❌ Prerequisites check failed: $($_.Exception.Message)" -ForegroundColor Red
         }
         return $prerequisites
@@ -1667,17 +1668,19 @@ function Connect-GraphWithStrategy {
     5. Offers interactive user guidance when automatic methods fail
     6. Logs all authentication attempts and environment detection logic
     #>
+    [CmdletBinding()]
     param(
         [string]$AuthMode = 'Auto',
         [string]$ClientId,
         [string]$TenantId,
         [string]$ClientSecret,
         [string[]]$Scopes,
-        [switch]$Verbose,
         [switch]$Interactive = $false
     )
     
     try {
+        $verboseEnabled = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
+        
         # If no scopes provided, use the configured scenario
         if (-not $Scopes) {
             $Scopes = Get-GraphScopesForScenario -Scenario $GraphScopeScenario
@@ -1706,7 +1709,7 @@ function Connect-GraphWithStrategy {
                 if ($azContext.Account -and $azContext.Account.Type -eq "ServicePrincipal") {
                     $autoDetectedClientId = $azContext.Account.Id
                 }
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "🔍 Az.Accounts context detected:" -ForegroundColor Cyan
                     Write-Host "   Account: $($azContext.Account.Id) ($($azContext.Account.Type))" -ForegroundColor Gray
                     Write-Host "   Tenant: $autoDetectedTenantId" -ForegroundColor Gray
@@ -1714,7 +1717,7 @@ function Connect-GraphWithStrategy {
                 }
             }
         } catch {
-            if ($Verbose) {
+            if ($verboseEnabled) {
                 Write-Host "🔍 No Az.Accounts context available: $($_.Exception.Message)" -ForegroundColor Gray
             }
         }
@@ -1722,20 +1725,18 @@ function Connect-GraphWithStrategy {
         # Use auto-detected values if not explicitly provided
         if (-not $creds.TenantId -and $autoDetectedTenantId) {
             $creds.TenantId = $autoDetectedTenantId
-            if ($Verbose) {
+            if ($verboseEnabled) {
                 Write-Host "✅ Auto-detected tenant ID from Az.Accounts: $autoDetectedTenantId" -ForegroundColor Green
             }
         }
         if (-not $creds.ClientId -and $autoDetectedClientId) {
             $creds.ClientId = $autoDetectedClientId
-            if ($Verbose) {
+            if ($verboseEnabled) {
                 Write-Host "✅ Auto-detected client ID from Az.Accounts: $autoDetectedClientId" -ForegroundColor Green
             }
         }
         
         # Improved authentication mode determination with verbose logging
-        # Enhanced environment detection with verbose logging
-        $isCloudShell = Test-CloudShellEnvironment -Verbose
         
         # Determine authentication mode with detailed reasoning
         $selectedMode = $AuthMode
@@ -1745,15 +1746,21 @@ function Connect-GraphWithStrategy {
             Write-Host "🔍 Auto-detecting optimal Graph authentication method..." -ForegroundColor Cyan
             
             # Enhanced environment detection with verbose logging
-            $isCloudShell = Test-CloudShellEnvironment -Quiet:(-not $Verbose) -Verbose:$Verbose
-            $hasManagedIdentity = Test-ManagedIdentityEnvironment -Quiet:(-not $Verbose) -Verbose:$Verbose
+            $isCloudShell = Test-CloudShellEnvironment -Quiet:(-not $verboseEnabled) -Verbose:$verboseEnabled
+            $hasManagedIdentity = Test-ManagedIdentityEnvironment -Quiet:(-not $verboseEnabled) -Verbose:$verboseEnabled
             
             # Priority 1: Check for complete app credentials (highest priority for automation)
             if ($hasAppCreds) {
                 $selectedMode = 'App'
+                $selectionReasoning += "Complete app credentials available (ClientId, TenantId, ClientSecret)"
+                if ($isCloudShell) {
+                    $selectionReasoning += "Azure Cloud Shell environment detected - app-only authentication preferred over device code"
+                } else {
+                    $selectionReasoning += "Local environment with app credentials - app-only authentication selected"
+                }
                 Write-Host "🤖 Selected: App-only authentication" -ForegroundColor Green
                 Write-Host "   🔍 Reason: Complete service principal credentials detected" -ForegroundColor Gray
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "   📝 Client ID: $($creds.ClientId)" -ForegroundColor Gray
                     Write-Host "   🏢 Tenant ID: $($creds.TenantId)" -ForegroundColor Gray
                     Write-Host "   🔑 Has Secret: $(-not [string]::IsNullOrWhiteSpace($creds.ClientSecret))" -ForegroundColor Gray
@@ -1763,19 +1770,23 @@ function Connect-GraphWithStrategy {
             elseif ($isCloudShell -or $hasManagedIdentity) {
                 if ($isCloudShell) {
                     $selectedMode = 'Interactive'
+                    $selectionReasoning += "Azure Cloud Shell environment detected"
+                    $selectionReasoning += "No app credentials available - interactive browser authentication selected"
                     Write-Host "☁️ Selected: Interactive browser authentication" -ForegroundColor Green
                     Write-Host "   🔍 Reason: Azure Cloud Shell environment detected" -ForegroundColor Gray
-                    if ($Verbose) {
+                    if ($verboseEnabled) {
                         Write-Host "   💡 Cloud Shell provides secure browser context for interactive auth" -ForegroundColor Gray
                     }
                 } else {
                     # MSI environment without Cloud Shell - try app-only first, then device code
                     if ($azContext -and $azContext.Account.Type -eq "ManagedService") {
                         $selectedMode = 'App'
+                        $selectionReasoning += "Active managed identity context detected"
                         Write-Host "🔧 Selected: Managed Identity authentication" -ForegroundColor Green
                         Write-Host "   🔍 Reason: Active managed identity context detected" -ForegroundColor Gray
                     } else {
                         $selectedMode = 'DeviceCode'
+                        $selectionReasoning += "Automation environment without interactive capabilities"
                         Write-Host "🔧 Selected: Device code authentication" -ForegroundColor Green
                         Write-Host "   🔍 Reason: Automation environment without interactive capabilities" -ForegroundColor Gray
                     }
@@ -1784,59 +1795,32 @@ function Connect-GraphWithStrategy {
             # Priority 3: Local environment - default to interactive
             else {
                 $selectedMode = 'Interactive'
-                Write-Host "🖥️ Selected: Interactive browser authentication" -ForegroundColor Green
-                Write-Host "   🔍 Reason: Local desktop environment detected" -ForegroundColor Gray
-                if ($Verbose) {
-                    Write-Host "   💡 Interactive auth is optimal for local development scenarios" -ForegroundColor Gray
-                }
-            }
-            
-            Write-Host "🤖 Auto-detection mode: Analyzing environment..." -ForegroundColor Cyan
-            
-            # Priority 1: MSI/App credentials in cloud environments (NOT device code)
-            if ($hasAppCreds) {
-                $selectedMode = 'App'
-                $selectionReasoning += "Complete app credentials available (ClientId, TenantId, ClientSecret)"
-                if ($isCloudShell) {
-                    $selectionReasoning += "Azure Cloud Shell environment detected - app-only authentication preferred over device code"
-                } else {
-                    $selectionReasoning += "Local environment with app credentials - app-only authentication selected"
-                }
-                Write-Host "🤖 Auto-selected: App-only authentication" -ForegroundColor Green
-                Write-Host "   Reason: Complete credentials available" -ForegroundColor Gray
-            }
-            # Priority 2: Interactive for local environments (browser available)
-            elseif (-not $isCloudShell) {
-                $selectedMode = 'Interactive'
                 $selectionReasoning += "Local environment detected (not Azure Cloud Shell)"
                 $selectionReasoning += "No app credentials available - defaulting to interactive browser authentication"
-                Write-Host "🤖 Auto-selected: Interactive authentication" -ForegroundColor Green
-                Write-Host "   Reason: Local environment, browser authentication available" -ForegroundColor Gray
-            }
-            # Priority 3: Device code as fallback for Cloud Shell WITHOUT app credentials
-            else {
-                $selectedMode = 'DeviceCode'
-                $selectionReasoning += "Azure Cloud Shell environment detected"
-                $selectionReasoning += "No app credentials available - device code authentication as fallback"
-                Write-Host "🤖 Auto-selected: Device code authentication (fallback)" -ForegroundColor Yellow
-                Write-Host "   Reason: Cloud Shell environment without app credentials" -ForegroundColor Gray
+                Write-Host "🖥️ Selected: Interactive browser authentication" -ForegroundColor Green
+                Write-Host "   🔍 Reason: Local desktop environment detected" -ForegroundColor Gray
+                if ($verboseEnabled) {
+                    Write-Host "   💡 Interactive auth is optimal for local development scenarios" -ForegroundColor Gray
+                }
             }
         } else {
             $selectionReasoning += "Explicit authentication mode specified: $selectedMode"
             Write-Host "⚙️ Using explicit authentication mode: $selectedMode" -ForegroundColor Cyan
-            if ($Verbose) {
+            if ($verboseEnabled) {
                 Write-Host "   🔍 Reason: Explicitly specified by user/parameter" -ForegroundColor Gray
             }
         }
         
         # Log authentication decision rationale
-        Write-Host "💭 Authentication selection reasoning:" -ForegroundColor Cyan
-        foreach ($reason in $selectionReasoning) {
-            Write-Host "   • $reason" -ForegroundColor Gray
+        if ($selectionReasoning.Count -gt 0) {
+            Write-Host "💭 Authentication selection reasoning:" -ForegroundColor Cyan
+            foreach ($reason in $selectionReasoning) {
+                Write-Host "   • $reason" -ForegroundColor Gray
+            }
         }
         
         # Check prerequisites with verbose output
-        $prereqCheck = Test-GraphAuthenticationPrerequisites -AuthMode $selectedMode -Verbose
+        $prereqCheck = Test-GraphAuthenticationPrerequisites -AuthMode $selectedMode -Verbose:$verboseEnabled
         foreach ($message in $prereqCheck.Messages) {
             Write-Host "ℹ️ $message" -ForegroundColor Cyan
         }
