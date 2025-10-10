@@ -573,6 +573,87 @@
     https://learn.microsoft.com/azure/key-vault/general/security-features
 #>
 
+# Script parameters
+[CmdletBinding()]
+param(
+    [Parameter(HelpMessage = "Run in test mode with limited Key Vaults for validation")]
+    [switch]$TestMode,
+    
+    [Parameter(HelpMessage = "Number of Key Vaults to test when in test mode. Default is 3")]
+    [int]$Limit = 3,
+    
+    [Parameter(HelpMessage = "Resume audit from a selected checkpoint file")]
+    [switch]$Resume,
+    
+    [Parameter(HelpMessage = "Process partial results from checkpoint/CSV file")]
+    [switch]$ProcessPartial,
+    
+    [Parameter(HelpMessage = "CSV file path for ProcessPartial or ReportFromCsv modes")]
+    [string]$CsvFilePath,
+    
+    [Parameter(HelpMessage = "Generate HTML report directly from CSV file")]
+    [switch]$ReportFromCsv,
+    
+    [Parameter(HelpMessage = "Mark ReportFromCsv output as PARTIAL RESULTS")]
+    [bool]$MarkPartial = $true,
+    
+    [Parameter(HelpMessage = "Enable strict CSV deduplication when resuming")]
+    [switch]$ResumeCsvStrict,
+    
+    [Parameter(HelpMessage = "Override the default output directory")]
+    [string]$OutputDirectory,
+    
+    [Parameter(HelpMessage = "Progress display mode: Session, Overall, or Both")]
+    [ValidateSet('Session', 'Overall', 'Both')]
+    [string]$ProgressMode = 'Session',
+    
+    [Parameter(HelpMessage = "Number of unmatched entries to log when resuming")]
+    [int]$UnmatchedLogCount = 10,
+    
+    [Parameter(HelpMessage = "Enable automatic upload to OneDrive/SharePoint")]
+    [switch]$UploadToCloud,
+    
+    [Parameter(HelpMessage = "Target folder path in OneDrive/SharePoint")]
+    [string]$CloudUploadPath,
+    
+    [Parameter(HelpMessage = "Resume source priority: Checkpoint, CSV, or Union")]
+    [ValidateSet('Checkpoint', 'CSV', 'Union')]
+    [string]$ResumeSourcePriority = 'Union',
+    
+    [Parameter(HelpMessage = "Enable strict matching validation when resuming")]
+    [switch]$ResumeStrictMatch,
+    
+    [Parameter(HelpMessage = "Minimum match percentage for strict matching (1-100)")]
+    [ValidateRange(1, 100)]
+    [int]$StrictMatchThresholdPercent = 60,
+    
+    [Parameter(HelpMessage = "Client ID for Microsoft Graph app-only authentication")]
+    [string]$GraphClientId,
+    
+    [Parameter(HelpMessage = "Tenant ID for Microsoft Graph app-only authentication")]
+    [string]$GraphTenantId,
+    
+    [Parameter(HelpMessage = "Client Secret for Microsoft Graph app-only authentication")]
+    [string]$GraphClientSecret,
+    
+    [Parameter(HelpMessage = "Microsoft Graph authentication mode")]
+    [ValidateSet('Interactive', 'App', 'DeviceCode', 'Auto')]
+    [string]$GraphAuthMode = 'Auto',
+    
+    [Parameter(HelpMessage = "Microsoft Graph permission scope scenario")]
+    [ValidateSet('Files', 'Sites', 'Full')]
+    [string]$GraphScopeScenario = 'Files',
+    
+    [Parameter(HelpMessage = "Run targeted diagnostics scan for a single Key Vault")]
+    [switch]$SingleVault,
+    
+    [Parameter(HelpMessage = "Key Vault name for single vault mode")]
+    [string]$VaultName,
+    
+    [Parameter(HelpMessage = "Subscription name or ID for single vault mode")]
+    [string]$SubscriptionName
+)
+
 # Enable strict mode for better error handling
 Set-StrictMode -Version Latest
 
