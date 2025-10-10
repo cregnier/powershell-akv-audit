@@ -10545,17 +10545,19 @@ if (-not $usingMasterFile -and -not $skipDiscovery) {
             
             Write-Host "📋 Found $($allSubscriptions.Count) subscription(s) - validating access..." -ForegroundColor Gray
             
-            # Test mode optimization: set a reasonable subscription limit to search for vaults
+            # Test mode optimization: in test mode, we'll validate subscriptions incrementally as needed
+            # Instead of pre-determining a fixed limit, we'll stop validation as soon as we have enough
+            # accessible subscriptions to potentially meet the vault limit
             $maxSubscriptionsToValidate = if ($TestMode) {
-                # In test mode, we need enough subscriptions to find the target number of vaults
-                # Estimate: assume 1-2 vaults per subscription on average, so validate 2x target vaults worth of subscriptions
-                [Math]::Min($allSubscriptions.Count, [Math]::Max(10, $TargetVaultCount * 2))
+                # In test mode with a small limit, start conservatively
+                # Assume at least 1 vault per subscription to minimize over-validation
+                [Math]::Min($allSubscriptions.Count, [Math]::Max(3, $TargetVaultCount))
             } else {
                 $allSubscriptions.Count
             }
             
             if ($TestMode -and $maxSubscriptionsToValidate -lt $allSubscriptions.Count) {
-                Write-Host "🧪 Test mode optimization: Will validate up to $maxSubscriptionsToValidate of $($allSubscriptions.Count) subscription(s)" -ForegroundColor Yellow
+                Write-Host "🧪 Test mode optimization: Will validate subscriptions incrementally (initial target: $maxSubscriptionsToValidate)" -ForegroundColor Yellow
             }
             
             # Validate access to subscriptions (with test mode optimization)
@@ -10679,6 +10681,9 @@ if (-not $usingMasterFile -and -not $skipDiscovery) {
     Write-Host "✅ Successfully validated access to $($subscriptions.Count) subscription(s)" -ForegroundColor Green
     if ($skippedCount -gt 0) {
         Write-Host "⚠️ $skippedCount subscription(s) skipped due to authentication/permission issues" -ForegroundColor Yellow
+    }
+    if ($TestMode) {
+        Write-Host "🧪 Test mode: Will search subscriptions until $Limit Key Vault(s) found" -ForegroundColor Cyan
     }
 
     # Discover Key Vaults with test mode optimization
