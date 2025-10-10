@@ -1884,14 +1884,14 @@ function Connect-GraphWithStrategy {
         switch ($selectedMode) {
             'Interactive' {
                 Write-Host "🌐 Attempting interactive browser authentication..." -ForegroundColor Yellow
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "   📝 This will open your default browser for Azure AD authentication" -ForegroundColor Gray
                     Write-Host "   🔒 Secure OAuth2 flow with browser-based consent" -ForegroundColor Gray
                 }
                 
                 try {
                     $tenantParam = if ($creds.TenantId) { $creds.TenantId } else { "common" }
-                    if ($Verbose) {
+                    if ($verboseEnabled) {
                         Write-Host "   🏢 Using tenant: $tenantParam" -ForegroundColor Gray
                     }
                     Write-Host "   Target tenant: $tenantParam" -ForegroundColor Gray
@@ -1905,7 +1905,7 @@ function Connect-GraphWithStrategy {
                     $authSuccess = $true
                 } catch {
                     Write-Host "❌ Interactive authentication failed: $($_.Exception.Message)" -ForegroundColor Red
-                    if ($Verbose) {
+                    if ($verboseEnabled) {
                         Write-Host "   🔍 This may be due to browser restrictions, network issues, or missing permissions" -ForegroundColor Gray
                     }
                     
@@ -1915,11 +1915,11 @@ function Connect-GraphWithStrategy {
                     
                     if ($hasAppCreds) {
                         Write-Host "   ⬇️ Trying app-only authentication (service principal credentials available)" -ForegroundColor Cyan
-                        return Connect-GraphWithStrategy -AuthMode 'App' -ClientId $creds.ClientId -TenantId $creds.TenantId -ClientSecret $creds.ClientSecret -Scopes $Scopes -Verbose:$Verbose
+                        return Connect-GraphWithStrategy -AuthMode 'App' -ClientId $creds.ClientId -TenantId $creds.TenantId -ClientSecret $creds.ClientSecret -Scopes $Scopes -Verbose:$verboseEnabled
                     } else {
                         Write-Host "   ⬇️ Trying device code authentication (no credentials required)" -ForegroundColor Cyan
                         Write-Host "   💡 Device code auth works in restrictive network environments" -ForegroundColor Gray
-                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$Verbose
+                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$verboseEnabled
                     }
                     $authError = $_.Exception
                     $errorMessage = "Interactive authentication failed: $($_.Exception.Message)"
@@ -1934,7 +1934,7 @@ function Connect-GraphWithStrategy {
                 # Handle both explicit app credentials and managed identity scenarios
                 if (-not $hasAppCreds -and $azContext -and $azContext.Account.Type -eq "ManagedService") {
                     Write-Host "🔧 Attempting managed identity authentication..." -ForegroundColor Yellow
-                    if ($Verbose) {
+                    if ($verboseEnabled) {
                         Write-Host "   🔍 Using existing managed identity context from Az.Accounts" -ForegroundColor Gray
                         Write-Host "   🤖 Account: $($azContext.Account.Id)" -ForegroundColor Gray
                     }
@@ -1944,28 +1944,28 @@ function Connect-GraphWithStrategy {
                         # This is a simplified approach - in practice, you might need to get a Graph token using the MSI endpoint
                         Write-Host "⚠️ Managed identity Graph authentication requires manual implementation" -ForegroundColor Yellow
                         Write-Host "   💡 Falling back to device code authentication for Graph access" -ForegroundColor Gray
-                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$Verbose
+                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$verboseEnabled
                     } catch {
                         Write-Host "❌ Managed identity authentication failed: $($_.Exception.Message)" -ForegroundColor Red
                         Write-Host "🔄 Falling back to device code authentication..." -ForegroundColor Yellow
-                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$Verbose
+                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$verboseEnabled
                     }
                 }
                 
                 if (-not $hasAppCreds) {
                     $errorMsg = "App-only authentication requires ClientId, TenantId, and ClientSecret"
                     Write-Host "❌ $errorMsg" -ForegroundColor Red
-                    if ($Verbose) {
+                    if ($verboseEnabled) {
                         Write-Host "   💡 Service principal credentials can be provided via:" -ForegroundColor Gray
                         Write-Host "      - Parameters: `$GraphClientId, `$GraphTenantId, `$GraphClientSecret" -ForegroundColor Gray
                         Write-Host "      - Environment variables: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET" -ForegroundColor Gray
                     }
                     Write-Host "🔄 Falling back to device code authentication..." -ForegroundColor Yellow
-                    return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$Verbose
+                    return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$verboseEnabled
                 }
                 
                 Write-Host "🤖 Attempting app-only authentication..." -ForegroundColor Yellow
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "   📝 Client ID: $($creds.ClientId)" -ForegroundColor Gray
                     Write-Host "   🏢 Tenant ID: $($creds.TenantId)" -ForegroundColor Gray
                     Write-Host "   🔐 Using client secret authentication" -ForegroundColor Gray
@@ -1986,12 +1986,12 @@ function Connect-GraphWithStrategy {
                     return $true
                 } catch {
                     Write-Host "❌ App-only authentication failed: $($_.Exception.Message)" -ForegroundColor Red
-                    if ($Verbose) {
+                    if ($verboseEnabled) {
                         Write-Host "   🔍 This may be due to invalid credentials, insufficient permissions, or network issues" -ForegroundColor Gray
                         Write-Host "   💡 Verify the service principal has necessary Graph API permissions" -ForegroundColor Gray
                     }
                     Write-Host "🔄 Falling back to device code authentication..." -ForegroundColor Yellow
-                    return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$Verbose
+                    return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$verboseEnabled
                     $errorMessage = "App-only authentication requires ClientId, TenantId, and ClientSecret"
                     Write-Host "❌ $errorMessage" -ForegroundColor Red
                     Write-GraphAuthErrorLog -AuthMethod "App" -Message $errorMessage -EnvironmentContext $authContext.EnvironmentVariables -AuthenticationContext $authContext.ProvidedCredentials
@@ -2038,7 +2038,7 @@ function Connect-GraphWithStrategy {
                 Write-Host "   ⏱️  Timeout: You have 15 minutes to complete the authentication" -ForegroundColor Gray
                 Write-Host ""
                 
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-Host "🔍 Device code authentication details:" -ForegroundColor Cyan
                     Write-Host "   🏷️  Using MSAL.PS for maximum compatibility" -ForegroundColor Gray
                     Write-Host "   🆔 Client ID: Microsoft PowerShell (trusted first-party app)" -ForegroundColor Gray
@@ -2062,7 +2062,7 @@ function Connect-GraphWithStrategy {
                     $tenantId = if ($creds.TenantId) { $creds.TenantId } else { "common" }
                     $clientId = "04b07795-8ddb-461a-bbee-02f9e1bf7b46"  # Microsoft PowerShell client ID
                     
-                    if ($Verbose) {
+                    if ($verboseEnabled) {
                         Write-Host "🔄 Initiating device code flow..." -ForegroundColor Cyan
                     }
                     
@@ -6626,7 +6626,7 @@ if ($PSBoundParameters.ContainsKey('Resume') -or $PSBoundParameters.ContainsKey(
                     Write-ResumeLog "SourceCombination" "Combined processed sets" "Priority: $ResumeSourcePriority | Sources: $($sourceDesc -join ', ') | UniqueIdentities: $($combinedResult.ProcessedSet.Count)"
                     
                     # Enhanced CSV alignment diagnostics for Resume mode
-                    if ($Verbose -and $global:csvProcessedSet -and $global:csvProcessedSet.Count -gt 0) {
+                    if ($VerbosePreference -eq 'Continue' -and $global:csvProcessedSet -and (Get-SafeCount $global:csvProcessedSet) -gt 0) {
                         Write-Host ""
                         Write-Host "📋 RESUME CSV ALIGNMENT" -ForegroundColor Cyan -BackgroundColor DarkBlue
                         Write-Host "========================" -ForegroundColor Cyan
@@ -7162,6 +7162,9 @@ function Get-AuthenticationMode {
     [CmdletBinding()]
     param()
     
+    # Check if verbose parameter was passed
+    $verboseEnabled = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
+    
     # Store authentication decision process in global context
     $authDecision = @{
         StartTime = Get-Date
@@ -7177,7 +7180,7 @@ function Get-AuthenticationMode {
     
     # First, detect Azure Cloud Shell with comprehensive logging
     Write-Verbose "Testing for Azure Cloud Shell environment..."
-    $isCloudShell = Test-CloudShellEnvironment -Quiet:(-not $Verbose) -Verbose:$Verbose
+    $isCloudShell = Test-CloudShellEnvironment -Quiet:(-not $verboseEnabled) -Verbose:$verboseEnabled
     $authDecision.DetectionResults.CloudShell = $isCloudShell
     
     if ($isCloudShell) {
@@ -7187,7 +7190,7 @@ function Get-AuthenticationMode {
         Write-UserMessage -Message "Azure Cloud Shell environment detected - using optimal authentication" -Type Success
         Write-UserMessage -Message "Selected: Interactive browser authentication (optimal for Cloud Shell)" -Type Success
         
-        if ($Verbose) {
+        if ($verboseEnabled) {
             Write-UserMessage -Message "Reasoning: Cloud Shell provides secure browser context for interactive auth" -Type Debug
         }
         
@@ -7197,7 +7200,7 @@ function Get-AuthenticationMode {
     
     # Check for managed identity/automation environment with comprehensive logging
     Write-Verbose "Testing for Managed Identity/automation environment..."
-    $hasManagedIdentity = Test-ManagedIdentityEnvironment -Quiet:(-not $Verbose) -Verbose:$Verbose
+    $hasManagedIdentity = Test-ManagedIdentityEnvironment -Quiet:(-not $verboseEnabled) -Verbose:$verboseEnabled
     $authDecision.DetectionResults.ManagedIdentity = $hasManagedIdentity
     
     if ($hasManagedIdentity) {
@@ -7207,7 +7210,7 @@ function Get-AuthenticationMode {
         Write-UserMessage -Message "Managed Identity/Automation environment detected - using app-only authentication" -Type Success
         Write-UserMessage -Message "Selected: Managed Identity authentication (optimal for automation)" -Type Success
         
-        if ($Verbose) {
+        if ($verboseEnabled) {
             Write-UserMessage -Message "Reasoning: MSI environment provides secure automated authentication without explicit credentials" -Type Debug
         }
         
@@ -7230,7 +7233,7 @@ function Get-AuthenticationMode {
         Write-UserMessage -Message "Service Principal credentials detected in environment variables" -Type Success
         Write-UserMessage -Message "Selected: Service Principal authentication (using environment credentials)" -Type Success
         
-        if ($Verbose) {
+        if ($verboseEnabled) {
             Write-UserMessage -Message "Reasoning: Complete service principal credentials found in environment" -Type Debug
             Write-UserMessage -Message "Client ID: $env:AZURE_CLIENT_ID" -Type Debug
             Write-UserMessage -Message "Tenant ID: $env:AZURE_TENANT_ID" -Type Debug
@@ -7283,7 +7286,7 @@ function Get-AuthenticationMode {
                 Write-UserMessage -Message "Selected: Interactive browser authentication" -Type Success
                 Write-Information "   → This will open a browser window for Azure login"
                 
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-UserMessage -Message "Reasoning: User manually selected interactive browser authentication" -Type Debug
                 }
                 
@@ -7316,7 +7319,7 @@ function Get-AuthenticationMode {
                 
                 $clientSecret = Read-Host "Enter Client Secret" -AsSecureString
                 
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-UserMessage -Message "Reasoning: User provided service principal credentials interactively" -Type Debug
                     Write-UserMessage -Message "Client ID: $clientId" -Type Debug
                     Write-UserMessage -Message "Tenant ID: $tenantId" -Type Debug
@@ -7343,7 +7346,7 @@ function Get-AuthenticationMode {
                 Write-Information "   → You will receive a device code to enter at https://microsoft.com/devicelogin"
                 Write-UserMessage -Message "Note: Consider using interactive or app-only authentication for better user experience" -Type Warning
                 
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-UserMessage -Message "Reasoning: User manually selected device code authentication as fallback" -Type Debug
                 }
                 
@@ -7423,7 +7426,7 @@ function Initialize-AzAuth {
             Write-ErrorLog "Auth" "Starting enhanced authentication mode detection"
             Write-UserMessage -Message "Analyzing environment for optimal authentication method..." -Type Info
             
-            $authMode = Get-AuthenticationMode -Verbose:$Verbose
+            $authMode = Get-AuthenticationMode @PSBoundParameters
             
             # Map authentication mode to user-friendly description
             $authMethodDescription = if ($authMode.Identity) {
