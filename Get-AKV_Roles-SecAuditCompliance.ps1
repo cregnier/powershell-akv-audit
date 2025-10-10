@@ -3762,12 +3762,18 @@ function toggleCollapsible(elementId) {
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-number">$(if ($AuditResults) { 
-                    $secretResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SecretCount') -and ([int](Get-SafeProperty -Object $_ -PropertyName 'SecretCount') -gt 0) }
+                    $secretResults = $AuditResults | Where-Object { 
+                        $secretCount = Get-SafeProperty -Object $_ -PropertyName 'SecretCount' -DefaultValue '0'
+                        try { [int]$secretCount -gt 0 } catch { $false }
+                    }
                     if ($secretResults) { $secretResults.Count } else { 0 }
                 } else { "N/A" })</div>
                 <div class="stat-label">Vaults Storing Secrets</div>
                 $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                    $secretResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SecretCount') -and ([int](Get-SafeProperty -Object $_ -PropertyName 'SecretCount') -gt 0) }
+                    $secretResults = $AuditResults | Where-Object { 
+                        $secretCount = Get-SafeProperty -Object $_ -PropertyName 'SecretCount' -DefaultValue '0'
+                        try { [int]$secretCount -gt 0 } catch { $false }
+                    }
                     $secretVaultCount = if ($secretResults) { $secretResults.Count } else { 0 }
                     $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
                     $percentage = [math]::Round(($secretVaultCount / $auditCount) * 100, 1)
@@ -3788,12 +3794,18 @@ function toggleCollapsible(elementId) {
             </div>
             <div class="stat-card">
                 <div class="stat-number">$(if ($AuditResults) { 
-                    $rbacResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -gt 0) }
+                    $rbacResults = $AuditResults | Where-Object { 
+                        $rbacCount = Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0'
+                        try { [int]$rbacCount -gt 0 } catch { $false }
+                    }
                     if ($rbacResults) { $rbacResults.Count } else { 0 }
                 } else { "N/A" })</div>
                 <div class="stat-label">Granular Secret Access</div>
                 $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                    $rbacResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -gt 0) }
+                    $rbacResults = $AuditResults | Where-Object { 
+                        $rbacCount = Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0'
+                        try { [int]$rbacCount -gt 0 } catch { $false }
+                    }
                     $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
                     $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
                     $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
@@ -3835,13 +3847,19 @@ function toggleCollapsible(elementId) {
                 "$percentage% of vaults have diagnostic logging enabled"
             } else { "Diagnostic logging status unknown for partial data" }), providing visibility into secret access patterns and potential security incidents.</li>
             <li><strong>Network Isolation:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $privateEndpointCount = ($AuditResults | Where-Object { [int](Get-SafeProperty -Object $_ -PropertyName 'PrivateEndpointCount') -gt 0 }).Count
+                $privateEndpointCount = ($AuditResults | Where-Object { 
+                    $peCount = Get-SafeProperty -Object $_ -PropertyName 'PrivateEndpointCount' -DefaultValue '0'
+                    try { [int]$peCount -gt 0 } catch { $false }
+                }).Count
                 $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
                 $percentage = [math]::Round(($privateEndpointCount / $auditCount) * 100, 1)
                 "$percentage% of vaults use private endpoints"
             } else { "Private endpoint usage unknown for partial data" }), protecting secrets from unauthorized network access.</li>
             <li><strong>Identity-Based Access:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $rbacResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -gt 0) }
+                $rbacResults = $AuditResults | Where-Object { 
+                    $rbacCount = Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0'
+                    try { [int]$rbacCount -gt 0 } catch { $false }
+                }
                 $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
                 $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
                 $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
@@ -3876,7 +3894,10 @@ function toggleCollapsible(elementId) {
         <h4>Network Security:</h4>
         <ul>
             <li><strong>Private Endpoints:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $privateEndpointCount = ($AuditResults | Where-Object { [int](Get-SafeProperty -Object $_ -PropertyName 'PrivateEndpointCount') -gt 0 }).Count
+                $privateEndpointCount = ($AuditResults | Where-Object { 
+                    $peCount = Get-SafeProperty -Object $_ -PropertyName 'PrivateEndpointCount' -DefaultValue '0'
+                    try { [int]$peCount -gt 0 } catch { $false }
+                }).Count
                 $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
                 "$privateEndpointCount of $auditCount vaults"
                 $percentage = [math]::Round(($privateEndpointCount / $AuditResults.Count) * 100, 1)
@@ -3967,7 +3988,10 @@ function toggleCollapsible(elementId) {
                 "$percentage% ($compliantCount fully compliant)"
             } else { "N/A" })</li>
             <li>RBAC adoption: $(if ($AuditResults.Count -gt 0) { 
-                $rbacResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -gt 0) }
+                $rbacResults = $AuditResults | Where-Object { 
+                    $rbacCount = Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0'
+                    try { [int]$rbacCount -gt 0 } catch { $false }
+                }
                 $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
                 $percentage = [math]::Round(($rbacCount / $AuditResults.Count) * 100, 1)
                 "$percentage% ($rbacCount vaults using RBAC)"
@@ -3988,7 +4012,9 @@ function toggleCollapsible(elementId) {
                 "$percentage% ($storageCount vaults configured)"
             } else { "N/A" })</li>
             <li>Private endpoint adoption: $(if ($AuditResults.Count -gt 0) { 
-                $privateEndpointCount = ($AuditResults | Where-Object { [int]$_.PrivateEndpointCount -gt 0 }).Count
+                $privateEndpointCount = ($AuditResults | Where-Object { 
+                    try { [int]$_.PrivateEndpointCount -gt 0 } catch { $false }
+                }).Count
                 $percentage = [math]::Round(($privateEndpointCount / $AuditResults.Count) * 100, 1)
                 "$percentage% ($privateEndpointCount vaults secured)"
             } else { "N/A" })</li>
