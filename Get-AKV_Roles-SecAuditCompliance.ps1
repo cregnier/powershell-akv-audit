@@ -593,6 +593,70 @@ $global:dataIssuesPath = $null
 $global:errPath = $null  
 $global:permissionsPath = $null
 
+# Standardized user message function for consistent output
+function Write-UserMessage {
+    <#
+    .SYNOPSIS
+    Standardized message output function that respects Verbose and Debug preferences
+    .DESCRIPTION
+    Provides consistent message output across the script with appropriate handling for different message types.
+    Info and Progress messages are suppressed unless -Verbose is active to reduce console clutter.
+    Error, Warning, and Success messages are always shown.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Message,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('Info', 'Warning', 'Error', 'Success', 'Debug', 'Progress', 'Verbose')]
+        [string]$Type = 'Info'
+    )
+
+    # Handle different message types with appropriate output methods
+    switch ($Type) {
+        'Error' {
+            # Errors always shown
+            Write-Error -Message $Message
+        }
+        'Warning' {
+            # Warnings always shown
+            Write-Warning $Message
+        }
+        'Success' {
+            # Success messages always shown
+            Write-Host $Message -ForegroundColor Green
+        }
+        'Debug' {
+            # Debug messages only shown when -Debug is active
+            Write-Debug -Message $Message
+        }
+        'Verbose' {
+            # Verbose messages only shown when -Verbose is active
+            Write-Verbose $Message
+        }
+        'Progress' {
+            # Progress messages shown when verbose or as Write-Progress
+            if ($VerbosePreference -eq 'Continue') {
+                Write-Host "Progress: $Message" -ForegroundColor Cyan
+            }
+            Write-Progress -Activity "Auditing Key Vaults" -Status $Message
+        }
+        'Info' {
+            # Info messages only shown when verbose is active, otherwise suppressed to reduce output
+            if ($VerbosePreference -eq 'Continue') {
+                Write-Host $Message -ForegroundColor Gray
+            }
+        }
+        default {
+            # Default to info behavior
+            if ($VerbosePreference -eq 'Continue') {
+                Write-Host $Message -ForegroundColor White
+            }
+        }
+    }
+}
+
 # Helper function for safe property access in PowerShell 7
 function Get-SafeProperty {
     param($Object, $PropertyName, $DefaultValue = 'N/A')
@@ -2891,7 +2955,7 @@ function New-ComprehensiveHtmlReport {
         
         # Calculate statistics with enhanced handling for partial results
         try {
-            Write-Host "DEBUG: Calculating report statistics..." -ForegroundColor Yellow
+            Write-Verbose "Calculating report statistics..."
             $totalVaults = if ($IsPartialResults -and $CheckpointData -and $CheckpointData.TotalVaults) { 
                 $CheckpointData.TotalVaults 
             } elseif ($IsPartialResults -and $ExecutiveSummary.TotalDiscoveredVaults) {
@@ -2904,7 +2968,7 @@ function New-ComprehensiveHtmlReport {
                 [math]::Round(($processedVaults / $totalVaults) * 100, 1) 
             } else { 100 }
             $remainingVaults = $totalVaults - $processedVaults
-            Write-Host "DEBUG: Statistics calculated - Processed: $processedVaults, Total: $totalVaults, Completion: $completionPercentage%" -ForegroundColor Yellow
+            Write-Verbose "Statistics calculated - Processed: $processedVaults, Total: $totalVaults, Completion: $completionPercentage%"
             Write-Verbose "Report statistics: Processed=$processedVaults, Total=$totalVaults, Completion=$completionPercentage%"
         } catch {
             Write-Host "❌ Error calculating report statistics: $_" -ForegroundColor Red
@@ -2964,7 +3028,7 @@ function New-ComprehensiveHtmlReport {
         
         # Start building HTML content
         # Generate HTML content with defensive programming for Count properties
-        Write-Host "DEBUG: About to generate HTML content" -ForegroundColor Yellow
+        Write-Verbose "About to generate HTML content"
         
         $htmlContent = @"
 <!DOCTYPE html>
@@ -3956,8 +4020,8 @@ function toggleCollapsible(elementId) {
 </body>
 </html>
 "@
-    Write-Host "DEBUG: HTML content string generation completed" -ForegroundColor Yellow
-    Write-Host "DEBUG: HTML content generation completed successfully" -ForegroundColor Yellow
+    Write-Verbose "HTML content string generation completed"
+    Write-Verbose "HTML content generation completed successfully"
     
     } catch {
         Write-Host "❌ Error generating comprehensive HTML report: $_" -ForegroundColor Red
@@ -11368,13 +11432,13 @@ try {
 
 # Initialize variables needed for HTML report generation
 $IsPartialResults = $false
-Write-Host "DEBUG: IsPartialResults initialized to: $IsPartialResults" -ForegroundColor Magenta
+Write-Verbose "IsPartialResults initialized to: $IsPartialResults"
 
 # Generate comprehensive HTML report using the unified function
 Write-Host "📊 Generating comprehensive HTML report..." -ForegroundColor Cyan
 
 # Use the comprehensive HTML generation function for consistent formatting
-Write-Host "DEBUG: About to call New-ComprehensiveHtmlReport..." -ForegroundColor Magenta
+Write-Verbose "About to call New-ComprehensiveHtmlReport..."
 
 # Defensive check to prevent crash when no vaults are processed
 if (-not $global:auditResults -or $global:auditResults.Count -eq 0) {
@@ -11433,7 +11497,7 @@ if (-not $global:auditResults -or $global:auditResults.Count -eq 0) {
 }
 
 $htmlGenerated = New-ComprehensiveHtmlReport -OutputPath $htmlPath -AuditResults $global:auditResults -ExecutiveSummary $executiveSummary -AuditStats $global:auditStats -IsPartialResults $IsPartialResults
-Write-Host "DEBUG: New-ComprehensiveHtmlReport call completed" -ForegroundColor Magenta
+Write-Verbose "New-ComprehensiveHtmlReport call completed"
 
 if ($htmlGenerated) {
     Write-Host "✅ HTML report: $htmlPath" -ForegroundColor Green
