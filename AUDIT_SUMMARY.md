@@ -1,7 +1,7 @@
 # Comprehensive PowerShell Script Audit - Summary of Changes
 
 ## Overview
-This document summarizes all changes made to `Get-AKV_Roles&SecAuditCompliance.ps1` as part of the comprehensive audit and enhancement requested in the problem statement.
+This document summarizes all changes made to `Get-AKV_Roles-SecAuditCompliance.ps1` as part of the comprehensive audit and enhancement requested in the problem statement.
 
 ## Changes Implemented
 

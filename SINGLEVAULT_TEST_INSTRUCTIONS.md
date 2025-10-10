@@ -30,7 +30,7 @@ Before testing, ensure you have:
 
 **Command:**
 ```powershell
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -VaultName "YourVaultName"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -VaultName "YourVaultName"
 ```
 
 **Expected Behavior:**
@@ -76,7 +76,7 @@ Before testing, ensure you have:
 
 **Command:**
 ```powershell
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault
 ```
 
 **Expected Behavior:**
@@ -88,7 +88,7 @@ Before testing, ensure you have:
 
 **Command:**
 ```powershell
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -VaultName "NonExistentVault"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -VaultName "NonExistentVault"
 ```
 
 **Expected Behavior:**
@@ -107,10 +107,10 @@ Before testing, ensure you have:
 **Test Invalid Combinations:**
 ```powershell
 # Should fail - SingleVault with Resume
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -Resume
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -Resume
 
 # Should fail - VaultName without SingleVault  
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -VaultName "TestVault"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -VaultName "TestVault"
 ```
 
 **Expected Error Messages:**

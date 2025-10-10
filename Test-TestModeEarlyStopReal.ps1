@@ -20,7 +20,7 @@ param()
 Write-Host "🧪 TESTMODE EARLY STOP REAL VALIDATION" -ForegroundColor Cyan
 Write-Host "=" * 70 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 
 if (-not (Test-Path $scriptPath)) {
     Write-Host "❌ Script not found: $scriptPath" -ForegroundColor Red

@@ -15,7 +15,7 @@ param()
 Write-Host "🔍 ANALYZING .Count PROPERTY USAGE PATTERNS" -ForegroundColor Cyan
 Write-Host "=" * 60 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $scriptContent = Get-Content $scriptPath -Raw
 
 # Find all .Count usage

@@ -17,7 +17,7 @@ param()
 Write-Host "🔍 AUDIT MODE UNIFICATION VALIDATION" -ForegroundColor Cyan
 Write-Host "=" * 60 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $testResults = @{
     AllModesUseSameTemplate = $false
     CSVStructureConsistent = $false

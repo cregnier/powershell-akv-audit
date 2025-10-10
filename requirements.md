@@ -92,10 +92,10 @@ This ensures the enhanced script provides accurate, real-time information about 
 #### Usage Examples:
 ```powershell
 # Automatic detection (recommended)
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode
 
 # Custom output directory
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -OutputDirectory "/custom/audit/path"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -OutputDirectory "/custom/audit/path"
 ```
 
 #### Benefits:
@@ -122,7 +122,7 @@ This ensures the enhanced script provides accurate, real-time information about 
 #### Usage:
 ```powershell
 # Resume with checkpoint selection
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume
 
 # The script will:
 # 1. List all available checkpoints with summaries
@@ -145,7 +145,7 @@ This ensures the enhanced script provides accurate, real-time information about 
 #### Usage:
 ```powershell
 # Process partial results from any checkpoint
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial
 
 # The script will:
 # 1. List all available checkpoints (including older ones)
@@ -379,34 +379,34 @@ The Azure Key Vault audit script now includes comprehensive Microsoft Graph inte
 #### **Automatic Upload Mode**
 ```powershell
 # Enable automatic upload with interactive path selection
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud
 
 # Specify target path directly
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud -CloudUploadPath "/Documents/KeyVaultAudits"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud -CloudUploadPath "/Documents/KeyVaultAudits"
 
 # SharePoint team site integration
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud -CloudUploadPath "/Shared Documents/Security/Audits"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud -CloudUploadPath "/Shared Documents/Security/Audits"
 ```
 
 #### **Test Mode with Upload**
 ```powershell
 # Validate functionality with test mode
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 5 -UploadToCloud
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 5 -UploadToCloud
 ```
 
 #### **Partial Results Upload**
 ```powershell
 # Upload partial results from checkpoints
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial -UploadToCloud
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial -UploadToCloud
 
 # Upload results from existing CSV
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath "audit.csv" -UploadToCloud
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath "audit.csv" -UploadToCloud
 ```
 
 #### **Interactive Cloud Shell Prompt**
 ```powershell
 # Normal run in Azure Cloud Shell - automatic detection and prompt
-.\Get-AKV_Roles&SecAuditCompliance.ps1
+.\Get-AKV_Roles-SecAuditCompliance.ps1
 # After completion:
 # "☁️ Azure Cloud Shell detected"
 # "To prevent data loss when Cloud Shell session expires, you can upload files to OneDrive/SharePoint."

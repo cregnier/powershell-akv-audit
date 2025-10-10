@@ -13,7 +13,7 @@ param()
 Write-Host "🔍 POWERSHELL TRY/CATCH SYNTAX FIX VALIDATION" -ForegroundColor Cyan
 Write-Host "=" * 55 -ForegroundColor Gray
 
-$scriptPath = "./Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = "./Get-AKV_Roles-SecAuditCompliance.ps1"
 
 Write-Host "`n1️⃣ Testing PowerShell parser syntax validation..." -ForegroundColor Yellow
 

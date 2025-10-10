@@ -58,7 +58,7 @@ Enhanced the `-SingleVault` parameter functionality to provide comprehensive Azu
 
 ## Files Modified
 
-### Main Script: `Get-AKV_Roles&SecAuditCompliance.ps1`
+### Main Script: `Get-AKV_Roles-SecAuditCompliance.ps1`
 **Lines Modified:** 8923-9140 (SingleVault implementation section)
 **Changes:**
 - Replaced basic result hashtable with comprehensive PSCustomObject

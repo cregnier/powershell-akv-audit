@@ -12,7 +12,7 @@ param()
 Write-Host "🎯 FINAL VALIDATION OF CRITICAL ERROR FIXES" -ForegroundColor Cyan
 Write-Host "=" * 60 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 
 Write-Host "`n1️⃣ Testing variable definitions in summary section...`n" -ForegroundColor Yellow
 

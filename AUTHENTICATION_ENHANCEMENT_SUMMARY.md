@@ -154,10 +154,10 @@ The enhancements are automatically active. No configuration changes required.
 ### To Test the Enhancement
 ```powershell
 # Run with existing authentication context
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode
 
 # Force new authentication to see the full decision process
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Force
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Force
 ```
 
 ### Expected Experience

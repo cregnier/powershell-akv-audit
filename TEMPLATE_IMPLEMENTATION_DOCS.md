@@ -144,7 +144,7 @@ All sections from htmldifferences.txt have been implemented:
 ## Template Usage Integration
 
 ### PowerShell Script Integration
-The templates are designed to integrate seamlessly with the existing `Get-AKV_Roles&SecAuditCompliance.ps1` script:
+The templates are designed to integrate seamlessly with the existing `Get-AKV_Roles-SecAuditCompliance.ps1` script:
 
 1. **Load template file** based on operation type (Full vs Resume)
 2. **Substitute placeholders** with actual audit data

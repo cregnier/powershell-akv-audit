@@ -76,7 +76,7 @@ if ($test4Exit -eq 0) {
 # Test 5: Main script syntax validation
 Write-Host "`n5️⃣ Testing main script syntax..." -ForegroundColor Yellow
 try {
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles&SecAuditCompliance.ps1', [ref]$null, [ref]$null)
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles-SecAuditCompliance.ps1', [ref]$null, [ref]$null)
     if ($ast) {
         Write-Host "   ✅ PASS: Main script syntax is valid" -ForegroundColor Green
         $test5Exit = 0
@@ -124,7 +124,7 @@ if ($passedTests -eq $totalTests) {
     Write-Host "✅ Test validation script confirms proper object shape" -ForegroundColor Green
     Write-Host ""
     Write-Host "🚀 Ready for production testing with real Azure environments!" -ForegroundColor Green
-    Write-Host "💡 Run with: ./Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 1" -ForegroundColor Cyan
+    Write-Host "💡 Run with: ./Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 1" -ForegroundColor Cyan
     
     exit 0
 } else {

@@ -46,7 +46,7 @@ try {
 # Test 3: ForceReauth Parameter Exists
 Write-Host "`n3️⃣ Testing ForceReauth parameter..." -ForegroundColor Yellow
 try {
-    $paramExists = (Get-Content "./Get-AKV_Roles&SecAuditCompliance.ps1" -Raw) -match '\$ForceReauth'
+    $paramExists = (Get-Content "./Get-AKV_Roles-SecAuditCompliance.ps1" -Raw) -match '\$ForceReauth'
     if ($paramExists) {
         Write-Host "   ✅ PASS: -ForceReauth parameter found in script" -ForegroundColor Green
     } else {
@@ -61,7 +61,7 @@ try {
 # Test 4: Script Syntax Validation
 Write-Host "`n4️⃣ Testing script syntax..." -ForegroundColor Yellow
 try {
-    $null = pwsh -Command '$ast = [System.Management.Automation.Language.Parser]::ParseFile("./Get-AKV_Roles&SecAuditCompliance.ps1", [ref]$null, [ref]$null); Write-Host "Syntax valid"' 2>&1
+    $null = pwsh -Command '$ast = [System.Management.Automation.Language.Parser]::ParseFile("./Get-AKV_Roles-SecAuditCompliance.ps1", [ref]$null, [ref]$null); Write-Host "Syntax valid"' 2>&1
     if ($LASTEXITCODE -eq 0) {
         Write-Host "   ✅ PASS: Script syntax is valid" -ForegroundColor Green
     } else {
@@ -76,7 +76,7 @@ try {
 # Test 5: Key Functions Exist
 Write-Host "`n5️⃣ Testing required functions..." -ForegroundColor Yellow
 try {
-    $scriptContent = Get-Content "./Get-AKV_Roles&SecAuditCompliance.ps1" -Raw
+    $scriptContent = Get-Content "./Get-AKV_Roles-SecAuditCompliance.ps1" -Raw
     $requiredFunctions = @(
         'Initialize-AkvAuthenticationContext',
         'Get-AkvAuthFlow'

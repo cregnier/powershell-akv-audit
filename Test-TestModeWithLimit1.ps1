@@ -21,7 +21,7 @@ Write-Host "`n🔬 Simulating key acceptance criteria scenarios..." -ForegroundC
 
 # Load the authentication functions
 try {
-    $scriptContent = Get-Content "./Get-AKV_Roles&SecAuditCompliance.ps1" -Raw
+    $scriptContent = Get-Content "./Get-AKV_Roles-SecAuditCompliance.ps1" -Raw
     
     # Extract authentication functions
     $initFunctionMatch = [regex]::Match($scriptContent, 'function Initialize-AkvAuthenticationContext.*?(?=^function|^#.*End Authentication Context Helpers)', [System.Text.RegularExpressions.RegexOptions]::Singleline -bor [System.Text.RegularExpressions.RegexOptions]::Multiline)

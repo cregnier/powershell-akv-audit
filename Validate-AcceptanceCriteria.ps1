@@ -12,7 +12,7 @@ param()
 Write-Host "🎯 ACCEPTANCE CRITERIA VALIDATION" -ForegroundColor Cyan
 Write-Host "=" * 70 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $scriptContent = Get-Content $scriptPath -Raw
 
 $criteria = @{

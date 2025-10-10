@@ -13,7 +13,7 @@ param()
 Write-Host "⏱️ EXECUTION TIME FIXES VALIDATION TEST" -ForegroundColor Cyan
 Write-Host "=" * 55 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 
 $testResults = @{
     SingleVaultTimeFix = $false

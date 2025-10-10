@@ -32,7 +32,7 @@ Write-Host "`n1️⃣ Testing new Windows Integrated Auth detection...`n" -Foreg
 
 try {
     # Source the main script to load functions
-    $scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+    $scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
     
     if (Test-Path $scriptPath) {
         Write-Host "   ✅ Main script found" -ForegroundColor Green

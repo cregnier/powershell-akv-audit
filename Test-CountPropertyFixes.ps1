@@ -24,7 +24,7 @@ Write-Host "`n1️⃣ Testing parser error fixes..." -ForegroundColor Yellow
 try {
     $tokens = $null
     $parseErrors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile("./Get-AKV_Roles&SecAuditCompliance.ps1", [ref]$tokens, [ref]$parseErrors)
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile("./Get-AKV_Roles-SecAuditCompliance.ps1", [ref]$tokens, [ref]$parseErrors)
     
     if ($parseErrors.Count -eq 0) {
         Write-Host "   ✅ No parser errors found" -ForegroundColor Green
@@ -99,7 +99,7 @@ try {
 Write-Host "`n4️⃣ Testing runtime safety of fixes..." -ForegroundColor Yellow
 try {
     # Source the main script functions for testing
-    $scriptContent = Get-Content "./Get-AKV_Roles&SecAuditCompliance.ps1" -Raw
+    $scriptContent = Get-Content "./Get-AKV_Roles-SecAuditCompliance.ps1" -Raw
     
     # Check that all the fixes are in place
     $hasScoreArrayFix = $scriptContent -match '\$scores = @\(\$auditResultsArray \| ForEach-Object'

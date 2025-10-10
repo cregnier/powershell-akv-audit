@@ -290,76 +290,76 @@
     to normal enumeration across all subscriptions.
     
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1
+    .\Get-AKV_Roles-SecAuditCompliance.ps1
     Run full production audit of all Key Vaults across all accessible subscriptions.
     
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode
     Run in test mode with default limit of 3 Key Vaults for validation.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 5
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 5
     Run in test mode with custom limit of 5 Key Vaults for extended testing.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault
     Run targeted diagnostics scan for a single Key Vault. Script will prompt for vault name
     and subscription name (optional), then search to locate and analyze the specified vault.
     
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -VaultName "MyCompanyProdVault"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -VaultName "MyCompanyProdVault"
     Run targeted diagnostics scan for the specific Key Vault "MyCompanyProdVault".
     Script will prompt for subscription name to speed up discovery, or search all subscriptions if left blank.
     Generates focused CSV and HTML reports with comprehensive diagnostic settings analysis.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -VaultName "MyVault" -SubscriptionName "Production"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -VaultName "MyVault" -SubscriptionName "Production"
     Run targeted diagnostics scan for "MyVault" in the "Production" subscription.
     Bypasses subscription enumeration for faster vault discovery.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -VaultName "TestVault" -SubscriptionName "12345678-1234-1234-1234-123456789abc"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -VaultName "TestVault" -SubscriptionName "12345678-1234-1234-1234-123456789abc"
     Run targeted diagnostics scan using a specific subscription ID for maximum precision and speed.
     Useful when you know the exact subscription GUID containing the target vault.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume
     Resume a previously interrupted audit. Will first check for checkpoint files,
     then automatically use master discovery file if no checkpoints are found.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial
     Generate reports from partial results. Will first check for checkpoint files,
     then automatically use master discovery file if no checkpoints are found.
     
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath "C:\Reports\KeyVaultAudit_partial.csv"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath "C:\Reports\KeyVaultAudit_partial.csv"
     Generate reports from partial results by loading directly from a CSV file.
     Completely bypasses subscription discovery and access validation for maximum performance.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "./KeyVaultComprehensiveAudit_20250910-131119.csv"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "./KeyVaultComprehensiveAudit_20250910-131119.csv"
     Generate HTML report directly from a specific CSV file. No Azure authentication required.
     Output will be marked as "PARTIAL RESULTS" and named with FROMCSV prefix.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -ReportFromCsv
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -ReportFromCsv
     Generate HTML report from the latest KeyVaultComprehensiveAudit*.csv file in the output directory.
     Auto-detects the most recent CSV file if -CsvFilePath is not specified.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "results.csv" -MarkPartial:$false
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "results.csv" -MarkPartial:$false
     Generate HTML report from CSV without "PARTIAL RESULTS" marking.
     Useful for final reports from complete but interrupted audits.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume -Verbose
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume -Verbose
     Resume audit from a selected checkpoint with enhanced verbose logging.
     Shows comprehensive authentication flow detection, environment analysis, and checkpoint recovery details.
     Demonstrates new PSScriptAnalyzer-compliant verbose output system.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Verbose
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Verbose
     Run in test mode with comprehensive verbose logging to understand environment detection.
     Shows authentication method selection logic, environment variable analysis, and detailed decision reasoning.
     Useful for troubleshooting authentication issues and understanding environment detection.
@@ -368,33 +368,33 @@
     # Environment-specific authentication examples:
     
     # Cloud Shell environment (auto-detected)
-    .\Get-AKV_Roles&SecAuditCompliance.ps1  # Uses interactive browser authentication
+    .\Get-AKV_Roles-SecAuditCompliance.ps1  # Uses interactive browser authentication
     
     # Automation environment with service principal
     $env:AZURE_CLIENT_ID = "app-id"; $env:AZURE_TENANT_ID = "tenant-id"; $env:AZURE_CLIENT_SECRET = "secret"
-    .\Get-AKV_Roles&SecAuditCompliance.ps1  # Uses service principal authentication automatically
+    .\Get-AKV_Roles-SecAuditCompliance.ps1  # Uses service principal authentication automatically
     
     # Local development with verbose authentication flow
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -Verbose  # Shows environment detection and authentication method selection
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -Verbose  # Shows environment detection and authentication method selection
 
 .EXAMPLE
     # Interruption handling and recovery examples:
     
     # Start audit (can be interrupted with CTRL-C)
-    .\Get-AKV_Roles&SecAuditCompliance.ps1
+    .\Get-AKV_Roles-SecAuditCompliance.ps1
     # Script handles interruption gracefully, saves checkpoint with interruption metadata
     
     # Resume from interruption checkpoint
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume
     # Detects interruption checkpoint, shows completion status and resume instructions
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -OutputDirectory "/custom/path"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -OutputDirectory "/custom/path"
     Run audit with custom output directory override.
     Enhanced error handling ensures directory creation and proper checkpoint management.
 
 .EXAMPLE
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "./out/KeyVaultComprehensiveAudit_20250910-131119.csv"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "./out/KeyVaultComprehensiveAudit_20250910-131119.csv"
     Generate HTML report from a specific CSV file with default MarkPartial behavior (marked as "PARTIAL RESULTS").
     This mode requires no Azure authentication and works completely offline.
     Enhanced report includes comprehensive partial results context and resume instructions.
@@ -403,40 +403,40 @@
     # OPTIMIZED WORKFLOW EXAMPLES:
     
     # First run - creates master discovery file
-    .\Get-AKV_Roles&SecAuditCompliance.ps1
+    .\Get-AKV_Roles-SecAuditCompliance.ps1
     
     # Subsequent runs using master file for optimized performance (no checkpoints needed)
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume          # ⚡ OPTIMIZED MODE: Uses master file, skips discovery
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial  # ⚡ OPTIMIZED MODE: Uses master file, skips discovery
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume          # ⚡ OPTIMIZED MODE: Uses master file, skips discovery
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial  # ⚡ OPTIMIZED MODE: Uses master file, skips discovery
     
     # Direct CSV processing (fastest option - no discovery at all)
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath "results.csv"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath "results.csv"
 
 .EXAMPLE
     # Auto-Resume Scenarios:
     # Scenario 1: Manual interruption (CTRL+C)
-    .\Get-AKV_Roles&SecAuditCompliance.ps1
+    .\Get-AKV_Roles-SecAuditCompliance.ps1
     # Press CTRL+C during execution...
     # Script saves checkpoint and cancellation marker
     
-    .\Get-AKV_Roles&SecAuditCompliance.ps1
+    .\Get-AKV_Roles-SecAuditCompliance.ps1
     # On next run, script detects cancellation marker and prompts:
     # "Do you want to resume from your last checkpoint? (Y/N):"
     # Selecting Y automatically resumes from the last saved checkpoint
 
 .EXAMPLE
     # Scenario 2: System crash or hang recovery
-    .\Get-AKV_Roles&SecAuditCompliance.ps1
+    .\Get-AKV_Roles-SecAuditCompliance.ps1
     # System crashes or script hangs...
     
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume
     # Script detects system recovery scenario and lists available checkpoints:
     # "SYSTEM RECOVERY MODE - Detected restart without manual cancellation marker"
     # Lists all available checkpoints with progress information for selection
 
 .EXAMPLE
     # Scenario 3: Tenant authentication error handling with ManagedIdentityCredential fix
-    .\Get-AKV_Roles&SecAuditCompliance.ps1
+    .\Get-AKV_Roles-SecAuditCompliance.ps1
     # Script encounters ManagedIdentityCredential or tenant authentication errors
     # Enhanced detection of ExpiresOn token format issues with managed identity
     # Logs clear warnings: "Tenant authentication issue: tenant-id"
@@ -446,58 +446,58 @@
 
 .EXAMPLE
     # Scenario 4: Generate partial reports without resuming analysis
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial
     # Lists available checkpoints and CSV files
     # Generates HTML/CSV reports from selected partial data
     # Reports clearly marked as "PARTIAL RESULTS" with original execution metadata
 
 .EXAMPLE
     # Scenario 5: Resume with specific source priority and strict matching
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume -ResumeSourcePriority CSV -ResumeStrictMatch -StrictMatchThresholdPercent 70
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume -ResumeSourcePriority CSV -ResumeStrictMatch -StrictMatchThresholdPercent 70
     # Resume using only CSV data (ignore checkpoint) with strict 70% match requirement
     # Aborts if fewer than 70% of CSV identities match current discovery
 
 .EXAMPLE  
     # Scenario 6: Resume with union of sources and relaxed diagnostics
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume -ResumeSourcePriority Union -UnmatchedLogCount 5 -Verbose
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume -ResumeSourcePriority Union -UnmatchedLogCount 5 -Verbose
     # Use both checkpoint and CSV data (union) for maximum matching
     # Show only 5 unmatched entries per source in verbose diagnostics
 
 .EXAMPLE
     # Scenario 7: Walk-away reliability with OneDrive upload integration
-    .\Get-AKV_Roles&SecAuditCompliance.ps1
+    .\Get-AKV_Roles-SecAuditCompliance.ps1
     # Audit automatically uploads checkpoint files every 25 vaults for continuity
     # Final reports (CSV, HTML, logs) uploaded to OneDrive upon completion
     # Device code authentication for Microsoft Graph API integration
     # All upload events logged with UTC timestamps and artifact URLs for resumability
     # Scenario 7: Azure Cloud Shell with automatic OneDrive/SharePoint upload
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud -CloudUploadPath "/Documents/KeyVaultAudits"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud -CloudUploadPath "/Documents/KeyVaultAudits"
     # Run full audit with automatic upload to OneDrive/SharePoint after completion
     # Uses device code authentication for seamless Azure Cloud Shell integration
     # All output files (CSV, HTML, logs) uploaded to the specified folder
 
 .EXAMPLE
     # Scenario 8: Manual cloud upload prompt in Azure Cloud Shell
-    .\Get-AKV_Roles&SecAuditCompliance.ps1
+    .\Get-AKV_Roles-SecAuditCompliance.ps1
     # Run audit normally - script automatically detects Azure Cloud Shell
     # After completion, prompts user to upload files to OneDrive/SharePoint
     # Prevents data loss when Cloud Shell session expires
 
 .EXAMPLE
     # Scenario 9: Test mode with cloud upload
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 5 -UploadToCloud
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 5 -UploadToCloud
     # Run test mode with 5 vaults and automatic cloud upload
     # Perfect for validating both audit functionality and upload integration
 
 .EXAMPLE
     # Scenario 10: Partial results processing with cloud upload
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial -UploadToCloud -CloudUploadPath "/Shared Documents/Security/Audits"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial -UploadToCloud -CloudUploadPath "/Shared Documents/Security/Audits"
     # Process partial results from checkpoints and upload to SharePoint team site
     # Useful for sharing incomplete audit results with team
 
 .EXAMPLE
     # Scenario 11: App-only authentication for automated scenarios
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud -GraphClientId "your-app-id" -GraphTenantId "your-tenant-id" -GraphClientSecret "your-secret"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud -GraphClientId "your-app-id" -GraphTenantId "your-tenant-id" -GraphClientSecret "your-secret"
     # Use app-only authentication for unattended execution
     # Perfect for scheduled audits in CI/CD pipelines
 
@@ -506,38 +506,38 @@
     $env:AZURE_CLIENT_ID = "your-app-id"
     $env:AZURE_TENANT_ID = "your-tenant-id"  
     $env:AZURE_CLIENT_SECRET = "your-secret"
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud
     # Credentials automatically detected from environment variables
     # Secure way to provide app credentials
 
 .EXAMPLE
     # Scenario 13: Enhanced automatic authentication with verbose logging
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud -Verbose
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud -Verbose
     # Enables verbose logging to show detailed environment detection logic
     # Shows which environment variables were checked and which authentication method was selected
     # Automatically detects Cloud Shell, MSI, or service principal environments
 
 .EXAMPLE
     # Scenario 14: Force specific Graph authentication mode
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud -GraphAuthMode Interactive
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud -GraphAuthMode Interactive
     # Override automatic mode selection to force interactive browser authentication
     # Useful when you want browser auth even with app credentials available
 
 .EXAMPLE
     # Scenario 15: Cloud Shell with device code authentication
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud -GraphAuthMode DeviceCode
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud -GraphAuthMode DeviceCode
     # Explicitly use device code flow in Azure Cloud Shell
     # Alternative when interactive authentication has Conditional Access restrictions
 
 .EXAMPLE
     # Scenario 16: Enhanced SharePoint permissions for site management
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud -GraphScopeScenario Sites
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud -GraphScopeScenario Sites
     # Request enhanced SharePoint permissions including Sites.Manage.All
     # Useful when uploading to SharePoint sites requiring elevated permissions
 
 .EXAMPLE
     # Scenario 17: Full enterprise permissions for comprehensive automation
-    .\Get-AKV_Roles&SecAuditCompliance.ps1 -UploadToCloud -GraphScopeScenario Full -GraphAuthMode App -GraphClientId "app-id" -GraphTenantId "tenant-id"
+    .\Get-AKV_Roles-SecAuditCompliance.ps1 -UploadToCloud -GraphScopeScenario Full -GraphAuthMode App -GraphClientId "app-id" -GraphTenantId "tenant-id"
     # Request comprehensive permissions including Directory.Read.All
     # Perfect for enterprise scenarios requiring user and directory information
     # Uses app-only authentication with provided credentials
@@ -573,84 +573,86 @@
     https://learn.microsoft.com/azure/key-vault/general/security-features
 #>
 
-
-function Main {
-    [CmdletBinding()]
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
-    param(
-        [switch]$enableOneDriveUpload,
-        [Parameter(HelpMessage = "Target folder path in OneDrive/SharePoint for file uploads")]
-        [string]$CloudUploadPath,
-        [Parameter(HelpMessage = "Client ID for Microsoft Graph app-only authentication")]
-        [string]$GraphClientId,
-        [Parameter(HelpMessage = "Tenant ID for Microsoft Graph app-only authentication")]
-        [string]$GraphTenantId,
-        [Parameter(HelpMessage = "Client Secret for Microsoft Graph app-only authentication")]
-        [string]$GraphClientSecret,
-        [Parameter(HelpMessage = "Override automatic Microsoft Graph authentication mode selection")]
-        [ValidateSet('Interactive','App','DeviceCode','Auto')]
-        [string]$GraphAuthMode,
-        [Parameter(HelpMessage = "Determines Microsoft Graph permission scopes requested")]
-        [ValidateSet('Files','Sites','Full')]
-        [string]$GraphScopeScenario = 'Files',
-        [Parameter(HelpMessage = "Run targeted diagnostics scan for a single Key Vault (prompts for vault name)")]
-        [switch]$SingleVault,
-        [Parameter(HelpMessage = "Key Vault name for single vault mode (optional - will prompt if not provided)")]
-        [string]$VaultName,
-        [Parameter(HelpMessage = "Subscription name or ID for single vault mode (optional - will prompt if not provided)")]
-        [string]$SubscriptionName
-    )
-
-    if (-not $GraphAuthMode) { $GraphAuthMode = 'Auto' }
-    
-    function Write-UserMessage {
-        [CmdletBinding()]
-        param(
-            [Parameter(Mandatory = $true)]
-            [string]$Message,
-    
-            [Parameter(Mandatory = $false)]
-            [ValidateSet('Info', 'Warning', 'Error', 'Success', 'Debug', 'Progress')]
-            [string]$Type = 'Info'
-        )
-    
-        # This function provides a standardized way to output messages.
-        switch ($Type) {
-            'Info'    { Write-Host $Message -ForegroundColor Gray }
-            'Warning' { Write-Warning $Message }
-            'Error'   { Write-Error -Message $Message }
-            'Success' { Write-Host $Message -ForegroundColor Green }
-            'Debug'   { Write-Debug -Message $Message }
-            'Progress' { Write-Progress -Activity "Auditing Key Vaults" -Status $Message }
-        }
-}
-
-# --- Script Initialization ---
-# --- Version Information ---
+# Script parameters
+[CmdletBinding()]
+param(
     [Parameter(HelpMessage = "Run in test mode with limited Key Vaults for validation")]
+    [switch]$TestMode,
+    
+    [Parameter(HelpMessage = "Number of Key Vaults to test when in test mode. Default is 3")]
+    [int]$Limit = 3,
+    
+    [Parameter(HelpMessage = "Resume audit from a selected checkpoint file")]
+    [switch]$Resume,
+    
+    [Parameter(HelpMessage = "Process partial results from checkpoint/CSV file")]
+    [switch]$ProcessPartial,
+    
+    [Parameter(HelpMessage = "CSV file path for ProcessPartial or ReportFromCsv modes")]
+    [string]$CsvFilePath,
+    
+    [Parameter(HelpMessage = "Generate HTML report directly from CSV file")]
+    [switch]$ReportFromCsv,
+    
+    [Parameter(HelpMessage = "Mark ReportFromCsv output as PARTIAL RESULTS")]
+    [bool]$MarkPartial = $true,
+    
+    [Parameter(HelpMessage = "Enable strict CSV deduplication when resuming")]
+    [switch]$ResumeCsvStrict,
+    
+    [Parameter(HelpMessage = "Override the default output directory")]
+    [string]$OutputDirectory,
+    
+    [Parameter(HelpMessage = "Progress display mode: Session, Overall, or Both")]
+    [ValidateSet('Session', 'Overall', 'Both')]
+    [string]$ProgressMode = 'Session',
+    
+    [Parameter(HelpMessage = "Number of unmatched entries to log when resuming")]
+    [int]$UnmatchedLogCount = 10,
+    
+    [Parameter(HelpMessage = "Enable automatic upload to OneDrive/SharePoint")]
+    [switch]$UploadToCloud,
+    
+    [Parameter(HelpMessage = "Target folder path in OneDrive/SharePoint")]
     [string]$CloudUploadPath,
+    
+    [Parameter(HelpMessage = "Resume source priority: Checkpoint, CSV, or Union")]
+    [ValidateSet('Checkpoint', 'CSV', 'Union')]
+    [string]$ResumeSourcePriority = 'Union',
+    
+    [Parameter(HelpMessage = "Enable strict matching validation when resuming")]
+    [switch]$ResumeStrictMatch,
+    
+    [Parameter(HelpMessage = "Minimum match percentage for strict matching (1-100)")]
+    [ValidateRange(1, 100)]
+    [int]$StrictMatchThresholdPercent = 60,
+    
     [Parameter(HelpMessage = "Client ID for Microsoft Graph app-only authentication")]
-        [string]$GraphClientId,
-        [Parameter(HelpMessage = "Tenant ID for Microsoft Graph app-only authentication")]
-        [string]$GraphTenantId,
-        [Parameter(HelpMessage = "Client Secret for Microsoft Graph app-only authentication")]
-        [string]$GraphClientSecret,
-        [Parameter(HelpMessage = "Override automatic Microsoft Graph authentication mode selection")]
-        [ValidateSet('Interactive','App','DeviceCode','Auto')]
-        [string]$GraphAuthMode,
-        [Parameter(HelpMessage = "Determines Microsoft Graph permission scopes requested")]
-        [ValidateSet('Files','Sites','Full')]
-        [string]$GraphScopeScenario = 'Files',
-        [Parameter(HelpMessage = "Run targeted diagnostics scan for a single Key Vault (prompts for vault name)")]
-        [switch]$SingleVault,
-        [Parameter(HelpMessage = "Key Vault name for single vault mode (optional - will prompt if not provided)")]
-        [string]$VaultName,
-        [Parameter(HelpMessage = "Subscription name or ID for single vault mode (optional - will prompt if not provided)")]
-        [string]$SubscriptionName
-
-    # ...existing code for script logic goes here...
-    return $true
-}
+    [string]$GraphClientId,
+    
+    [Parameter(HelpMessage = "Tenant ID for Microsoft Graph app-only authentication")]
+    [string]$GraphTenantId,
+    
+    [Parameter(HelpMessage = "Client Secret for Microsoft Graph app-only authentication")]
+    [string]$GraphClientSecret,
+    
+    [Parameter(HelpMessage = "Microsoft Graph authentication mode")]
+    [ValidateSet('Interactive', 'App', 'DeviceCode', 'Auto')]
+    [string]$GraphAuthMode = 'Auto',
+    
+    [Parameter(HelpMessage = "Microsoft Graph permission scope scenario")]
+    [ValidateSet('Files', 'Sites', 'Full')]
+    [string]$GraphScopeScenario = 'Files',
+    
+    [Parameter(HelpMessage = "Run targeted diagnostics scan for a single Key Vault")]
+    [switch]$SingleVault,
+    
+    [Parameter(HelpMessage = "Key Vault name for single vault mode")]
+    [string]$VaultName,
+    
+    [Parameter(HelpMessage = "Subscription name or ID for single vault mode")]
+    [string]$SubscriptionName
+)
 
 # Enable strict mode for better error handling
 Set-StrictMode -Version Latest
@@ -671,6 +673,70 @@ $global:ScriptExecutionContext = @{
 $global:dataIssuesPath = $null
 $global:errPath = $null  
 $global:permissionsPath = $null
+
+# Standardized user message function for consistent output
+function Write-UserMessage {
+    <#
+    .SYNOPSIS
+    Standardized message output function that respects Verbose and Debug preferences
+    .DESCRIPTION
+    Provides consistent message output across the script with appropriate handling for different message types.
+    Info and Progress messages are suppressed unless -Verbose is active to reduce console clutter.
+    Error, Warning, and Success messages are always shown.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Message,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('Info', 'Warning', 'Error', 'Success', 'Debug', 'Progress', 'Verbose')]
+        [string]$Type = 'Info'
+    )
+
+    # Handle different message types with appropriate output methods
+    switch ($Type) {
+        'Error' {
+            # Errors always shown
+            Write-Error -Message $Message
+        }
+        'Warning' {
+            # Warnings always shown
+            Write-Warning $Message
+        }
+        'Success' {
+            # Success messages always shown
+            Write-Host $Message -ForegroundColor Green
+        }
+        'Debug' {
+            # Debug messages only shown when -Debug is active
+            Write-Debug -Message $Message
+        }
+        'Verbose' {
+            # Verbose messages only shown when -Verbose is active
+            Write-Verbose $Message
+        }
+        'Progress' {
+            # Progress messages shown when verbose or as Write-Progress
+            if ($VerbosePreference -eq 'Continue') {
+                Write-Host "Progress: $Message" -ForegroundColor Cyan
+            }
+            Write-Progress -Activity "Auditing Key Vaults" -Status $Message
+        }
+        'Info' {
+            # Info messages only shown when verbose is active, otherwise suppressed to reduce output
+            if ($VerbosePreference -eq 'Continue') {
+                Write-Host $Message -ForegroundColor Gray
+            }
+        }
+        default {
+            # Default to info behavior
+            if ($VerbosePreference -eq 'Continue') {
+                Write-Host $Message -ForegroundColor White
+            }
+        }
+    }
+}
 
 # Helper function for safe property access in PowerShell 7
 function Get-SafeProperty {
@@ -2866,15 +2932,15 @@ function Invoke-PartialResults {
 function New-ComprehensiveHtmlReport {
     <#
     .SYNOPSIS
-    Generate comprehensive HTML report using external template files
+    Generate comprehensive HTML report with inline template generation
     .DESCRIPTION
-    Creates detailed HTML audit reports using KeyVaultComprehensiveAudit_Full.html or 
-    KeyVaultComprehensiveAudit_Resume.html templates with placeholder replacement.
+    Creates detailed HTML audit reports by generating HTML content inline (not from external templates).
+    All HTML is dynamically generated within the function based on audit data.
     
     Supports:
-    - Full audit results using KeyVaultComprehensiveAudit_Full.html
-    - Partial/resume results using KeyVaultComprehensiveAudit_Resume.html
-    - Complete placeholder replacement for all required fields
+    - Full audit results with complete compliance analysis
+    - Partial/resume results with progress tracking
+    - Dynamic data visualization and executive insights
     - Consistent feature-rich reporting regardless of audit mode
     #>
     [CmdletBinding()]
@@ -2970,7 +3036,7 @@ function New-ComprehensiveHtmlReport {
         
         # Calculate statistics with enhanced handling for partial results
         try {
-            Write-Host "DEBUG: Calculating report statistics..." -ForegroundColor Yellow
+            Write-Verbose "Calculating report statistics..."
             $totalVaults = if ($IsPartialResults -and $CheckpointData -and $CheckpointData.TotalVaults) { 
                 $CheckpointData.TotalVaults 
             } elseif ($IsPartialResults -and $ExecutiveSummary.TotalDiscoveredVaults) {
@@ -2983,7 +3049,7 @@ function New-ComprehensiveHtmlReport {
                 [math]::Round(($processedVaults / $totalVaults) * 100, 1) 
             } else { 100 }
             $remainingVaults = $totalVaults - $processedVaults
-            Write-Host "DEBUG: Statistics calculated - Processed: $processedVaults, Total: $totalVaults, Completion: $completionPercentage%" -ForegroundColor Yellow
+            Write-Verbose "Statistics calculated - Processed: $processedVaults, Total: $totalVaults, Completion: $completionPercentage%"
             Write-Verbose "Report statistics: Processed=$processedVaults, Total=$totalVaults, Completion=$completionPercentage%"
         } catch {
             Write-Host "❌ Error calculating report statistics: $_" -ForegroundColor Red
@@ -3043,7 +3109,7 @@ function New-ComprehensiveHtmlReport {
         
         # Start building HTML content
         # Generate HTML content with defensive programming for Count properties
-        Write-Host "DEBUG: About to generate HTML content" -ForegroundColor Yellow
+        Write-Verbose "About to generate HTML content"
         
         $htmlContent = @"
 <!DOCTYPE html>
@@ -3278,7 +3344,7 @@ function toggleCollapsible(elementId) {
                 4. Estimated time to complete: $(if ($estimatedTimeRemaining -ne "Unknown") { "$estimatedTimeRemaining minutes" } else { "depends on remaining vault complexity" })
                 <br><br>
                 <strong>Command example:</strong><br>
-                <code>.\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume</code>
+                <code>.\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume</code>
             </div>
             
             <h4>⚠️ Important Notes:</h4>
@@ -3320,9 +3386,9 @@ function toggleCollapsible(elementId) {
             <p><strong>To complete the full organizational audit:</strong></p>
             <ol>
                 <li><strong>Check for checkpoint files:</strong> Look for files matching <code>akv_audit_checkpoint_$(if ($CheckpointData) { Get-SafeProperty -Object $CheckpointData -PropertyName 'ExecutionId' -DefaultValue "unknown" } else { "unknown" })_*.json</code> in your output directory</li>
-                <li><strong>Resume from checkpoint:</strong> Run <code>Get-AKV_Roles&SecAuditCompliance.ps1 -Resume</code> and select the appropriate checkpoint</li>
-                <li><strong>Alternative approach:</strong> Start a new complete audit with <code>Get-AKV_Roles&SecAuditCompliance.ps1</code> (full scan)</li>
-                <li><strong>Test mode first:</strong> Use <code>Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode</code> to validate setup before full scan</li>
+                <li><strong>Resume from checkpoint:</strong> Run <code>Get-AKV_Roles-SecAuditCompliance.ps1 -Resume</code> and select the appropriate checkpoint</li>
+                <li><strong>Alternative approach:</strong> Start a new complete audit with <code>Get-AKV_Roles-SecAuditCompliance.ps1</code> (full scan)</li>
+                <li><strong>Test mode first:</strong> Use <code>Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode</code> to validate setup before full scan</li>
             </ol>
             <p><strong>📝 Note:</strong> Resume functionality requires the original checkpoint files from the incomplete audit. If checkpoints are not available, a new full audit will be required.</p>
         </div>
@@ -4035,8 +4101,8 @@ function toggleCollapsible(elementId) {
 </body>
 </html>
 "@
-    Write-Host "DEBUG: HTML content string generation completed" -ForegroundColor Yellow
-    Write-Host "DEBUG: HTML content generation completed successfully" -ForegroundColor Yellow
+    Write-Verbose "HTML content string generation completed"
+    Write-Verbose "HTML content generation completed successfully"
     
     } catch {
         Write-Host "❌ Error generating comprehensive HTML report: $_" -ForegroundColor Red
@@ -5005,7 +5071,7 @@ if ($PSBoundParameters.ContainsKey('Resume') -and $PSBoundParameters.ContainsKey
 
 if ($PSBoundParameters.ContainsKey('CsvFilePath') -and !$PSBoundParameters.ContainsKey('ProcessPartial')) {
     Write-Host "❌ Error: -CsvFilePath can only be used with -ProcessPartial parameter." -ForegroundColor Red
-    Write-Host "   Use: .\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath 'path\to\file.csv'" -ForegroundColor Yellow
+    Write-Host "   Use: .\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath 'path\to\file.csv'" -ForegroundColor Yellow
     exit 1
 }
 
@@ -5024,14 +5090,14 @@ if ($PSBoundParameters.ContainsKey('ReportFromCsv') -and $PSBoundParameters.Cont
 
 if ($PSBoundParameters.ContainsKey('CsvFilePath') -and !$PSBoundParameters.ContainsKey('ReportFromCsv') -and !$PSBoundParameters.ContainsKey('ProcessPartial')) {
     Write-Host "❌ Error: -CsvFilePath can only be used with -ReportFromCsv or -ProcessPartial parameters." -ForegroundColor Red
-    Write-Host "   Use: .\Get-AKV_Roles&SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath 'path\to\file.csv'" -ForegroundColor Yellow
-    Write-Host "   Or:  .\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath 'path\to\file.csv'" -ForegroundColor Yellow
+    Write-Host "   Use: .\Get-AKV_Roles-SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath 'path\to\file.csv'" -ForegroundColor Yellow
+    Write-Host "   Or:  .\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath 'path\to\file.csv'" -ForegroundColor Yellow
     exit 1
 }
 
 if (!$PSBoundParameters.ContainsKey('ReportFromCsv') -and $PSBoundParameters.ContainsKey('MarkPartial')) {
     Write-Host "❌ Error: -MarkPartial can only be used with -ReportFromCsv parameter." -ForegroundColor Red
-    Write-Host "   Use: .\Get-AKV_Roles&SecAuditCompliance.ps1 -ReportFromCsv -MarkPartial:`$false" -ForegroundColor Yellow
+    Write-Host "   Use: .\Get-AKV_Roles-SecAuditCompliance.ps1 -ReportFromCsv -MarkPartial:`$false" -ForegroundColor Yellow
     exit 1
 }
 
@@ -5044,13 +5110,13 @@ if ($PSBoundParameters.ContainsKey('SingleVault') -and ($PSBoundParameters.Conta
 
 if ($PSBoundParameters.ContainsKey('VaultName') -and !$PSBoundParameters.ContainsKey('SingleVault')) {
     Write-Host "❌ Error: -VaultName can only be used with -SingleVault parameter." -ForegroundColor Red
-    Write-Host "   Use: .\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -VaultName 'your-vault-name'" -ForegroundColor Yellow
+    Write-Host "   Use: .\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -VaultName 'your-vault-name'" -ForegroundColor Yellow
     exit 1
 }
 
 if ($PSBoundParameters.ContainsKey('SubscriptionName') -and !$PSBoundParameters.ContainsKey('SingleVault')) {
     Write-Host "❌ Error: -SubscriptionName can only be used with -SingleVault parameter." -ForegroundColor Red
-    Write-Host "   Use: .\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -SubscriptionName 'your-subscription'" -ForegroundColor Yellow
+    Write-Host "   Use: .\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -SubscriptionName 'your-subscription'" -ForegroundColor Yellow
     exit 1
 }
 
@@ -5061,7 +5127,7 @@ if ($PSBoundParameters.ContainsKey('ReportFromCsv') -and -not $PSBoundParameters
 
 if ($PSBoundParameters.ContainsKey('ResumeCsvStrict') -and -not $PSBoundParameters.ContainsKey('Resume')) {
     Write-Host "❌ Error: -ResumeCsvStrict can only be used with -Resume parameter." -ForegroundColor Red
-    Write-Host "   Use: .\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume -ResumeCsvStrict" -ForegroundColor Yellow
+    Write-Host "   Use: .\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume -ResumeCsvStrict" -ForegroundColor Yellow
     exit 1
 }
 
@@ -11447,13 +11513,13 @@ try {
 
 # Initialize variables needed for HTML report generation
 $IsPartialResults = $false
-Write-Host "DEBUG: IsPartialResults initialized to: $IsPartialResults" -ForegroundColor Magenta
+Write-Verbose "IsPartialResults initialized to: $IsPartialResults"
 
 # Generate comprehensive HTML report using the unified function
 Write-Host "📊 Generating comprehensive HTML report..." -ForegroundColor Cyan
 
 # Use the comprehensive HTML generation function for consistent formatting
-Write-Host "DEBUG: About to call New-ComprehensiveHtmlReport..." -ForegroundColor Magenta
+Write-Verbose "About to call New-ComprehensiveHtmlReport..."
 
 # Defensive check to prevent crash when no vaults are processed
 if (-not $global:auditResults -or $global:auditResults.Count -eq 0) {
@@ -11512,7 +11578,7 @@ if (-not $global:auditResults -or $global:auditResults.Count -eq 0) {
 }
 
 $htmlGenerated = New-ComprehensiveHtmlReport -OutputPath $htmlPath -AuditResults $global:auditResults -ExecutiveSummary $executiveSummary -AuditStats $global:auditStats -IsPartialResults $IsPartialResults
-Write-Host "DEBUG: New-ComprehensiveHtmlReport call completed" -ForegroundColor Magenta
+Write-Verbose "New-ComprehensiveHtmlReport call completed"
 
 if ($htmlGenerated) {
     Write-Host "✅ HTML report: $htmlPath" -ForegroundColor Green

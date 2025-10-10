@@ -21,7 +21,7 @@ param()
 Write-Host "🧪 Testing KeyVaultName variable initialization fixes..." -ForegroundColor Cyan
 Write-Host "=" * 60
 
-$scriptPath = "./Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = "./Get-AKV_Roles-SecAuditCompliance.ps1"
 $testsPassed = 0
 $totalTests = 0
 

@@ -18,7 +18,7 @@ Write-Host "`n1️⃣ Testing function availability..." -ForegroundColor Yellow
 
 try {
     # Source the authentication functions by loading just their definitions
-    $scriptContent = Get-Content "./Get-AKV_Roles&SecAuditCompliance.ps1" -Raw
+    $scriptContent = Get-Content "./Get-AKV_Roles-SecAuditCompliance.ps1" -Raw
     
     # Extract the Initialize-AkvAuthenticationContext function
     $functionMatch = [regex]::Match($scriptContent, 'function Initialize-AkvAuthenticationContext.*?(?=^function|^#.*Authentication Context Helpers.*\Z)', [System.Text.RegularExpressions.RegexOptions]::Singleline -bor [System.Text.RegularExpressions.RegexOptions]::Multiline)

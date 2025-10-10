@@ -25,7 +25,7 @@ Write-Host "`n1️⃣ Testing function definition and structure..." -ForegroundC
 
 try {
     # Source the main script to load functions
-    $scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+    $scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
     if (-not (Test-Path $scriptPath)) {
         throw "Main script not found: $scriptPath"
     }

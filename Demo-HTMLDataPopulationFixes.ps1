@@ -13,7 +13,7 @@ param()
 Write-Host "🎯 HTML DATA POPULATION FIXES - DEMONSTRATION" -ForegroundColor Cyan
 Write-Host "=" * 70 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $csvPath = Join-Path $PSScriptRoot "KeyVaultSingleVault_prod-skr-cloud-key-vault_20250915_123742.csv"
 
 Write-Host "`n🔍 BEFORE vs AFTER Comparison" -ForegroundColor Yellow
@@ -106,7 +106,7 @@ Write-Host "=" * 50 -ForegroundColor Gray
 
 Write-Host "`nTo test the fixes:" -ForegroundColor White
 Write-Host "   # Run syntax validation" -ForegroundColor Gray
-Write-Host "   pwsh -Command `"`$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles&SecAuditCompliance.ps1', [ref]`$null, [ref]`$null); Write-Host 'Syntax valid'`"" -ForegroundColor Cyan
+Write-Host "   pwsh -Command `"`$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles-SecAuditCompliance.ps1', [ref]`$null, [ref]`$null); Write-Host 'Syntax valid'`"" -ForegroundColor Cyan
 
 Write-Host "`n   # Run comprehensive validation" -ForegroundColor Gray
 Write-Host "   pwsh ./Validate-ComprehensiveColumnMapping.ps1" -ForegroundColor Cyan
@@ -115,7 +115,7 @@ Write-Host "`n   # Test HTML data population fixes" -ForegroundColor Gray
 Write-Host "   pwsh ./Test-HTMLDataPopulationFixes.ps1" -ForegroundColor Cyan
 
 Write-Host "`n   # Test with actual Azure data (requires authentication)" -ForegroundColor Gray
-Write-Host "   pwsh ./Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 1 -Verbose" -ForegroundColor Cyan
+Write-Host "   pwsh ./Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 1 -Verbose" -ForegroundColor Cyan
 
 Write-Host "`n💡 KEY BENEFITS" -ForegroundColor Yellow
 Write-Host "=" * 50 -ForegroundColor Gray

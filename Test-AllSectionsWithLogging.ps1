@@ -14,7 +14,7 @@ param()
 Write-Host "🧪 COMPREHENSIVE SECTION TESTS & ENHANCED LOGGING VALIDATION" -ForegroundColor Cyan
 Write-Host "=" * 70 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 
 # Individual section test scripts
 $sectionTests = @(

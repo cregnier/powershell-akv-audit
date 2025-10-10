@@ -14,7 +14,7 @@ param()
 Write-Host "🔍 TESTING HTML DATA POPULATION FIXES" -ForegroundColor Cyan
 Write-Host "=" * 70 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $csvPath = Join-Path $PSScriptRoot "KeyVaultSingleVault_prod-skr-cloud-key-vault_20250915_123742.csv"
 
 if (-not (Test-Path $csvPath)) {

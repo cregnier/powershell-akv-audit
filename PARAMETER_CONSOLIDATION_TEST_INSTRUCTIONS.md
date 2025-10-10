@@ -25,17 +25,17 @@ This document provides comprehensive test instructions for validating the parame
 
 ```powershell
 # Test 1.1: Syntax validation (< 1 second)
-pwsh -Command "`$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles&SecAuditCompliance.ps1', [ref]`$null, [ref]`$null); if (`$ast) { Write-Host 'PowerShell syntax valid' } else { Write-Host 'Syntax errors found' }"
+pwsh -Command "`$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles-SecAuditCompliance.ps1', [ref]`$null, [ref]`$null); if (`$ast) { Write-Host 'PowerShell syntax valid' } else { Write-Host 'Syntax errors found' }"
 
 # Test 1.2: Help system validation (< 1 second)
-pwsh -Command "Get-Help './Get-AKV_Roles&SecAuditCompliance.ps1'"
+pwsh -Command "Get-Help './Get-AKV_Roles-SecAuditCompliance.ps1'"
 
 # Test 1.3: Parameter-specific help (< 1 second)
-pwsh -Command "Get-Help './Get-AKV_Roles&SecAuditCompliance.ps1' -Parameter CsvFilePath"
-pwsh -Command "Get-Help './Get-AKV_Roles&SecAuditCompliance.ps1' -Parameter SingleVault"
+pwsh -Command "Get-Help './Get-AKV_Roles-SecAuditCompliance.ps1' -Parameter CsvFilePath"
+pwsh -Command "Get-Help './Get-AKV_Roles-SecAuditCompliance.ps1' -Parameter SingleVault"
 
 # Test 1.4: Examples validation (< 1 second)
-pwsh -Command "Get-Help './Get-AKV_Roles&SecAuditCompliance.ps1' -Examples"
+pwsh -Command "Get-Help './Get-AKV_Roles-SecAuditCompliance.ps1' -Examples"
 ```
 
 **Expected Results:**
@@ -47,21 +47,21 @@ pwsh -Command "Get-Help './Get-AKV_Roles&SecAuditCompliance.ps1' -Examples"
 
 ```powershell
 # Test 2.1: Valid CsvFilePath usage with ProcessPartial
-./Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath "nonexistent.csv"
+./Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath "nonexistent.csv"
 
 # Test 2.2: Valid CsvFilePath usage with ReportFromCsv  
-./Get-AKV_Roles&SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "nonexistent.csv"
+./Get-AKV_Roles-SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "nonexistent.csv"
 
 # Test 2.3: Invalid CsvFilePath usage (should fail)
-./Get-AKV_Roles&SecAuditCompliance.ps1 -CsvFilePath "test.csv"
+./Get-AKV_Roles-SecAuditCompliance.ps1 -CsvFilePath "test.csv"
 
 # Test 2.4: SingleVault parameter conflicts (should fail)
-./Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -Resume
-./Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -ProcessPartial  
-./Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -ReportFromCsv
+./Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -Resume
+./Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -ProcessPartial  
+./Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -ReportFromCsv
 
 # Test 2.5: VaultName without SingleVault (should fail)
-./Get-AKV_Roles&SecAuditCompliance.ps1 -VaultName "TestVault"
+./Get-AKV_Roles-SecAuditCompliance.ps1 -VaultName "TestVault"
 ```
 
 **Expected Results:**
@@ -74,7 +74,7 @@ pwsh -Command "Get-Help './Get-AKV_Roles&SecAuditCompliance.ps1' -Examples"
 
 ```powershell
 # Test 3.1: Environment detection (should handle gracefully)
-./Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 1
+./Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 1
 
 # Test 3.2: CTRL+C handler registration (check for warnings about unsupported environments)
 # This should show no warnings in most environments, or a graceful warning in restricted environments
@@ -88,10 +88,10 @@ pwsh -Command "Get-Help './Get-AKV_Roles&SecAuditCompliance.ps1' -Examples"
 
 ```powershell
 # Test 4.1: SingleVault with VaultName parameter
-./Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -VaultName "NonExistentVault"
+./Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -VaultName "NonExistentVault"
 
 # Test 4.2: SingleVault without VaultName (should prompt)
-./Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault
+./Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault
 ```
 
 **Expected Results:**
@@ -111,10 +111,10 @@ TestVault,12345678-1234-1234-1234-123456789012,TestRG
 "@ | Out-File -FilePath "test_audit.csv" -Encoding UTF8
 
 # Test 5.1: ReportFromCsv with CsvFilePath
-./Get-AKV_Roles&SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "test_audit.csv"
+./Get-AKV_Roles-SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "test_audit.csv"
 
 # Test 5.2: ProcessPartial with CsvFilePath  
-./Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath "test_audit.csv"
+./Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial -CsvFilePath "test_audit.csv"
 
 # Cleanup
 Remove-Item "test_audit.csv" -ErrorAction SilentlyContinue

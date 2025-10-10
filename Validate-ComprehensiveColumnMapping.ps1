@@ -15,7 +15,7 @@ param()
 Write-Host "🔍 COMPREHENSIVE CSV-HTML COLUMN MAPPING VALIDATION" -ForegroundColor Cyan
 Write-Host "=" * 70 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $testResults = @{
     Syntax = $false
     CSVColumns = $false

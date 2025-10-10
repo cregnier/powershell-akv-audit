@@ -160,7 +160,7 @@ All tests pass successfully, confirming the fixes are working correctly.
 - **Added fallback mechanisms** for edge cases
 
 ## Files Modified
-- `Get-AKV_Roles&SecAuditCompliance.ps1` - Core script with fixes
+- `Get-AKV_Roles-SecAuditCompliance.ps1` - Core script with fixes
 - `Test-KeyVaultNameFix.ps1` - New comprehensive test suite
 
 ## Validation

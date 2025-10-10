@@ -21,7 +21,7 @@ param()
 Write-Host "🧪 COMPREHENSIVE AZURE KEY VAULT AUDIT ENHANCEMENTS TEST" -ForegroundColor Cyan
 Write-Host "=" * 70 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $testResults = @{
     Syntax = $false
     OverPrivilegedFunction = $false
