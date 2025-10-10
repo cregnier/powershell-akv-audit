@@ -3949,9 +3949,9 @@ function toggleCollapsible(elementId) {
                 "$logAnalyticsCount of $auditCount vaults ($percentage%)"
             } else { "Status unknown for partial data" }) have Log Analytics enabled for centralized query and alerting</li>
             <li><strong>Storage Account Logging:</strong> $(if ((Get-SafeCount $AuditResults) -gt 0) { 
-                $storageCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'StorageAccountEnabled') -eq "Yes" }).Count
+                $storageCount = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'StorageAccountEnabled') -eq "Yes" }).Count
                 $percentage = [math]::Round(($storageCount / (Get-SafeCount $AuditResults)) * 100, 1)
-                "$storageCount of $($AuditResults.Count) vaults ($percentage%)"
+                "$storageCount of $(Get-SafeCount $AuditResults) vaults ($percentage%)"
             } else { "Status unknown for partial data" }) have storage account logging configured</li>
             <li><strong>Azure Sentinel Integration:</strong> Connect Key Vault logs to Azure Sentinel for advanced threat detection</li>
             <li><strong>Azure Policy:</strong> Implement automated compliance enforcement</li>
@@ -15825,9 +15825,9 @@ function toggleCollapsible(elementId) {
                 "$logAnalyticsCount of $auditCount vaults ($percentage%)"
             } else { "Status unknown for partial data" }) have Log Analytics enabled for centralized query and alerting</li>
             <li><strong>Storage Account Logging:</strong> $(if ((Get-SafeCount $AuditResults) -gt 0) { 
-                $storageCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'StorageAccountEnabled') -eq "Yes" }).Count
+                $storageCount = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'StorageAccountEnabled') -eq "Yes" }).Count
                 $percentage = [math]::Round(($storageCount / (Get-SafeCount $AuditResults)) * 100, 1)
-                "$storageCount of $($AuditResults.Count) vaults ($percentage%)"
+                "$storageCount of $(Get-SafeCount $AuditResults) vaults ($percentage%)"
             } else { "Status unknown for partial data" }) have storage account logging configured</li>
             <li><strong>Azure Sentinel Integration:</strong> Connect Key Vault logs to Azure Sentinel for advanced threat detection</li>
             <li><strong>Azure Policy:</strong> Implement automated compliance enforcement</li>
