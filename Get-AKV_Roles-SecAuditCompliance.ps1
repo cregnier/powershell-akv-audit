@@ -1029,7 +1029,7 @@ function Test-CloudShellEnvironment {
                 # Show authentication flow implications
                 Write-UserMessage -Message "Authentication Flow: Interactive authentication will be used" -Type Info
                 
-                if ($Verbose -and $matchedIndicators.Count -gt 0) {
+                if ($VerbosePreference -eq 'Continue' -and $matchedIndicators.Count -gt 0) {
                     Write-UserMessage -Message "Matched indicators: $($matchedIndicators -join ', ')" -Type Debug
                 }
             } else {
@@ -1039,14 +1039,14 @@ function Test-CloudShellEnvironment {
                 # Show authentication flow implications
                 Write-UserMessage -Message "Authentication Flow: Interactive with device code fallback" -Type Info
                 
-                if ($Verbose) {
+                if ($VerbosePreference -eq 'Continue') {
                     Write-UserMessage -Message "No Cloud Shell indicators found" -Type Debug
                 }
             }
         }
         
         # Verbose environment information logging
-        if ($Verbose) {
+        if ($VerbosePreference -eq 'Continue') {
             Write-VerboseEnvironmentInfo -DetectionResults $detectionResults -DetectionType "Cloud Shell"
         }
         
@@ -1059,7 +1059,7 @@ function Test-CloudShellEnvironment {
         
         if (-not $Quiet) {
             Write-UserMessage -Message "Environment detection failed, assuming local environment" -Type Warning
-            if ($Verbose) {
+            if ($VerbosePreference -eq 'Continue') {
                 Write-UserMessage -Message "Error: $($_.Exception.Message)" -Type Debug
             }
         }
@@ -1180,18 +1180,18 @@ function Test-ManagedIdentityEnvironment {
                     Write-UserMessage -Message "Authentication Flow: Device code authentication recommended" -Type Info
                 }
                 
-                if ($Verbose -and $matchedIndicators.Count -gt 0) {
+                if ($VerbosePreference -eq 'Continue' -and $matchedIndicators.Count -gt 0) {
                     Write-UserMessage -Message "Matched indicators: $($matchedIndicators -join ', ')" -Type Debug
                 }
             } else {
-                if ($Verbose) {
+                if ($VerbosePreference -eq 'Continue') {
                     Write-UserMessage -Message "No Managed Identity indicators found" -Type Debug
                 }
             }
         }
         
         # Verbose environment information logging
-        if ($Verbose) {
+        if ($VerbosePreference -eq 'Continue') {
             Write-VerboseEnvironmentInfo -DetectionResults $detectionResults -DetectionType "Managed Identity"
         }
         
@@ -1204,7 +1204,7 @@ function Test-ManagedIdentityEnvironment {
         
         if (-not $Quiet) {
             Write-UserMessage -Message "MSI environment detection failed" -Type Warning
-            if ($Verbose) {
+            if ($VerbosePreference -eq 'Continue') {
                 Write-UserMessage -Message "Error: $($_.Exception.Message)" -Type Debug
             }
         }
@@ -2828,7 +2828,7 @@ function Invoke-PartialResults {
             # Calculate executive summary for partial results
             $partialExecutiveSummary = @{
                 TotalKeyVaults = if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A') { $global:auditResults.Count } else { 0 }
-                CompliantVaults = ($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 }).Count
+                CompliantVaults = if ($global:auditResults) { ($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 }).Count } else { 0 }
                 CompliancePercentage = if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A' -and $global:auditResults.Count -gt 0) { 
                     [math]::Round((($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 }).Count / $global:auditResults.Count) * 100, 1) 
                 } else { 0 }
@@ -2839,7 +2839,7 @@ function Invoke-PartialResults {
                     $companyScores = $global:auditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'CompanyComplianceScore') -ne 'N/A' } | ForEach-Object { try { [int]($_.CompanyComplianceScore -replace '%', '') } catch { 0 } }
                     if ($companyScores.Count -gt 0) { [math]::Round(($companyScores | Measure-Object -Average).Average, 1) } else { 0 }
                 } else { 0 }
-                HighRiskVaults = ($global:auditResults | Where-Object { $_.ComplianceScore -lt 60 }).Count
+                HighRiskVaults = if ($global:auditResults) { ($global:auditResults | Where-Object { $_.ComplianceScore -lt 60 }).Count } else { 0 }
             }
             
             # Use the comprehensive HTML generation function
@@ -4646,17 +4646,19 @@ function Import-PartialResultsFromCsv {
             
             # Calculate executive summary for CSV partial results
             $csvExecutiveSummary = @{
-                TotalKeyVaults = $global:auditResults.Count
-                CompliantVaults = ($global:auditResults | Where-Object { 
-                    [int]($_.ComplianceScore -replace '%', '') -ge 90 
-                }).Count
-                CompliancePercentage = if ($global:auditResults.Count -gt 0) { 
+                TotalKeyVaults = if ($global:auditResults) { $global:auditResults.Count } else { 0 }
+                CompliantVaults = if ($global:auditResults) { 
+                    ($global:auditResults | Where-Object { 
+                        [int]($_.ComplianceScore -replace '%', '') -ge 90 
+                    }).Count
+                } else { 0 }
+                CompliancePercentage = if ($global:auditResults -and $global:auditResults.Count -gt 0) { 
                     $compliantCount = ($global:auditResults | Where-Object { 
                         [int]($_.ComplianceScore -replace '%', '') -ge 90 
                     }).Count
                     [math]::Round(($compliantCount / $global:auditResults.Count) * 100, 1) 
                 } else { 0 }
-                AverageComplianceScore = if ($global:auditResults.Count -gt 0) { 
+                AverageComplianceScore = if ($global:auditResults -and $global:auditResults.Count -gt 0) { 
                     $scores = $global:auditResults | ForEach-Object { 
                         [int]($_.ComplianceScore -replace '%', '') 
                     } | Where-Object { $null -ne $_ }
@@ -4664,7 +4666,7 @@ function Import-PartialResultsFromCsv {
                         [math]::Round(($scores | Measure-Object -Average).Average, 1) 
                     } else { 0 }
                 } else { 0 }
-                CompanyAverageScore = if ($global:auditResults.Count -gt 0) { 
+                CompanyAverageScore = if ($global:auditResults -and $global:auditResults.Count -gt 0) { 
                     $scores = $global:auditResults | Where-Object { Get-SafeProperty -Object $_ -PropertyName 'CompanyComplianceScore' } | ForEach-Object { 
                         try { [int]((Get-SafeProperty -Object $_ -PropertyName 'CompanyComplianceScore') -replace '%', '') } catch { 0 }
                     } | Where-Object { $null -ne $_ }
@@ -4672,9 +4674,11 @@ function Import-PartialResultsFromCsv {
                         [math]::Round(($scores | Measure-Object -Average).Average, 1) 
                     } else { 0 }
                 } else { 0 }
-                HighRiskVaults = ($global:auditResults | Where-Object { 
-                    [int]($_.ComplianceScore -replace '%', '') -lt 60 
-                }).Count
+                HighRiskVaults = if ($global:auditResults) { 
+                    ($global:auditResults | Where-Object { 
+                        [int]($_.ComplianceScore -replace '%', '') -lt 60 
+                    }).Count
+                } else { 0 }
             }
             
             # Use the comprehensive HTML generation function
@@ -6798,6 +6802,12 @@ $global:auditStats = @{
 }
 $global:skippedSubscriptions = @()
 $global:currentUser = ""
+
+# Initialize global count variables for RBAC analysis
+$global:serviceProviderCount = 0
+$global:managedIdentityCount = 0
+$global:systemManagedIdentityCount = 0
+$global:userManagedIdentityCount = 0
 
 # --- Production Memory Management and Checkpoint System ---
 function Invoke-MemoryCleanup {
