@@ -9101,17 +9101,19 @@ function Initialize-GraphAuth {
     - Robust fallback mechanisms with user-friendly error messages
     - Support for Interactive, App-only, and Device Code authentication flows
     #>
+    [CmdletBinding()]
     param(
         [switch]$Force,
         [string]$ClientId,
         [string]$TenantId, 
         [string]$ClientSecret,
         [ValidateSet('Interactive','App','DeviceCode','Auto')]
-        [string]$AuthMode = 'Auto',
-        [switch]$Verbose
+        [string]$AuthMode = 'Auto'
     )
     
     try {
+        $verboseEnabled = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
+        
         # Check if MSAL.PS module is available for device code fallback
         if (-not (Get-Module -ListAvailable -Name "MSAL.PS" -ErrorAction SilentlyContinue)) {
             Write-UploadLog "Auth" "MSAL.PS module not available, OneDrive upload disabled" -Context "ModuleCheck"
@@ -9133,7 +9135,7 @@ function Initialize-GraphAuth {
         $scopes = @("Files.ReadWrite", "Files.ReadWrite.All")
         
         # Delegate to the improved Connect-GraphWithStrategy function
-        $success = Connect-GraphWithStrategy -AuthMode $AuthMode -ClientId $ClientId -TenantId $TenantId -ClientSecret $ClientSecret -Scopes $scopes -Verbose:$Verbose
+        $success = Connect-GraphWithStrategy -AuthMode $AuthMode -ClientId $ClientId -TenantId $TenantId -ClientSecret $ClientSecret -Scopes $scopes -Verbose:$verboseEnabled
         
         if ($success) {
             Write-UploadLog "Auth" "Graph authentication successful via Connect-GraphWithStrategy" -Context "AuthMode=$AuthMode"
