@@ -13,7 +13,7 @@ Write-Host "=" * 45 -ForegroundColor Gray
 
 # Source the main script to load functions
 try {
-    $scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+    $scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
     
     # Initialize global context
     $global:ScriptExecutionContext = @{

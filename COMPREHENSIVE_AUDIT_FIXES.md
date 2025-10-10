@@ -120,7 +120,7 @@ All HTML is dynamically generated within the function based on audit data.
 ---
 
 ### 6. ✅ Fixed Filename References in Documentation
-**Issue**: All help documentation examples referenced `Get-AKV_Roles&SecAuditCompliance.ps1` (with ampersand) but the actual file is `Get-AKV_Roles-SecAuditCompliance.ps1` (with dash).
+**Issue**: All help documentation examples referenced `Get-AKV_Roles-SecAuditCompliance.ps1` (with ampersand) but the actual file is `Get-AKV_Roles-SecAuditCompliance.ps1` (with dash).
 
 **Fix**: Replaced all 57 instances of the ampersand version with the dash version throughout the help documentation.
 

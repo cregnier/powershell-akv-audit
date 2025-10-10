@@ -12,7 +12,7 @@ Write-Host "=" * 45 -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "Problem Statement:" -ForegroundColor Yellow
-Write-Host "After merge of PR #126, running './Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 1'" -ForegroundColor Gray
+Write-Host "After merge of PR #126, running './Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 1'" -ForegroundColor Gray
 Write-Host "produced: '[Auth] Authentication failed: The property 'AuthenticationFlow' cannot be found on this object.'" -ForegroundColor Red
 Write-Host ""
 

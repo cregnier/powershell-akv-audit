@@ -165,19 +165,19 @@ A comprehensive test suite (`Test-EnhancedWorkloadAnalysis.ps1`) validates:
 ### SingleVault Mode with Enhanced Analysis
 ```powershell
 # Run enhanced workload analysis on a specific vault
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -VaultName "MyProductionVault"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -VaultName "MyProductionVault"
 
 # Target specific subscription for faster analysis
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -SubscriptionName "Production" -VaultName "MyVault"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -SubscriptionName "Production" -VaultName "MyVault"
 ```
 
 ### Full Organizational Audit with Enhanced Features
 ```powershell
 # Run comprehensive audit with enhanced workload analysis
-.\Get-AKV_Roles&SecAuditCompliance.ps1
+.\Get-AKV_Roles-SecAuditCompliance.ps1
 
 # Test mode to validate enhanced features
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 3
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 3
 ```
 
 ## Benefits for Organizations

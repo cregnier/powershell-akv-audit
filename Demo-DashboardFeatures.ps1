@@ -14,7 +14,7 @@ Write-Host "🎨 INTERACTIVE DASHBOARD FEATURES DEMO" -ForegroundColor Cyan
 Write-Host "=" * 70 -ForegroundColor Gray
 
 # Load the main script functions (without executing main logic)
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 
 # Check if script exists
 if (-not (Test-Path $scriptPath)) {

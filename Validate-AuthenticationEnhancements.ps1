@@ -14,7 +14,7 @@ Write-Host "=" * 50 -ForegroundColor Gray
 # Test 1: Syntax validation
 Write-Host "`n1️⃣ Syntax validation..." -ForegroundColor Yellow
 try {
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile("./Get-AKV_Roles&SecAuditCompliance.ps1", [ref]$null, [ref]$null)
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile("./Get-AKV_Roles-SecAuditCompliance.ps1", [ref]$null, [ref]$null)
     if ($ast) {
         Write-Host "   ✅ PowerShell syntax valid" -ForegroundColor Green
     } else {
@@ -29,7 +29,7 @@ try {
 # Test 2: Function presence validation
 Write-Host "`n2️⃣ Function presence validation..." -ForegroundColor Yellow
 
-$scriptContent = Get-Content "./Get-AKV_Roles&SecAuditCompliance.ps1" -Raw
+$scriptContent = Get-Content "./Get-AKV_Roles-SecAuditCompliance.ps1" -Raw
 
 $expectedFunctions = @(
     "Test-DomainJoinedEnvironment",

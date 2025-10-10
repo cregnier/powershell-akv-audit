@@ -13,7 +13,7 @@ param()
 Write-Host "🎯 FINAL VALIDATION OF .Count PROPERTY FIXES" -ForegroundColor Cyan
 Write-Host "=" * 70 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $scriptContent = Get-Content $scriptPath -Raw
 
 Write-Host "`n✅ SUMMARY OF FIXES APPLIED" -ForegroundColor Green

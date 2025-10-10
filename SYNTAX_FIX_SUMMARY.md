@@ -1,7 +1,7 @@
 # PowerShell Try/Catch Syntax Fix - Summary
 
 ## Issue
-The PowerShell script `Get-AKV_Roles&SecAuditCompliance.ps1` failed to load in PowerShell 7+ with the following syntax error:
+The PowerShell script `Get-AKV_Roles-SecAuditCompliance.ps1` failed to load in PowerShell 7+ with the following syntax error:
 ```
 Line 4082: Unexpected token '}' in expression or statement.
 Line 4087: Unexpected token '}' in expression or statement.
@@ -63,7 +63,7 @@ pwsh ./Test-SyntaxFix.ps1
 - **Functional Changes**: None - all code paths remain the same
 
 ## Files Modified
-1. `Get-AKV_Roles&SecAuditCompliance.ps1` - Fixed premature function closure (7 lines removed)
+1. `Get-AKV_Roles-SecAuditCompliance.ps1` - Fixed premature function closure (7 lines removed)
 2. `Test-SyntaxFix.ps1` - New validation test to verify the fix
 
 ## Note on Unreachable Code

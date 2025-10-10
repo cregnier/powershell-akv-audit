@@ -20,11 +20,11 @@ pwsh -Command "Install-Module -Name Az.Accounts, Az.KeyVault, Az.Resources, Az.M
 Set timeout to 20+ minutes for module installation. If installation fails due to repository issues, this is expected in sandboxed environments - the script will attempt auto-installation when run.
 
 ### Validation and Linting
-- **Syntax validation** (< 1 second): `pwsh -Command "$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles&SecAuditCompliance.ps1', [ref]$null, [ref]$null); Write-Host 'Syntax valid'"`
-- **PSScriptAnalyzer linting** (6-10 seconds): `pwsh -Command "Invoke-ScriptAnalyzer -Path './Get-AKV_Roles&SecAuditCompliance.ps1' -ExcludeRule PSAvoidUsingWriteHost,PSAvoidUsingPositionalParameters"`
+- **Syntax validation** (< 1 second): `pwsh -Command "$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles-SecAuditCompliance.ps1', [ref]$null, [ref]$null); Write-Host 'Syntax valid'"`
+- **PSScriptAnalyzer linting** (6-10 seconds): `pwsh -Command "Invoke-ScriptAnalyzer -Path './Get-AKV_Roles-SecAuditCompliance.ps1' -ExcludeRule PSAvoidUsingWriteHost,PSAvoidUsingPositionalParameters"`
   - Note: PSScriptAnalyzer installation may fail in sandboxed environments - this is expected
   - The script has known style warnings (Write-Host usage, positional parameters) that are acceptable for this interactive audit tool
-- **Help system test** (< 1 second): `pwsh -Command "Get-Help './Get-AKV_Roles&SecAuditCompliance.ps1'"`
+- **Help system test** (< 1 second): `pwsh -Command "Get-Help './Get-AKV_Roles-SecAuditCompliance.ps1'"`
 
 ### Running the Script
 
@@ -38,7 +38,7 @@ The script requires Azure authentication with these minimum permissions:
 #### Test Mode Execution (5-30 minutes depending on Key Vault count)
 **NEVER CANCEL** - Azure API calls can be slow, especially with authentication:
 ```powershell
-pwsh -Command "./Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 3"
+pwsh -Command "./Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 3"
 ```
 - Use timeout of 45+ minutes for test mode
 - Script will prompt for Azure login if not authenticated
@@ -47,7 +47,7 @@ pwsh -Command "./Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 3"
 #### Full Production Scan (30 minutes to several hours)
 **NEVER CANCEL** - Full organizational scans take significant time:
 ```powershell  
-pwsh -Command "./Get-AKV_Roles&SecAuditCompliance.ps1"
+pwsh -Command "./Get-AKV_Roles-SecAuditCompliance.ps1"
 ```
 - Set timeout to 4+ hours for large organizations
 - Use `-TestMode` first to validate setup before full scan
@@ -66,15 +66,15 @@ The script generates timestamped files in `~/Documents/KeyVaultAudit/`:
 
 ### Scenario 1: Help and Parameter Validation
 ```powershell
-pwsh -Command "Get-Help './Get-AKV_Roles&SecAuditCompliance.ps1' -Examples"
-pwsh -Command "Get-Help './Get-AKV_Roles&SecAuditCompliance.ps1' -Parameter TestMode"
+pwsh -Command "Get-Help './Get-AKV_Roles-SecAuditCompliance.ps1' -Examples"
+pwsh -Command "Get-Help './Get-AKV_Roles-SecAuditCompliance.ps1' -Parameter TestMode"
 ```
 - Verify help documentation displays correctly
 - Confirm parameter descriptions are accurate
 
 ### Scenario 2: Syntax and Code Quality Check  
 ```powershell
-pwsh -Command "$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles&SecAuditCompliance.ps1', [ref]$null, [ref]$null); if ($ast) { Write-Host 'PowerShell syntax valid' } else { Write-Host 'Syntax errors found' }"
+pwsh -Command "$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles-SecAuditCompliance.ps1', [ref]$null, [ref]$null); if ($ast) { Write-Host 'PowerShell syntax valid' } else { Write-Host 'Syntax errors found' }"
 ```
 - Must return "PowerShell syntax valid"
 - Any syntax errors will prevent script execution
@@ -90,7 +90,7 @@ pwsh -Command "& { $modules = @('Az.Accounts', 'Az.KeyVault', 'Az.Resources', 'A
 ### Scenario 4: Authentication Flow Test (without actual Azure login)
 Test the authentication functions without connecting:
 ```powershell
-pwsh -Command "& './Get-AKV_Roles&SecAuditCompliance.ps1' -TestMode -Limit 1" 
+pwsh -Command "& './Get-AKV_Roles-SecAuditCompliance.ps1' -TestMode -Limit 1" 
 ```
 - Should fail at authentication step (expected when not logged into Azure)
 - Verify error messages are helpful and not cryptic
@@ -113,7 +113,7 @@ pwsh -Command "& './Get-AKV_Roles&SecAuditCompliance.ps1' -TestMode -Limit 1"
 ### File Structure Reference
 ```
 powershell-akv-audit/
-├── Get-AKV_Roles&SecAuditCompliance.ps1    # Main audit script (1649 lines)
+├── Get-AKV_Roles-SecAuditCompliance.ps1    # Main audit script (1649 lines)
 ├── README.md                                # Basic repository info
 ├── requirements.md                          # Enhancement requirements
 └── .github/

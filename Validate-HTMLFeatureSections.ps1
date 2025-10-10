@@ -17,7 +17,7 @@ param()
 Write-Host "🔍 COMPREHENSIVE HTML FEATURE SECTIONS VALIDATION" -ForegroundColor Cyan
 Write-Host "=" * 70 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $testResults = @{
     ExecutiveSummary = $false
     IdAMInsights = $false

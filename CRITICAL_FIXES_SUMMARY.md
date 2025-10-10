@@ -48,7 +48,7 @@ $placeholders["{{MICROSOFT_FULLY_COMPLIANT}}"] = Get-PlaceholderValue $Executive
 
 ## Files Modified
 
-1. **Get-AKV_Roles&SecAuditCompliance.ps1**: Applied all critical fixes
+1. **Get-AKV_Roles-SecAuditCompliance.ps1**: Applied all critical fixes
 2. **Test-NewCriticalFixes.ps1**: Created comprehensive test for the new fixes
 
 ## Script Status

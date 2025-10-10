@@ -144,33 +144,33 @@ Three validation scripts ensure reporting consistency:
 
 ### SingleVault Comprehensive Analysis
 ```powershell
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -SingleVault -VaultName "prod-kv-001"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -SingleVault -VaultName "prod-kv-001"
 # Generates: KeyVaultSingleVault_prod-kv-001_TIMESTAMP.csv
 #            KeyVaultSingleVault_prod-kv-001_TIMESTAMP.html
 ```
 
 ### Test Mode with Unified Features
 ```powershell
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 5
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 5
 # Generates: KeyVaultComprehensiveAudit_TIMESTAMP.csv  
 #            KeyVaultComprehensiveAudit_TIMESTAMP.html
 ```
 
 ### Resume with Full Feature Set
 ```powershell
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume
 # Resumes from checkpoint with same comprehensive reporting
 ```
 
 ### Process Partial Results
 ```powershell
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial
 # Extracts comprehensive reports from checkpoint data
 ```
 
 ### Full Organizational Audit
 ```powershell
-.\Get-AKV_Roles&SecAuditCompliance.ps1
+.\Get-AKV_Roles-SecAuditCompliance.ps1
 # Complete audit with unified comprehensive reporting
 ```
 

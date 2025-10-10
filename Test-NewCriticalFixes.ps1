@@ -15,7 +15,7 @@ param()
 Write-Host "🔧 NEW CRITICAL FIXES VALIDATION" -ForegroundColor Cyan
 Write-Host "=" * 60 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $testResults = @{
     CompliancePercentageFixed = $false
     ShowProgressDefensiveAccess = $false

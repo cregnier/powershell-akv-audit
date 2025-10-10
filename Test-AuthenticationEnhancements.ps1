@@ -31,7 +31,7 @@ Write-Host "`n1️⃣ Testing function definitions and syntax...`n" -ForegroundC
 
 try {
     # Source the main script to load functions
-    $scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+    $scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
     if (-not (Test-Path $scriptPath)) {
         Write-Host "   ❌ Main script not found at: $scriptPath" -ForegroundColor Red
         exit 1

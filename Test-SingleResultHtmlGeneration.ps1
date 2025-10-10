@@ -19,7 +19,7 @@ param()
 Write-Host "🧪 TESTING SINGLE & MULTIPLE RESULT HTML GENERATION" -ForegroundColor Cyan
 Write-Host "='" * 70 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $testResults = @{
     SyntaxValidation = $false
     FunctionAvailability = $false

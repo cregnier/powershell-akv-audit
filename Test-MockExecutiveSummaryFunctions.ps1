@@ -14,7 +14,7 @@ Write-Host "🧪 MOCK DATA TEST FOR EXECUTIVESUMMARY FUNCTIONS" -ForegroundColor
 Write-Host "=" * 60 -ForegroundColor Gray
 
 # Source the functions from the main script
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $scriptContent = Get-Content $scriptPath -Raw
 
 # Extract and load the helper functions

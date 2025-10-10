@@ -139,7 +139,7 @@ try {
 # Test 4: ForceReauth Parameter
 Write-Host "`n4️⃣ Testing ForceReauth parameter..." -ForegroundColor Yellow
 try {
-    $scriptContent = Get-Content "./Get-AKV_Roles&SecAuditCompliance.ps1" -Raw
+    $scriptContent = Get-Content "./Get-AKV_Roles-SecAuditCompliance.ps1" -Raw
     
     # Check for the parameter definition
     if ($scriptContent -match '\[Parameter\(HelpMessage.*Force re-authentication.*\]\s*\[switch\]\$ForceReauth') {

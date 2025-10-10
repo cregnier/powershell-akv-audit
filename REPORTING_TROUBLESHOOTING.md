@@ -5,7 +5,7 @@
 ### Validate Script Health
 ```powershell
 # Test PowerShell syntax
-pwsh -Command "`$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles&SecAuditCompliance.ps1', [ref]`$null, [ref]`$null); Write-Host 'Syntax valid'"
+pwsh -Command "`$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles-SecAuditCompliance.ps1', [ref]`$null, [ref]`$null); Write-Host 'Syntax valid'"
 
 # Run comprehensive validation
 .\Validate-UnifiedReporting.ps1
@@ -26,10 +26,10 @@ pwsh -Command "`$ast = [System.Management.Automation.Language.Parser]::ParseFile
 **Diagnosis:**
 ```powershell
 # Check if New-ComprehensiveHtmlReport function exists
-pwsh -Command "Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String 'function New-ComprehensiveHtmlReport'"
+pwsh -Command "Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' | Select-String 'function New-ComprehensiveHtmlReport'"
 
 # Verify Use-HtmlTemplate function
-pwsh -Command "Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String 'function Use-HtmlTemplate'"
+pwsh -Command "Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' | Select-String 'function Use-HtmlTemplate'"
 ```
 
 **Solutions:**
@@ -66,7 +66,7 @@ pwsh -Command "Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-Str
 .\Validate-UnifiedReporting.ps1 | Select-String "CSV columns found"
 
 # Verify HTML header count
-pwsh -Command "(Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' -Raw | Select-String -Pattern '<th onclick=\"sortTable\(\d+\)\"[^>]*>' -AllMatches).Matches.Count"
+pwsh -Command "(Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' -Raw | Select-String -Pattern '<th onclick=\"sortTable\(\d+\)\"[^>]*>' -AllMatches).Matches.Count"
 ```
 
 **Solutions:**
@@ -99,10 +99,10 @@ pwsh -Command "(Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' -Raw | Sele
 **Diagnosis:**
 ```powershell
 # Check for safe property access patterns
-Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String "if.*\$result\.[A-Za-z].*else"
+Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' | Select-String "if.*\$result\.[A-Za-z].*else"
 
 # Verify placeholder mapping
-Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String "\$placeholders\["
+Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' | Select-String "\$placeholders\["
 ```
 
 **Solutions:**
@@ -140,7 +140,7 @@ Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String "\$placehol
 .\Validate-AuditModeUnification.ps1
 
 # Check for deprecated function usage
-Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String "Generate-HTMLReport"
+Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' | Select-String "Generate-HTMLReport"
 ```
 
 **Solutions:**
@@ -175,7 +175,7 @@ Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String "Generate-H
 Get-Content './KeyVaultComprehensiveAudit_*.html' | Select-String "\{\{[A-Z_]+\}\}"
 
 # Verify placeholder definition
-Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String "\$placeholders.*="
+Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' | Select-String "\$placeholders.*="
 ```
 
 **Solutions:**
@@ -211,7 +211,7 @@ Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String "\$placehol
 Get-AzContext
 
 # Verify global user variable
-pwsh -Command "Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String '\$global:currentUser'"
+pwsh -Command "Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' | Select-String '\$global:currentUser'"
 ```
 
 **Solutions:**
@@ -249,10 +249,10 @@ $VerbosePreference = "Continue"
 **Performance Optimization:**
 ```powershell
 # Use TestMode for validation
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 3
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 3
 
 # Check checkpoint functionality
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -Resume
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -Resume
 ```
 
 ### HTML Template Debugging
@@ -269,7 +269,7 @@ $htmlSections = @(
 )
 
 foreach ($section in $htmlSections) {
-    $found = Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String $section
+    $found = Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' | Select-String $section
     if ($found) {
         Write-Host "✅ $section section found"
     } else {
@@ -281,10 +281,10 @@ foreach ($section in $htmlSections) {
 **Validate CSS and JavaScript:**
 ```powershell
 # Check for CSS styles
-Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String "function sortTable|function filterTable"
+Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' | Select-String "function sortTable|function filterTable"
 
 # Verify responsive design
-Get-Content './Get-AKV_Roles&SecAuditCompliance.ps1' | Select-String "grid-template-columns.*auto-fit"
+Get-Content './Get-AKV_Roles-SecAuditCompliance.ps1' | Select-String "grid-template-columns.*auto-fit"
 ```
 
 ### CSV Export Debugging
@@ -299,7 +299,7 @@ $csv.PSObject.Properties.Count  # Should be 62
 **Test CSV-to-HTML Conversion:**
 ```powershell
 # Test ReportFromCsv functionality
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "path/to/audit.csv"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "path/to/audit.csv"
 ```
 
 ## 📋 Validation Checklist
@@ -331,22 +331,22 @@ $csv.PSObject.Properties.Count  # Should be 62
 ### If HTML Generation Completely Fails
 ```powershell
 # Generate basic CSV-only report
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 1
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 1
 # Then manually convert CSV to HTML using ReportFromCsv mode
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "path/to/csv"
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -ReportFromCsv -CsvFilePath "path/to/csv"
 ```
 
 ### If All Reporting Fails
 ```powershell
 # Use ProcessPartial to extract data from checkpoints
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -ProcessPartial
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -ProcessPartial
 # Select the most recent checkpoint for data extraction
 ```
 
 ### Script Corruption Recovery
 ```powershell
 # Validate script integrity
-$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles&SecAuditCompliance.ps1', [ref]$null, [ref]$null)
+$ast = [System.Management.Automation.Language.Parser]::ParseFile('./Get-AKV_Roles-SecAuditCompliance.ps1', [ref]$null, [ref]$null)
 if (-not $ast) {
     Write-Host "Script file corrupted - restore from backup"
 }
@@ -364,7 +364,7 @@ Check these log files for detailed error information:
 Enable detailed logging for troubleshooting:
 ```powershell
 $VerbosePreference = "Continue"
-.\Get-AKV_Roles&SecAuditCompliance.ps1 -TestMode -Limit 1
+.\Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode -Limit 1
 ```
 
 ### Community Resources

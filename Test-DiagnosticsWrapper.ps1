@@ -13,7 +13,7 @@ param()
 Write-Host "🔧 DIAGNOSTICS WRAPPER TEST" -ForegroundColor Cyan
 Write-Host "=" * 50 -ForegroundColor Gray
 
-$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles&SecAuditCompliance.ps1"
+$scriptPath = Join-Path $PSScriptRoot "Get-AKV_Roles-SecAuditCompliance.ps1"
 $testResults = @{
     DiagnosticsSafeFunctionExists = $false
     SafeArrayFunctionExists = $false
