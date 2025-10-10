@@ -762,6 +762,30 @@ function Get-SafeProperty {
     }
 }
 
+# Helper function for safe count access to prevent property access errors
+function Get-SafeCount {
+    param($Object)
+    
+    if ($null -eq $Object) { 
+        return 0 
+    }
+    
+    try {
+        # If it's an array or collection with Count property
+        if ($Object -is [array]) {
+            return $Object.Count
+        }
+        # Check if the object has a Count property
+        if ($Object.PSObject.Properties['Count']) {
+            return $Object.Count
+        }
+        # If it's a single object (not null), count is 1
+        return 1
+    } catch {
+        return 0
+    }
+}
+
 function Write-VerboseEnvironmentInfo {
     <#
     .SYNOPSIS
@@ -2811,19 +2835,19 @@ function Invoke-PartialResults {
         try {
             # Calculate executive summary for partial results
             $partialExecutiveSummary = @{
-                TotalKeyVaults = if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A') { $global:auditResults.Count } else { 0 }
-                CompliantVaults = if ($global:auditResults) { ($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 }).Count } else { 0 }
-                CompliancePercentage = if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A' -and $global:auditResults.Count -gt 0) { 
-                    [math]::Round((($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 }).Count / $global:auditResults.Count) * 100, 1) 
+                TotalKeyVaults = Get-SafeCount $global:auditResults
+                CompliantVaults = Get-SafeCount @($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 })
+                CompliancePercentage = if ((Get-SafeCount $global:auditResults) -gt 0) { 
+                    [math]::Round((Get-SafeCount @($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 })) / (Get-SafeCount $global:auditResults) * 100, 1) 
                 } else { 0 }
-                AverageComplianceScore = if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A' -and $global:auditResults.Count -gt 0) { 
+                AverageComplianceScore = if ((Get-SafeCount $global:auditResults) -gt 0) { 
                     [math]::Round(($global:auditResults | Measure-Object -Property ComplianceScore -Average).Average, 1) 
                 } else { 0 }
-                CompanyAverageScore = if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A' -and $global:auditResults.Count -gt 0) { 
+                CompanyAverageScore = if ((Get-SafeCount $global:auditResults) -gt 0) { 
                     $companyScores = $global:auditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'CompanyComplianceScore') -ne 'N/A' } | ForEach-Object { try { [int]($_.CompanyComplianceScore -replace '%', '') } catch { 0 } }
-                    if ($companyScores.Count -gt 0) { [math]::Round(($companyScores | Measure-Object -Average).Average, 1) } else { 0 }
+                    if ((Get-SafeCount $companyScores) -gt 0) { [math]::Round(($companyScores | Measure-Object -Average).Average, 1) } else { 0 }
                 } else { 0 }
-                HighRiskVaults = if ($global:auditResults) { ($global:auditResults | Where-Object { $_.ComplianceScore -lt 60 }).Count } else { 0 }
+                HighRiskVaults = Get-SafeCount @($global:auditResults | Where-Object { $_.ComplianceScore -lt 60 })
             }
             
             # Use the comprehensive HTML generation function
@@ -2845,7 +2869,7 @@ function Invoke-PartialResults {
         Write-Host "   Original timestamp: $($CheckpointData.Timestamp)" -ForegroundColor Gray
         Write-Host "   Vaults processed: $($CheckpointData.VaultIndex)/$($CheckpointData.TotalVaults)" -ForegroundColor Gray
         Write-Host "   Progress: $([math]::Round(($CheckpointData.VaultIndex / $CheckpointData.TotalVaults) * 100, 1))%" -ForegroundColor Gray
-        Write-Host "   Results extracted: $($global:auditResults.Count) vaults" -ForegroundColor Green
+        Write-Host "   Results extracted: $(Get-SafeCount $global:auditResults) vaults" -ForegroundColor Green
         
         # Cloud upload integration for partial results
         if ($UploadToCloud) {
@@ -3026,9 +3050,9 @@ function New-ComprehensiveHtmlReport {
             } elseif ($IsPartialResults -and $ExecutiveSummary.TotalDiscoveredVaults) {
                 $ExecutiveSummary.TotalDiscoveredVaults
             } else { 
-                if ($AuditResults -and ($AuditResults.Count -or $AuditResults.Length)) { $AuditResults.Count } else { 0 }
+                Get-SafeCount $AuditResults
             }
-            $processedVaults = if ($AuditResults -and ($AuditResults.Count -or $AuditResults.Length)) { $AuditResults.Count } else { 0 }
+            $processedVaults = Get-SafeCount $AuditResults
             $completionPercentage = if ($totalVaults -gt 0) { 
                 [math]::Round(($processedVaults / $totalVaults) * 100, 1) 
             } else { 100 }
@@ -3563,7 +3587,7 @@ function toggleCollapsible(elementId) {
 
         # Add vault data rows
         $rowIndex = 0
-        $totalRecords = if ($AuditResults -and ($AuditResults.Count -or $AuditResults.Length)) { $AuditResults.Count } else { 0 }
+        $totalRecords = Get-SafeCount $AuditResults
         foreach ($result in $AuditResults) {
             $rowIndex++
             
@@ -3690,14 +3714,14 @@ function toggleCollapsible(elementId) {
             </div>
             <div class="stat-card">
                 <div class="stat-number">$(if ($AuditResults) { 
-                    $systemAssignedResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SystemAssignedIdentity') -eq "Yes" }
-                    if ($systemAssignedResults) { $systemAssignedResults.Count } else { 0 }
+                    $systemAssignedResults = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SystemAssignedIdentity') -eq "Yes" })
+                    Get-SafeCount $systemAssignedResults
                 } else { "N/A" })</div>
                 <div class="stat-label">System-Assigned Identities</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and $AuditResults.Count -gt 0) { 
-                    $systemAssignedResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SystemAssignedIdentity') -eq "Yes" }
-                    $sysAssignedCount = if ($systemAssignedResults) { $systemAssignedResults.Count } else { 0 }
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { $AuditResults.Count } else { 1 }
+                $(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                    $systemAssignedResults = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SystemAssignedIdentity') -eq "Yes" })
+                    $sysAssignedCount = Get-SafeCount $systemAssignedResults
+                    $auditCount = Get-SafeCount $AuditResults
                     $percentage = [math]::Round(($sysAssignedCount / $auditCount) * 100, 1)
                     if ($percentage -eq 0) { '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' }
                     elseif ($percentage -lt 50) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
@@ -3714,14 +3738,14 @@ function toggleCollapsible(elementId) {
             </div>
             <div class="stat-card">
                 <div class="stat-number">$(if ($AuditResults) { 
-                    $rbacResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -ne 'N/A' -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0') -gt 0) }
-                    if ($rbacResults) { $rbacResults.Count } else { 0 }
+                    $rbacResults = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -ne 'N/A' -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0') -gt 0) })
+                    Get-SafeCount $rbacResults
                 } else { "N/A" })</div>
                 <div class="stat-label">Using RBAC</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and $AuditResults.Count -gt 0) { 
-                    $rbacResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -ne 'N/A' -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0') -gt 0) }
-                    $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { $AuditResults.Count } else { 1 }
+                $(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                    $rbacResults = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -ne 'N/A' -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0') -gt 0) })
+                    $rbacCount = Get-SafeCount $rbacResults
+                    $auditCount = Get-SafeCount $AuditResults
                     $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
                     if ($percentage -ge 90) { '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' }
                     elseif ($percentage -ge 60) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
@@ -3733,18 +3757,18 @@ function toggleCollapsible(elementId) {
         <h4>Key Identity Recommendations:</h4>
         <ul>
             <li><strong>Migrate to Managed Identities:</strong> Replace service principals with managed identities where possible for enhanced security</li>
-            <li><strong>Implement RBAC:</strong> Move from legacy access policies to Azure RBAC for fine-grained access control$(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and $AuditResults.Count -gt 0) { 
-                $rbacResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -ne 'N/A' -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0') -gt 0) }
-                $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { $AuditResults.Count } else { 1 }
+            <li><strong>Implement RBAC:</strong> Move from legacy access policies to Azure RBAC for fine-grained access control$(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                $rbacResults = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -ne 'N/A' -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0') -gt 0) })
+                $rbacCount = Get-SafeCount $rbacResults
+                $auditCount = Get-SafeCount $AuditResults
                 $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
                 " ($percentage% currently using RBAC)"
             })</li>
             <li><strong>Apply Least Privilege:</strong> Review and reduce over-privileged role assignments</li>
-            <li><strong>Enable System-Assigned Identities:</strong> Configure system-assigned managed identities on Key Vault resources$(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and $AuditResults.Count -gt 0) { 
-                $systemAssignedResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SystemAssignedIdentity') -eq "Yes" }
-                $sysAssignedCount = if ($systemAssignedResults) { $systemAssignedResults.Count } else { 0 }
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { $AuditResults.Count } else { 0 }
+            <li><strong>Enable System-Assigned Identities:</strong> Configure system-assigned managed identities on Key Vault resources$(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                $systemAssignedResults = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SystemAssignedIdentity') -eq "Yes" })
+                $sysAssignedCount = Get-SafeCount $systemAssignedResults
+                $auditCount = Get-SafeCount $AuditResults
                 " ($sysAssignedCount of $auditCount vaults have system-assigned identities)"
             })</li>
         </ul>
@@ -3762,20 +3786,20 @@ function toggleCollapsible(elementId) {
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-number">$(if ($AuditResults) { 
-                    $secretResults = $AuditResults | Where-Object { 
+                    $secretResults = @($AuditResults | Where-Object { 
                         $secretCount = Get-SafeProperty -Object $_ -PropertyName 'SecretCount' -DefaultValue '0'
                         try { [int]$secretCount -gt 0 } catch { $false }
-                    }
-                    if ($secretResults) { $secretResults.Count } else { 0 }
+                    })
+                    Get-SafeCount $secretResults
                 } else { "N/A" })</div>
                 <div class="stat-label">Vaults Storing Secrets</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                    $secretResults = $AuditResults | Where-Object { 
+                $(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                    $secretResults = @($AuditResults | Where-Object { 
                         $secretCount = Get-SafeProperty -Object $_ -PropertyName 'SecretCount' -DefaultValue '0'
                         try { [int]$secretCount -gt 0 } catch { $false }
-                    }
-                    $secretVaultCount = if ($secretResults) { $secretResults.Count } else { 0 }
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                    })
+                    $secretVaultCount = Get-SafeCount $secretResults
+                    $auditCount = Get-SafeCount $AuditResults
                     $percentage = [math]::Round(($secretVaultCount / $auditCount) * 100, 1)
                     '<div class="stat-percentage" style="color: #667eea;">' + $percentage + '%</div>'
                 } else { if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' } else { '<div class="stat-percentage" style="color: #667eea;">N/A</div>' } })
@@ -3794,20 +3818,20 @@ function toggleCollapsible(elementId) {
             </div>
             <div class="stat-card">
                 <div class="stat-number">$(if ($AuditResults) { 
-                    $rbacResults = $AuditResults | Where-Object { 
+                    $rbacResults = @($AuditResults | Where-Object { 
                         $rbacCount = Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0'
                         try { [int]$rbacCount -gt 0 } catch { $false }
-                    }
-                    if ($rbacResults) { $rbacResults.Count } else { 0 }
+                    })
+                    Get-SafeCount $rbacResults
                 } else { "N/A" })</div>
                 <div class="stat-label">Granular Secret Access</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                    $rbacResults = $AuditResults | Where-Object { 
+                $(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                    $rbacResults = @($AuditResults | Where-Object { 
                         $rbacCount = Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0'
                         try { [int]$rbacCount -gt 0 } catch { $false }
-                    }
-                    $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                    })
+                    $rbacCount = Get-SafeCount $rbacResults
+                    $auditCount = Get-SafeCount $AuditResults
                     $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
                     if ($percentage -ge 90) { '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' }
                     elseif ($percentage -ge 60) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
@@ -3815,11 +3839,11 @@ function toggleCollapsible(elementId) {
                 } else { if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' } else { '<div class="stat-percentage" style="color: #dc3545">0%</div>' } })
             </div>
             <div class="stat-card">
-                <div class="stat-number">$(if ($AuditResults) { ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }).Count } else { "N/A" })</div>
+                <div class="stat-number">$(if ($AuditResults) { Get-SafeCount @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }) } else { "N/A" })</div>
                 <div class="stat-label">Secret Recovery Protection</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                    $softDeleteCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }).Count
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                $(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                    $softDeleteCount = Get-SafeCount @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" })
+                    $auditCount = Get-SafeCount $AuditResults
                     $percentage = [math]::Round(($softDeleteCount / $auditCount) * 100, 1)
                     if ($percentage -eq 0) { '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' }
                     elseif ($percentage -lt 50) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
@@ -3840,34 +3864,34 @@ function toggleCollapsible(elementId) {
         
         <h4>📊 Compliance & Security Insights:</h4>
         <ul>
-            <li><strong>Audit Trail:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $diagnosticsCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -and ((Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq "Yes" -or (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq $true) }).Count
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+            <li><strong>Audit Trail:</strong> $(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                $diagnosticsCount = Get-SafeCount @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -and ((Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq "Yes" -or (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq $true) })
+                $auditCount = Get-SafeCount $AuditResults
                 $percentage = [math]::Round(($diagnosticsCount / $auditCount) * 100, 1)
                 "$percentage% of vaults have diagnostic logging enabled"
             } else { "Diagnostic logging status unknown for partial data" }), providing visibility into secret access patterns and potential security incidents.</li>
-            <li><strong>Network Isolation:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $privateEndpointCount = ($AuditResults | Where-Object { 
+            <li><strong>Network Isolation:</strong> $(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                $privateEndpointCount = Get-SafeCount @($AuditResults | Where-Object { 
                     $peCount = Get-SafeProperty -Object $_ -PropertyName 'PrivateEndpointCount' -DefaultValue '0'
                     try { [int]$peCount -gt 0 } catch { $false }
-                }).Count
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                })
+                $auditCount = Get-SafeCount $AuditResults
                 $percentage = [math]::Round(($privateEndpointCount / $auditCount) * 100, 1)
                 "$percentage% of vaults use private endpoints"
             } else { "Private endpoint usage unknown for partial data" }), protecting secrets from unauthorized network access.</li>
-            <li><strong>Identity-Based Access:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $rbacResults = $AuditResults | Where-Object { 
+            <li><strong>Identity-Based Access:</strong> $(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                $rbacResults = @($AuditResults | Where-Object { 
                     $rbacCount = Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0'
                     try { [int]$rbacCount -gt 0 } catch { $false }
-                }
-                $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                })
+                $rbacCount = Get-SafeCount $rbacResults
+                $auditCount = Get-SafeCount $AuditResults
                 $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
                 "$percentage% of vaults use RBAC"
             } else { "RBAC usage unknown for partial data" }) for granular secret permissions instead of legacy access policies.</li>
-            <li><strong>Secret Recovery:</strong> Soft delete is enabled on $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $softDeleteCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }).Count
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+            <li><strong>Secret Recovery:</strong> Soft delete is enabled on $(if ((Get-SafeCount $AuditResults) -gt 0) { 
+                $softDeleteCount = Get-SafeCount @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" })
+                $auditCount = Get-SafeCount $AuditResults
                 $percentage = [math]::Round(($softDeleteCount / $auditCount) * 100, 1)
                 "$percentage% of vaults"
             } else { "unknown percentage for partial data" }), enabling secret recovery in case of accidental deletion.</li>
@@ -4656,31 +4680,29 @@ function Import-PartialResultsFromCsv {
             
             # Calculate executive summary for CSV partial results
             $csvExecutiveSummary = @{
-                TotalKeyVaults = if ($global:auditResults) { $global:auditResults.Count } else { 0 }
-                CompliantVaults = if ($global:auditResults) { 
-                    ($global:auditResults | Where-Object { 
+                TotalKeyVaults = Get-SafeCount $global:auditResults
+                CompliantVaults = Get-SafeCount @($global:auditResults | Where-Object { 
+                    [int]($_.ComplianceScore -replace '%', '') -ge 90 
+                })
+                CompliancePercentage = if ((Get-SafeCount $global:auditResults) -gt 0) { 
+                    $compliantCount = Get-SafeCount @($global:auditResults | Where-Object { 
                         [int]($_.ComplianceScore -replace '%', '') -ge 90 
-                    }).Count
+                    })
+                    [math]::Round(($compliantCount / (Get-SafeCount $global:auditResults)) * 100, 1) 
                 } else { 0 }
-                CompliancePercentage = if ($global:auditResults -and $global:auditResults.Count -gt 0) { 
-                    $compliantCount = ($global:auditResults | Where-Object { 
-                        [int]($_.ComplianceScore -replace '%', '') -ge 90 
-                    }).Count
-                    [math]::Round(($compliantCount / $global:auditResults.Count) * 100, 1) 
-                } else { 0 }
-                AverageComplianceScore = if ($global:auditResults -and $global:auditResults.Count -gt 0) { 
+                AverageComplianceScore = if ((Get-SafeCount $global:auditResults) -gt 0) { 
                     $scores = $global:auditResults | ForEach-Object { 
                         [int]($_.ComplianceScore -replace '%', '') 
                     } | Where-Object { $null -ne $_ }
-                    if ($scores.Count -gt 0) {
+                    if ((Get-SafeCount $scores) -gt 0) {
                         [math]::Round(($scores | Measure-Object -Average).Average, 1) 
                     } else { 0 }
                 } else { 0 }
-                CompanyAverageScore = if ($global:auditResults -and $global:auditResults.Count -gt 0) { 
+                CompanyAverageScore = if ((Get-SafeCount $global:auditResults) -gt 0) { 
                     $scores = $global:auditResults | Where-Object { Get-SafeProperty -Object $_ -PropertyName 'CompanyComplianceScore' } | ForEach-Object { 
                         try { [int]((Get-SafeProperty -Object $_ -PropertyName 'CompanyComplianceScore') -replace '%', '') } catch { 0 }
                     } | Where-Object { $null -ne $_ }
-                    if ($scores.Count -gt 0) {
+                    if ((Get-SafeCount $scores) -gt 0) {
                         [math]::Round(($scores | Measure-Object -Average).Average, 1) 
                     } else { 0 }
                 } else { 0 }
@@ -5161,10 +5183,10 @@ $cancelHandler = {
     
     # Save final checkpoint with current results
     try {
-        if ($global:auditResults -and $global:auditResults.Count -gt 0) {
-            Save-ProgressCheckpoint -VaultIndex $global:auditResults.Count -TotalVaults $global:totalVaultsToProcess -ProcessedResults $global:auditResults -IsFinalCheckpoint $true
+        if ((Get-SafeCount $global:auditResults) -gt 0) {
+            Save-ProgressCheckpoint -VaultIndex (Get-SafeCount $global:auditResults) -TotalVaults $global:totalVaultsToProcess -ProcessedResults $global:auditResults -IsFinalCheckpoint $true
             Write-Host "✅ Progress saved successfully." -ForegroundColor Green
-            Write-CancellationDebugLog "Checkpoint" "Final checkpoint saved successfully" -Context "VaultCount=$($global:auditResults.Count)"
+            Write-CancellationDebugLog "Checkpoint" "Final checkpoint saved successfully" -Context "VaultCount=$((Get-SafeCount $global:auditResults))"
         } else {
             Write-CancellationDebugLog "Checkpoint" "No audit results to save in checkpoint" -Context "auditResults.Count=0"
         }
@@ -6287,32 +6309,32 @@ if ($PSBoundParameters.ContainsKey('ReportFromCsv')) {
         $nonCompliantVaults = @($global:auditResults | Where-Object { 
             try { [int]($_.ComplianceScore -replace '%', '') -lt 60 } catch { $false }
         }).Count
-        $highRiskVaults = @($global:auditResults | Where-Object { 
+        $highRiskVaults = Get-SafeCount @($global:auditResults | Where-Object { 
             try { [int]($_.ComplianceScore -replace '%', '') -lt 60 } catch { $false }
-        }).Count
+        })
         
         # Calculate compliance percentage
-        $compliancePercentage = if ($global:auditResults.Count -gt 0) { 
-            [math]::Round(($compliantVaults / $global:auditResults.Count) * 100, 1) 
+        $compliancePercentage = if ((Get-SafeCount $global:auditResults) -gt 0) { 
+            [math]::Round(($compliantVaults / (Get-SafeCount $global:auditResults)) * 100, 1) 
         } else { 0 }
         
         # Calculate average compliance scores
         $msScores = $global:auditResults | ForEach-Object { 
             try { [int]($_.ComplianceScore -replace '%', '') } catch { 0 }
         }
-        $averageComplianceScore = if ($msScores.Count -gt 0) { 
+        $averageComplianceScore = if ((Get-SafeCount $msScores) -gt 0) { 
             [math]::Round(($msScores | Measure-Object -Average).Average, 1) 
         } else { 0 }
         
         $companyScores = $global:auditResults | ForEach-Object { 
             try { [int]($_.CompanyComplianceScore -replace '%', '') } catch { 0 }
         }
-        $companyAverageScore = if ($companyScores.Count -gt 0) { 
+        $companyAverageScore = if ((Get-SafeCount $companyScores) -gt 0) { 
             [math]::Round(($companyScores | Measure-Object -Average).Average, 1) 
         } else { 0 }
         
         $executiveSummary = @{
-            TotalKeyVaults = $global:auditResults.Count
+            TotalKeyVaults = Get-SafeCount $global:auditResults
             CompliantVaults = $compliantVaults
             PartiallyCompliantVaults = $partiallyCompliantVaults
             NonCompliantVaults = $nonCompliantVaults
@@ -6652,11 +6674,11 @@ if ($PSBoundParameters.ContainsKey('Resume') -or $PSBoundParameters.ContainsKey(
                 Write-Host "🔄 Processing partial results from checkpoint..." -ForegroundColor Cyan
                 
                 # Load existing results from checkpoint - use full ProcessedResults if available
-                if ($resumeData.ProcessedResults -and $resumeData.ProcessedResults.Count -gt 0) {
+                if ($resumeData.ProcessedResults -and (Get-SafeCount $resumeData.ProcessedResults) -gt 0) {
                     # Use the complete audit results from checkpoint
                     $global:auditResults = $resumeData.ProcessedResults
-                    Write-Host "✅ Loaded $($global:auditResults.Count) complete vault results from checkpoint" -ForegroundColor Green
-                } elseif ($resumeData.ProcessedVaults -and $resumeData.ProcessedVaults.Count -gt 0) {
+                    Write-Host "✅ Loaded $((Get-SafeCount $global:auditResults)) complete vault results from checkpoint" -ForegroundColor Green
+                } elseif ($resumeData.ProcessedVaults -and (Get-SafeCount $resumeData.ProcessedVaults) -gt 0) {
                     # Fallback to ProcessedVaults data if ProcessedResults not available (older checkpoint format)
                     $global:auditResults = @()
                     foreach ($processedVault in $resumeData.ProcessedVaults) {
@@ -6673,7 +6695,7 @@ if ($PSBoundParameters.ContainsKey('Resume') -or $PSBoundParameters.ContainsKey(
                         }
                         $global:auditResults += $partialResult
                     }
-                    Write-Host "✅ Loaded $($global:auditResults.Count) vault results from checkpoint (legacy format)" -ForegroundColor Green
+                    Write-Host "✅ Loaded $((Get-SafeCount $global:auditResults)) vault results from checkpoint (legacy format)" -ForegroundColor Green
                 } else {
                     Write-Host "❌ No processed vault data found in checkpoint" -ForegroundColor Red
                     exit 1
@@ -6818,6 +6840,7 @@ $global:serviceProviderCount = 0
 $global:managedIdentityCount = 0
 $global:systemManagedIdentityCount = 0
 $global:userManagedIdentityCount = 0
+$global:accessPolicyCount = 0
 
 # --- Production Memory Management and Checkpoint System ---
 function Invoke-MemoryCleanup {
@@ -11447,7 +11470,7 @@ foreach ($kvItem in $vaultsToProcess) {
         
         # Write result to CSV immediately for real-time output (if CSV path is available)
         if ($csvPath) {
-            Write-VaultResultToCSV -VaultResult $result -CsvFilePath $csvPath -IsFirstResult ($global:auditResults.Count -eq 1)
+            Write-VaultResultToCSV -VaultResult $result -CsvFilePath $csvPath -IsFirstResult ((Get-SafeCount $global:auditResults) -eq 1)
         } else {
             Write-Host "⚠️ CSV path not yet initialized, skipping real-time CSV write for $($result.KeyVaultName)" -ForegroundColor Yellow
         }
@@ -11549,7 +11572,7 @@ Write-Host "📊 Generating comprehensive HTML report..." -ForegroundColor Cyan
 Write-Verbose "About to call New-ComprehensiveHtmlReport..."
 
 # Defensive check to prevent crash when no vaults are processed
-if (-not $global:auditResults -or $global:auditResults.Count -eq 0) {
+if ((Get-SafeCount $global:auditResults) -eq 0) {
     Write-Warning "No vault data was successfully processed. Generating a failure report."
     
     # Ensure variables exist before trying to access them in the failure report
