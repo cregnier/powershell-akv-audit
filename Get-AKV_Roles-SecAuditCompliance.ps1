@@ -11527,10 +11527,10 @@ Write-Host "📊 Generating reports..." -ForegroundColor Yellow
 # Export to CSV
 try {
     $global:auditResults | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
-    Write-Host "✅ CSV report: $csvPath" -ForegroundColor Green
 } catch {
     $errorMessage = if ($_.Exception.Message) { $_.Exception.Message } else { $_.ToString() }
     Write-ErrorLog "Export" "Failed to export CSV: $errorMessage"
+    Write-Host "❌ Failed to export CSV: $errorMessage" -ForegroundColor Red
 }
 
 # --- Generate Enhanced HTML Report with All Requested Features ---
@@ -11606,7 +11606,7 @@ $htmlGenerated = New-ComprehensiveHtmlReport -OutputPath $htmlPath -AuditResults
 Write-Verbose "New-ComprehensiveHtmlReport call completed"
 
 if ($htmlGenerated) {
-    Write-Host "✅ HTML report: $htmlPath" -ForegroundColor Green
+    # Success - report will be shown in final summary
 } else {
     Write-Host "❌ Failed to generate HTML report" -ForegroundColor Red
     Write-ErrorLog "Export" "Failed to generate comprehensive HTML report"
@@ -11694,10 +11694,6 @@ $summaryData | Format-Table -Property @{Label="Metric"; Expression={$_.Metric}; 
                                      @{Label="Percentage"; Expression={$_.Percentage}; Width=15} -AutoSize
 
 Write-Host ""
-Write-Host "⏱️  Execution Time: $([math]::Round($executionTime.TotalMinutes, 2)) minutes" -ForegroundColor Cyan
-Write-Host "👤 Executed by: $global:currentUser" -ForegroundColor Cyan
-Write-Host "🔄 Token Refreshes: $($global:auditStats.TokenRefreshCount)" -ForegroundColor Cyan
-Write-Host ""
 
 # Color-coded compliance summary
 if ($compliancePercentage -ge 90) {
@@ -11709,14 +11705,6 @@ if ($compliancePercentage -ge 90) {
 } else {
     Write-Host "🚨 ATTENTION REQUIRED: $compliancePercentage% compliance rate - immediate action required" -ForegroundColor Red
 }
-
-Write-Host ""
-Write-Host "📄 Reports Generated:" -ForegroundColor Yellow
-Write-Host "   📊 HTML Report: $htmlPath" -ForegroundColor White
-Write-Host "   📋 CSV Data: $csvPath" -ForegroundColor White
-Write-Host "   ❌ Error Log: $global:errPath" -ForegroundColor White
-Write-Host "   🔐 Permissions Log: $global:permissionsPath" -ForegroundColor White  
-Write-Host "   📉 Data Issues Log: $global:dataIssuesPath" -ForegroundColor White
 
 # Log completion
 Write-ErrorLog "Audit" "Azure Key Vault Comprehensive Audit completed successfully"
