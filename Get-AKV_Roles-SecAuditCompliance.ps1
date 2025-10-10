@@ -573,85 +573,6 @@
     https://learn.microsoft.com/azure/key-vault/general/security-features
 #>
 
-
-function Main {
-    [CmdletBinding()]
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
-    param(
-        [switch]$enableOneDriveUpload,
-        [Parameter(HelpMessage = "Target folder path in OneDrive/SharePoint for file uploads")]
-        [string]$CloudUploadPath,
-        [Parameter(HelpMessage = "Client ID for Microsoft Graph app-only authentication")]
-        [string]$GraphClientId,
-        [Parameter(HelpMessage = "Tenant ID for Microsoft Graph app-only authentication")]
-        [string]$GraphTenantId,
-        [Parameter(HelpMessage = "Client Secret for Microsoft Graph app-only authentication")]
-        [string]$GraphClientSecret,
-        [Parameter(HelpMessage = "Override automatic Microsoft Graph authentication mode selection")]
-        [ValidateSet('Interactive','App','DeviceCode','Auto')]
-        [string]$GraphAuthMode,
-        [Parameter(HelpMessage = "Determines Microsoft Graph permission scopes requested")]
-        [ValidateSet('Files','Sites','Full')]
-        [string]$GraphScopeScenario = 'Files',
-        [Parameter(HelpMessage = "Run targeted diagnostics scan for a single Key Vault (prompts for vault name)")]
-        [switch]$SingleVault,
-        [Parameter(HelpMessage = "Key Vault name for single vault mode (optional - will prompt if not provided)")]
-        [string]$VaultName,
-        [Parameter(HelpMessage = "Subscription name or ID for single vault mode (optional - will prompt if not provided)")]
-        [string]$SubscriptionName
-    )
-
-    if (-not $GraphAuthMode) { $GraphAuthMode = 'Auto' }
-    
-    function Write-UserMessage {
-        [CmdletBinding()]
-        param(
-            [Parameter(Mandatory = $true)]
-            [string]$Message,
-    
-            [Parameter(Mandatory = $false)]
-            [ValidateSet('Info', 'Warning', 'Error', 'Success', 'Debug', 'Progress')]
-            [string]$Type = 'Info'
-        )
-    
-        # This function provides a standardized way to output messages.
-        switch ($Type) {
-            'Info'    { Write-Host $Message -ForegroundColor Gray }
-            'Warning' { Write-Warning $Message }
-            'Error'   { Write-Error -Message $Message }
-            'Success' { Write-Host $Message -ForegroundColor Green }
-            'Debug'   { Write-Debug -Message $Message }
-            'Progress' { Write-Progress -Activity "Auditing Key Vaults" -Status $Message }
-        }
-}
-
-# --- Script Initialization ---
-# --- Version Information ---
-    [Parameter(HelpMessage = "Run in test mode with limited Key Vaults for validation")]
-    [string]$CloudUploadPath,
-    [Parameter(HelpMessage = "Client ID for Microsoft Graph app-only authentication")]
-        [string]$GraphClientId,
-        [Parameter(HelpMessage = "Tenant ID for Microsoft Graph app-only authentication")]
-        [string]$GraphTenantId,
-        [Parameter(HelpMessage = "Client Secret for Microsoft Graph app-only authentication")]
-        [string]$GraphClientSecret,
-        [Parameter(HelpMessage = "Override automatic Microsoft Graph authentication mode selection")]
-        [ValidateSet('Interactive','App','DeviceCode','Auto')]
-        [string]$GraphAuthMode,
-        [Parameter(HelpMessage = "Determines Microsoft Graph permission scopes requested")]
-        [ValidateSet('Files','Sites','Full')]
-        [string]$GraphScopeScenario = 'Files',
-        [Parameter(HelpMessage = "Run targeted diagnostics scan for a single Key Vault (prompts for vault name)")]
-        [switch]$SingleVault,
-        [Parameter(HelpMessage = "Key Vault name for single vault mode (optional - will prompt if not provided)")]
-        [string]$VaultName,
-        [Parameter(HelpMessage = "Subscription name or ID for single vault mode (optional - will prompt if not provided)")]
-        [string]$SubscriptionName
-
-    # ...existing code for script logic goes here...
-    return $true
-}
-
 # Enable strict mode for better error handling
 Set-StrictMode -Version Latest
 
@@ -2866,15 +2787,15 @@ function Invoke-PartialResults {
 function New-ComprehensiveHtmlReport {
     <#
     .SYNOPSIS
-    Generate comprehensive HTML report using external template files
+    Generate comprehensive HTML report with inline template generation
     .DESCRIPTION
-    Creates detailed HTML audit reports using KeyVaultComprehensiveAudit_Full.html or 
-    KeyVaultComprehensiveAudit_Resume.html templates with placeholder replacement.
+    Creates detailed HTML audit reports by generating HTML content inline (not from external templates).
+    All HTML is dynamically generated within the function based on audit data.
     
     Supports:
-    - Full audit results using KeyVaultComprehensiveAudit_Full.html
-    - Partial/resume results using KeyVaultComprehensiveAudit_Resume.html
-    - Complete placeholder replacement for all required fields
+    - Full audit results with complete compliance analysis
+    - Partial/resume results with progress tracking
+    - Dynamic data visualization and executive insights
     - Consistent feature-rich reporting regardless of audit mode
     #>
     [CmdletBinding()]
