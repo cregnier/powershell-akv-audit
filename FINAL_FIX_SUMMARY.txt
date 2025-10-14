@@ -1,0 +1,72 @@
+================================================================================
+HTML REPORT GENERATION ERROR - FINAL FIX SUMMARY
+================================================================================
+
+ISSUE RESOLVED
+--------------
+Error: "The term 'if' is not recognized as a name of a cmdlet, function, 
+       script file, or executable program."
+       
+This error occurred during HTML report generation in the 
+New-ComprehensiveHtmlReport function.
+
+ROOT CAUSE
+----------
+Five if-elseif-else statements inside $() subexpressions (used for HTML string
+interpolation) had incorrect formatting that prevented PowerShell from 
+recognizing them as valid expressions that return values.
+
+THE FIX
+-------
+Reformatted each if-elseif-else chain to explicitly show each branch returns
+a value by placing string expressions on separate lines:
+
+BEFORE (problematic):
+    if ($percentage -eq 0) { '<div>...</div>' }
+    elseif ($percentage -lt 50) { '<div>...</div>' }
+    else { '<div>...</div>' }
+
+AFTER (fixed):
+    if ($percentage -eq 0) { 
+        '<div>...</div>' 
+    } elseif ($percentage -lt 50) { 
+        '<div>...</div>' 
+    } else { 
+        '<div>...</div>' 
+    }
+
+LOCATIONS FIXED
+---------------
+1. Line 3800-3806: System-Assigned Identities percentage
+2. Line 3828-3834: RBAC usage percentage
+3. Line 3892-3898: Secret Access Monitoring percentage
+4. Line 3914-3920: Granular Secret Access percentage
+5. Line 3926-3932: Secret Recovery Protection percentage
+
+All five sections display color-coded compliance percentages in the HTML report.
+
+FILES CHANGED
+-------------
+- Get-AKV_Roles-SecAuditCompliance.ps1 (5 code blocks, 35 total lines modified)
+- Test-HTMLIfElseIfFix.ps1 (NEW - test script)
+- HTML_IF_ELSEIF_FIX_SUMMARY.md (NEW - comprehensive documentation)
+
+VALIDATION COMPLETED
+--------------------
+✅ PowerShell syntax validation passes
+✅ Help system works correctly  
+✅ Test script confirms fix is working
+✅ All HTML section markers present in generated output
+✅ No "The term 'if' is not recognized" errors
+✅ No other similar patterns found in codebase
+
+IMPACT
+------
+BEFORE: HTML report generation failed with syntax error
+AFTER:  HTML report generation completes successfully with color-coded stats
+
+The fix is minimal, surgical, and only affects the formatting of these five
+specific if-elseif-else statements. No functional changes were made to the
+script logic or behavior.
+
+================================================================================
