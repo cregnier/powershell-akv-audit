@@ -673,6 +673,33 @@ $global:ScriptExecutionContext = @{
 $global:dataIssuesPath = $null
 $global:errPath = $null  
 $global:permissionsPath = $null
+$SCRIPT_VERSION = "2.2"
+$userAgent = if ($env:AZURE_HTTP_USER_AGENT) { $env:AZURE_HTTP_USER_AGENT } else { "PowerShell/$($PSVersionTable.PSVersion.ToString())" }
+
+# Defensive: Always declare $diagnostics at the top to guarantee it exists in all code paths
+$diagnostics = $null
+
+# Enable strict mode for better error handling
+Set-StrictMode -Version Latest
+
+# Global variables for tracking execution context
+$global:startTime = Get-Date
+$global:RunspaceId = [System.Guid]::NewGuid().ToString()
+$global:ScriptExecutionContext = @{
+    StartTime = $global:startTime
+    RunspaceId = $global:RunspaceId
+    IsInterrupted = $false
+    EnvironmentDetection = @{}
+    AuthenticationFlow = @{}
+    InterruptionHandlers = @()
+}
+
+# Initialize critical global variables early for defensive programming
+$global:dataIssuesPath = $null
+$global:errPath = $null  
+$global:permissionsPath = $null
+$SCRIPT_VERSION = "2.2"
+$userAgent = if ($env:AZURE_HTTP_USER_AGENT) { $env:AZURE_HTTP_USER_AGENT } else { "PowerShell/$($PSVersionTable.PSVersion.ToString())" }
 
 # Standardized user message function for consistent output
 function Write-UserMessage {
@@ -982,7 +1009,7 @@ function Test-CloudShellEnvironment {
     try {
         $detectionResults = @{}
         
-        Write-Verbose "Starting Azure Cloud Shell environment detection..."
+        Write-UserMessage "Starting Azure Cloud Shell environment detection..." -Type Verbose
         
         # Enhanced Cloud Shell indicators with comprehensive tracking
         $cloudShellChecks = @{
@@ -1024,7 +1051,7 @@ function Test-CloudShellEnvironment {
         if (-not $Quiet) {
             if ($isCloudShell) {
                 Write-UserMessage -Message "Azure Cloud Shell environment detected" -Type Success
-                Write-Verbose "Cloud Shell detection successful. Matched indicators: $($matchedIndicators -join ', ')"
+                Write-UserMessage "Cloud Shell detection successful. Matched indicators: $($matchedIndicators -join ', ')" -Type Verbose
                 
                 # Show authentication flow implications
                 Write-UserMessage -Message "Authentication Flow: Interactive authentication will be used" -Type Info
@@ -1034,7 +1061,7 @@ function Test-CloudShellEnvironment {
                 }
             } else {
                 Write-UserMessage -Message "Local environment detected" -Type Info
-                Write-Verbose "Local environment detection. No Cloud Shell indicators found."
+                Write-UserMessage "Local environment detection. No Cloud Shell indicators found." -Type Verbose
                 
                 # Show authentication flow implications
                 Write-UserMessage -Message "Authentication Flow: Interactive with device code fallback" -Type Info
@@ -1050,12 +1077,12 @@ function Test-CloudShellEnvironment {
             Write-VerboseEnvironmentInfo -DetectionResults $detectionResults -DetectionType "Cloud Shell"
         }
         
-        Write-Verbose "Cloud Shell environment detection completed. Result: $isCloudShell"
+        Write-UserMessage "Cloud Shell environment detection completed. Result: $isCloudShell" -Type Verbose
         return $isCloudShell
         
     } catch {
         $errorMessage = "Environment detection failed: $($_.Exception.Message)"
-        Write-Verbose $errorMessage
+        Write-UserMessage $errorMessage -Type Verbose
         
         if (-not $Quiet) {
             Write-UserMessage -Message "Environment detection failed, assuming local environment" -Type Warning
@@ -1105,7 +1132,7 @@ function Test-ManagedIdentityEnvironment {
     try {
         $detectionResults = @{}
         
-        Write-Verbose "Starting Managed Identity environment detection..."
+        Write-UserMessage "Starting Managed Identity environment detection..." -Type Verbose
         
         # Enhanced MSI/automation environment checks with comprehensive tracking
         $msiChecks = @{
@@ -1134,7 +1161,7 @@ function Test-ManagedIdentityEnvironment {
             }
         } catch {
             $msiChecks['AZ_CONTEXT_MSI'] = $false
-            Write-Verbose "Failed to check Az.Accounts context: $($_.Exception.Message)"
+            Write-UserMessage "Failed to check Az.Accounts context: $($_.Exception.Message)" -Type Verbose
         }
         
         # Collect all environment variables for verbose logging and troubleshooting
@@ -1171,7 +1198,7 @@ function Test-ManagedIdentityEnvironment {
         if (-not $Quiet) {
             if ($hasManagedIdentity) {
                 Write-UserMessage -Message "Managed Identity/Automation environment detected" -Type Success
-                Write-Verbose "MSI detection successful. Matched indicators: $($matchedIndicators -join ', ')"
+                Write-UserMessage "MSI detection successful. Matched indicators: $($matchedIndicators -join ', ')" -Type Verbose
                 
                 # Show authentication flow implications
                 if ($hasCompleteCredentials) {
@@ -1195,12 +1222,12 @@ function Test-ManagedIdentityEnvironment {
             Write-VerboseEnvironmentInfo -DetectionResults $detectionResults -DetectionType "Managed Identity"
         }
         
-        Write-Verbose "Managed Identity environment detection completed. Result: $hasManagedIdentity"
+        Write-UserMessage "Managed Identity environment detection completed. Result: $hasManagedIdentity" -Type Verbose
         return $hasManagedIdentity
         
     } catch {
         $errorMessage = "MSI environment detection failed: $($_.Exception.Message)"
-        Write-Verbose $errorMessage
+        Write-UserMessage $errorMessage -Type Verbose
         
         if (-not $Quiet) {
             Write-UserMessage -Message "MSI environment detection failed" -Type Warning
@@ -1891,11 +1918,11 @@ function Connect-GraphWithStrategy {
                     
                     if ($hasAppCreds) {
                         Write-Host "   ⬇️ Trying app-only authentication (service principal credentials available)" -ForegroundColor Cyan
-                        return Connect-GraphWithStrategy -AuthMode 'App' -ClientId $creds.ClientId -TenantId $creds.TenantId -ClientSecret $creds.ClientSecret -Scopes $Scopes -Verbose:$Verbose
+                        return Connect-GraphWithStrategy -AuthMode 'App' -ClientId $creds.ClientId -TenantId $creds.TenantId -ClientSecret $creds.ClientSecret -Scopes $Scopes -Verbose:$verboseEnabled
                     } else {
                         Write-Host "   ⬇️ Trying device code authentication (no credentials required)" -ForegroundColor Cyan
                         Write-Host "   💡 Device code auth works in restrictive network environments" -ForegroundColor Gray
-                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$Verbose
+                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$verboseEnabled
                     }
                     $authError = $_.Exception
                     $errorMessage = "Interactive authentication failed: $($_.Exception.Message)"
@@ -1920,11 +1947,11 @@ function Connect-GraphWithStrategy {
                         # This is a simplified approach - in practice, you might need to get a Graph token using the MSI endpoint
                         Write-Host "⚠️ Managed identity Graph authentication requires manual implementation" -ForegroundColor Yellow
                         Write-Host "   💡 Falling back to device code authentication for Graph access" -ForegroundColor Gray
-                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$Verbose
+                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$verboseEnabled
                     } catch {
                         Write-Host "❌ Managed identity authentication failed: $($_.Exception.Message)" -ForegroundColor Red
                         Write-Host "🔄 Falling back to device code authentication..." -ForegroundColor Yellow
-                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$Verbose
+                        return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$verboseEnabled
                     }
                 }
                 
@@ -1937,7 +1964,7 @@ function Connect-GraphWithStrategy {
                         Write-Host "      - Environment variables: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET" -ForegroundColor Gray
                     }
                     Write-Host "🔄 Falling back to device code authentication..." -ForegroundColor Yellow
-                    return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$Verbose
+                    return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$verboseEnabled
                 }
                 
                 Write-Host "🤖 Attempting app-only authentication..." -ForegroundColor Yellow
@@ -1967,7 +1994,7 @@ function Connect-GraphWithStrategy {
                         Write-Host "   💡 Verify the service principal has necessary Graph API permissions" -ForegroundColor Gray
                     }
                     Write-Host "🔄 Falling back to device code authentication..." -ForegroundColor Yellow
-                    return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$Verbose
+                    return Connect-GraphWithStrategy -AuthMode 'DeviceCode' -Scopes $Scopes -Verbose:$verboseEnabled
                     $errorMessage = "App-only authentication requires ClientId, TenantId, and ClientSecret"
                     Write-Host "❌ $errorMessage" -ForegroundColor Red
                     Write-GraphAuthErrorLog -AuthMethod "App" -Message $errorMessage -EnvironmentContext $authContext.EnvironmentVariables -AuthenticationContext $authContext.ProvidedCredentials
@@ -2564,7 +2591,7 @@ function Get-ScriptExecutionEnvironment {
             }
         }
     } catch {
-        Write-Verbose "Environment detection failed: $($_.Exception.Message)"
+        Write-UserMessage "Environment detection failed: $($_.Exception.Message)" -Type Verbose
         # Default to local environment with user consent required
         return @{
             Environment = "Unknown"
@@ -2638,7 +2665,7 @@ function Write-CancellationDebugLog {
         $logMessage | Out-File -FilePath $global:dataIssuesPath -Append -Encoding UTF8 -ErrorAction SilentlyContinue
     }
     
-    Write-Verbose "🛑 Debug: $Operation - $Message$triggerInfo$contextInfo" -Verbose
+    Write-UserMessage "Debug: $Operation - $Message$triggerInfo$contextInfo" -Type Verbose
 }
 
 # --- Cancellation Recovery Functions ---
@@ -2812,18 +2839,22 @@ function Invoke-PartialResults {
             # Calculate executive summary for partial results
             $partialExecutiveSummary = @{
                 TotalKeyVaults = if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A') { $global:auditResults.Count } else { 0 }
-                CompliantVaults = if ($global:auditResults) { ($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 }).Count } else { 0 }
+                CompliantVaults = if ($global:auditResults) { (@($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 })).Count } else { 0 }
                 CompliancePercentage = if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A' -and $global:auditResults.Count -gt 0) { 
-                    [math]::Round((($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 }).Count / $global:auditResults.Count) * 100, 1) 
+                    [math]::Round(((@($global:auditResults | Where-Object { $_.ComplianceScore -ge 90 })).Count / $global:auditResults.Count) * 100, 1) 
                 } else { 0 }
                 AverageComplianceScore = if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A' -and $global:auditResults.Count -gt 0) { 
-                    [math]::Round(($global:auditResults | Measure-Object -Property ComplianceScore -Average).Average, 1) 
+                    $complianceMeasure = $global:auditResults | Measure-Object -Property ComplianceScore -Average
+                    [math]::Round((Get-SafeProperty -Object $complianceMeasure -PropertyName 'Average' -DefaultValue 0), 1) 
                 } else { 0 }
                 CompanyAverageScore = if ($global:auditResults -and (Get-SafeProperty -Object $global:auditResults -PropertyName 'Count') -ne 'N/A' -and $global:auditResults.Count -gt 0) { 
-                    $companyScores = $global:auditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'CompanyComplianceScore') -ne 'N/A' } | ForEach-Object { try { [int]($_.CompanyComplianceScore -replace '%', '') } catch { 0 } }
-                    if ($companyScores.Count -gt 0) { [math]::Round(($companyScores | Measure-Object -Average).Average, 1) } else { 0 }
+                    $companyScores = @($global:auditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'CompanyComplianceScore') -ne 'N/A' } | ForEach-Object { try { [int]($_.CompanyComplianceScore -replace '%', '') } catch { 0 } })
+                    if ($companyScores.Count -gt 0) { 
+                        $companyMeasure = $companyScores | Measure-Object -Average
+                        [math]::Round((Get-SafeProperty -Object $companyMeasure -PropertyName 'Average' -DefaultValue 0), 1) 
+                    } else { 0 }
                 } else { 0 }
-                HighRiskVaults = if ($global:auditResults) { ($global:auditResults | Where-Object { $_.ComplianceScore -lt 60 }).Count } else { 0 }
+                HighRiskVaults = if ($global:auditResults) { (@($global:auditResults | Where-Object { $_.ComplianceScore -lt 60 })).Count } else { 0 }
             }
             
             # Use the comprehensive HTML generation function
@@ -2953,7 +2984,7 @@ function New-ComprehensiveHtmlReport {
         if ($null -eq $ExecutiveSummary) { $ExecutiveSummary = @{} }
         if ($null -eq $AuditStats) { $AuditStats = @{} }
         Write-UserMessage -Message "Generating comprehensive HTML audit report..." -Type Progress
-        Write-Verbose "HTML report generation started. IsPartial: $IsPartialResults, Source: $PartialDataSource"
+        Write-UserMessage "HTML report generation started. IsPartial: $IsPartialResults, Source: $PartialDataSource" -Type Verbose
         
         # Defensive check for AuditResults - ensure it's a proper array
         if (-not $AuditResults) {
@@ -2975,7 +3006,7 @@ function New-ComprehensiveHtmlReport {
             }
         } | Where-Object { $null -ne $_ })
         
-        Write-Verbose "Processed AuditResults: Count = $($AuditResults.Count)"
+        Write-UserMessage "Processed AuditResults: Count = $(if ($AuditResults) { $AuditResults.Count } else { 0 })" -Type Verbose
         
         # Convert AuditStats to hashtable if needed
         if ($AuditStats -and $AuditStats -isnot [hashtable]) {
@@ -2986,7 +3017,7 @@ function New-ComprehensiveHtmlReport {
                         $convertedStats[$prop.Name] = $prop.Value
                     }
                     $AuditStats = $convertedStats
-                    Write-Verbose "Converted AuditStats from PSCustomObject to Hashtable"
+                    Write-UserMessage "Converted AuditStats from PSCustomObject to Hashtable" -Type Verbose
                 } else {
                     Write-UserMessage -Message "AuditStats parameter is not Hashtable or PSCustomObject, using empty hashtable" -Type Warning
                     $AuditStats = @{}
@@ -3010,7 +3041,7 @@ function New-ComprehensiveHtmlReport {
             ReportType = if ($IsPartialResults) { "Partial Results" } else { "Complete Audit" }
         }
         
-        Write-Verbose "Report context: $($reportContext | ConvertTo-Json -Compress)"
+        Write-UserMessage "Report context: $($reportContext | ConvertTo-Json -Compress)" -Type Verbose
         
         # Use main HTML generation logic but adapt for partial results
         $testModeAnimation = ""
@@ -3020,21 +3051,21 @@ function New-ComprehensiveHtmlReport {
         
         # Calculate statistics with enhanced handling for partial results
         try {
-            Write-Verbose "Calculating report statistics..."
+            Write-UserMessage "Calculating report statistics..." -Type Verbose
             $totalVaults = if ($IsPartialResults -and $CheckpointData -and $CheckpointData.TotalVaults) { 
                 $CheckpointData.TotalVaults 
-            } elseif ($IsPartialResults -and $ExecutiveSummary.TotalDiscoveredVaults) {
+            } elseif ($IsPartialResults -and $ExecutiveSummary -and $ExecutiveSummary.TotalDiscoveredVaults) {
                 $ExecutiveSummary.TotalDiscoveredVaults
             } else { 
-                if ($AuditResults -and ($AuditResults.Count -or $AuditResults.Length)) { $AuditResults.Count } else { 0 }
+                if ($AuditResults -and ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -or (Get-SafeProperty -Object $AuditResults -PropertyName 'Length'))) { (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) } else { 0 }
             }
-            $processedVaults = if ($AuditResults -and ($AuditResults.Count -or $AuditResults.Length)) { $AuditResults.Count } else { 0 }
+            $processedVaults = if ($AuditResults -and ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -or (Get-SafeProperty -Object $AuditResults -PropertyName 'Length'))) { (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) } else { 0 }
             $completionPercentage = if ($totalVaults -gt 0) { 
                 [math]::Round(($processedVaults / $totalVaults) * 100, 1) 
             } else { 100 }
             $remainingVaults = $totalVaults - $processedVaults
-            Write-Verbose "Statistics calculated - Processed: $processedVaults, Total: $totalVaults, Completion: $completionPercentage%"
-            Write-Verbose "Report statistics: Processed=$processedVaults, Total=$totalVaults, Completion=$completionPercentage%"
+            Write-UserMessage "Statistics calculated - Processed: $processedVaults, Total: $totalVaults, Completion: $completionPercentage%" -Type Verbose
+            Write-UserMessage "Report statistics: Processed=$processedVaults, Total=$totalVaults, Completion=$completionPercentage%" -Type Verbose
         } catch {
             Write-Host "❌ Error calculating report statistics: $_" -ForegroundColor Red
         }
@@ -3093,7 +3124,7 @@ function New-ComprehensiveHtmlReport {
         
         # Start building HTML content
         # Generate HTML content with defensive programming for Count properties
-        Write-Verbose "About to generate HTML content"
+        Write-UserMessage "About to generate HTML content" -Type Verbose
         
         $htmlContent = @"
 <!DOCTYPE html>
@@ -3461,45 +3492,70 @@ function toggleCollapsible(elementId) {
         }
         
         # Continue with executive summary and main content
+        # Ensure ExecutiveSummary exists and has all required properties before generating HTML
+        if (-not $ExecutiveSummary) {
+            $ExecutiveSummary = @{}
+        }
+        
+        # Ensure all required properties exist with default values
+        if (-not (Get-Member -InputObject $ExecutiveSummary -Name 'TotalKeyVaults' -MemberType Properties)) {
+            $ExecutiveSummary.TotalKeyVaults = 0
+        }
+        if (-not (Get-Member -InputObject $ExecutiveSummary -Name 'CompliantVaults' -MemberType Properties)) {
+            $ExecutiveSummary.CompliantVaults = 0
+        }
+        if (-not (Get-Member -InputObject $ExecutiveSummary -Name 'CompliancePercentage' -MemberType Properties)) {
+            $ExecutiveSummary.CompliancePercentage = 0
+        }
+        if (-not (Get-Member -InputObject $ExecutiveSummary -Name 'AverageComplianceScore' -MemberType Properties)) {
+            $ExecutiveSummary.AverageComplianceScore = 0
+        }
+        if (-not (Get-Member -InputObject $ExecutiveSummary -Name 'CompanyAverageScore' -MemberType Properties)) {
+            $ExecutiveSummary.CompanyAverageScore = 0
+        }
+        if (-not (Get-Member -InputObject $ExecutiveSummary -Name 'HighRiskVaults' -MemberType Properties)) {
+            $ExecutiveSummary.HighRiskVaults = 0
+        }
+        
         $htmlContent += @"
     
     <div class="summary">
         <h2>🎯 Executive Summary</h2>
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-number">$($ExecutiveSummary.TotalKeyVaults)</div>
+                <div class="stat-number">$(Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 0)</div>
                 <div class="stat-label">Key Vaults $(if ($IsPartialResults) { "Analyzed" } else { "Discovered" })</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: 100%; background: #667eea; animation: progressAnimation 1.5s ease-out;"></div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">$($ExecutiveSummary.CompliantVaults)</div>
+                <div class="stat-number">$(Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'CompliantVaults' -DefaultValue 0)</div>
                 <div class="stat-label">Fully Compliant</div>
-                <div class="stat-percentage $(if ($ExecutiveSummary.CompliancePercentage -ge 90) { 'compliant' } elseif ($ExecutiveSummary.CompliancePercentage -ge 60) { 'partially-compliant' } else { 'non-compliant' })">$($ExecutiveSummary.CompliancePercentage)%</div>
+                <div class="stat-percentage $(if ((Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'CompliancePercentage' -DefaultValue 0) -ge 90) { 'compliant' } elseif ((Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'CompliancePercentage' -DefaultValue 0) -ge 60) { 'partially-compliant' } else { 'non-compliant' })">$(Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'CompliancePercentage' -DefaultValue 0)%</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: $($ExecutiveSummary.CompliancePercentage)%; background: $(if ($ExecutiveSummary.CompliancePercentage -ge 90) { '#28a745' } elseif ($ExecutiveSummary.CompliancePercentage -ge 60) { '#ffc107' } else { '#dc3545' }); animation: progressAnimation 2s ease-out;"></div>
+                    <div class="progress-fill" style="width: $(Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'CompliancePercentage' -DefaultValue 0)%; background: $(if ((Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'CompliancePercentage' -DefaultValue 0) -ge 90) { '#28a745' } elseif ((Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'CompliancePercentage' -DefaultValue 0) -ge 60) { '#ffc107' } else { '#dc3545' }); animation: progressAnimation 2s ease-out;"></div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">$($ExecutiveSummary.AverageComplianceScore)</div>
+                <div class="stat-number">$(Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'AverageComplianceScore' -DefaultValue 0)</div>
                 <div class="stat-label">Average Score</div>
                 <div class="stat-percentage">Microsoft Framework</div>
                 <div class="dual-framework">
                     <div class="framework-score microsoft-framework">
-                        <strong>MS:</strong> $($ExecutiveSummary.AverageComplianceScore)%
+                        <strong>MS:</strong> $(Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'AverageComplianceScore' -DefaultValue 0)%
                     </div>
                     <div class="framework-score company-framework">
-                        <strong>Company:</strong> $($ExecutiveSummary.CompanyAverageScore)%
+                        <strong>Company:</strong> $(Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'CompanyAverageScore' -DefaultValue 0)%
                     </div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">$($ExecutiveSummary.HighRiskVaults)</div>
+                <div class="stat-number">$(Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'HighRiskVaults' -DefaultValue 0)</div>
                 <div class="stat-label">High Risk Vaults</div>
-                <div class="stat-percentage $(if ($ExecutiveSummary.HighRiskVaults -eq 0) { 'compliant' } else { 'non-compliant' })">Require Attention</div>
+                <div class="stat-percentage $(if ((Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'HighRiskVaults' -DefaultValue 0) -eq 0) { 'compliant' } else { 'non-compliant' })">Require Attention</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: $(if ($ExecutiveSummary.TotalKeyVaults -gt 0) { [math]::Round(($ExecutiveSummary.HighRiskVaults / $ExecutiveSummary.TotalKeyVaults) * 100, 1) } else { 0 })%; background: #dc3545; animation: progressAnimation 2.5s ease-out;"></div>
+                    <div class="progress-fill" style="width: $(if ((Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 0) -gt 0) { [math]::Round(((Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'HighRiskVaults' -DefaultValue 0) / (Get-SafeProperty -Object $ExecutiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1)) * 100, 1) } else { 0 })%; background: #dc3545; animation: progressAnimation 2.5s ease-out;"></div>
                 </div>
             </div>
         </div>
@@ -3563,7 +3619,7 @@ function toggleCollapsible(elementId) {
 
         # Add vault data rows
         $rowIndex = 0
-        $totalRecords = if ($AuditResults -and ($AuditResults.Count -or $AuditResults.Length)) { $AuditResults.Count } else { 0 }
+        $totalRecords = if ($AuditResults -and ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -or (Get-SafeProperty -Object $AuditResults -PropertyName 'Length'))) { (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) } else { 0 }
         foreach ($result in $AuditResults) {
             $rowIndex++
             
@@ -3572,21 +3628,22 @@ function toggleCollapsible(elementId) {
             Write-Progress -Activity "Generating HTML Report" -Status "Processing vault $rowIndex of $totalRecords" -PercentComplete $percentComplete
             
             # Determine compliance status class
-            $complianceClass = if ($result.ComplianceScore -ge 90) { "compliant" } 
-                              elseif ($result.ComplianceScore -ge 60) { "partially-compliant" } 
+            $complianceScore = Get-SafeProperty -Object $result -PropertyName 'ComplianceScore' -DefaultValue 0
+            $complianceClass = if ($complianceScore -ge 90) { "compliant" } 
+                              elseif ($complianceScore -ge 60) { "partially-compliant" } 
                               else { "non-compliant" }
             
-            $scoreColor = if ($result.ComplianceScore -ge 90) { "#28a745" } 
-                          elseif ($result.ComplianceScore -ge 60) { "#ffc107" } 
+            $scoreColor = if ($complianceScore -ge 90) { "#28a745" } 
+                          elseif ($complianceScore -ge 60) { "#ffc107" } 
                           else { "#dc3545" }
             
             $htmlContent += "<tr>"
-            $htmlContent += "<td title='$($result.SubscriptionId)'>$($result.SubscriptionName)</td>"
-            $htmlContent += "<td><strong>$($result.KeyVaultName)</strong></td>"
-            $htmlContent += "<td>$($result.Location)</td>"
-            $htmlContent += "<td>$($result.ResourceGroupName)</td>"
-            $htmlContent += "<td><span class='$complianceClass'>$($result.ComplianceStatus)</span></td>"
-            $htmlContent += "<td><span style='color: $scoreColor; font-weight: bold;'>$($result.ComplianceScore)%</span></td>"
+            $htmlContent += "<td title='$(Get-SafeProperty -Object $result -PropertyName 'SubscriptionId' -DefaultValue 'N/A')'>$(Get-SafeProperty -Object $result -PropertyName 'SubscriptionName' -DefaultValue 'N/A')</td>"
+            $htmlContent += "<td><strong>$(Get-SafeProperty -Object $result -PropertyName 'KeyVaultName' -DefaultValue 'N/A')</strong></td>"
+            $htmlContent += "<td>$(Get-SafeProperty -Object $result -PropertyName 'Location' -DefaultValue 'N/A')</td>"
+            $htmlContent += "<td>$(Get-SafeProperty -Object $result -PropertyName 'ResourceGroupName' -DefaultValue 'N/A')</td>"
+            $htmlContent += "<td><span class='$complianceClass'>$(Get-SafeProperty -Object $result -PropertyName 'ComplianceStatus' -DefaultValue 'Unknown')</span></td>"
+            $htmlContent += "<td><span style='color: $scoreColor; font-weight: bold;'>$($complianceScore)%</span></td>"
             
             # Add Company compliance score with appropriate color coding
             $companyScore = Get-SafeProperty -Object $result -PropertyName 'CompanyComplianceScore' -DefaultValue 0
@@ -3638,7 +3695,7 @@ function toggleCollapsible(elementId) {
             }
             
             $htmlContent += "</ul>"
-            if ($result.ComplianceScore -lt 90) {
+            if ($complianceScore -lt 90) {
                 $htmlContent += "<p><strong>Impact:</strong> Implementing these recommendations will improve security posture and compliance score.</p>"
             }
             $htmlContent += "</div>"
@@ -3675,7 +3732,7 @@ function toggleCollapsible(elementId) {
             <div class="stat-card">
                 <div class="stat-number">$(if ($AuditResults) { 
                     $servicePrincipalSum = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'ServicePrincipalCount') -ne 'N/A' } | Measure-Object -Property ServicePrincipalCount -Sum -ErrorAction SilentlyContinue
-                    if ($servicePrincipalSum -and (Get-SafeProperty -Object $servicePrincipalSum -PropertyName 'Sum') -ne 'N/A') { $servicePrincipalSum.Sum } else { "N/A" }
+                    if ($servicePrincipalSum -and (Get-SafeProperty -Object $servicePrincipalSum -PropertyName 'Sum') -ne 'N/A') { Get-SafeProperty -Object $servicePrincipalSum -PropertyName 'Sum' -DefaultValue 'N/A' } else { "N/A" }
                 } else { "N/A" })</div>
                 <div class="stat-label">Total Service Principals</div>
                 $(if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' })
@@ -3683,7 +3740,7 @@ function toggleCollapsible(elementId) {
             <div class="stat-card">
                 <div class="stat-number">$(if ($AuditResults) { 
                     $managedIdentitySum = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'ManagedIdentityCount') -ne 'N/A' } | Measure-Object -Property ManagedIdentityCount -Sum -ErrorAction SilentlyContinue
-                    if ($managedIdentitySum -and (Get-SafeProperty -Object $managedIdentitySum -PropertyName 'Sum') -ne 'N/A') { $managedIdentitySum.Sum } else { "N/A" }
+                    if ($managedIdentitySum -and (Get-SafeProperty -Object $managedIdentitySum -PropertyName 'Sum') -ne 'N/A') { Get-SafeProperty -Object $managedIdentitySum -PropertyName 'Sum' -DefaultValue 'N/A' } else { "N/A" }
                 } else { "N/A" })</div>
                 <div class="stat-label">Total Managed Identities</div>
                 $(if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' })
@@ -3694,10 +3751,10 @@ function toggleCollapsible(elementId) {
                     if ($systemAssignedResults) { $systemAssignedResults.Count } else { 0 }
                 } else { "N/A" })</div>
                 <div class="stat-label">System-Assigned Identities</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and $AuditResults.Count -gt 0) { 
+                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
                     $systemAssignedResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SystemAssignedIdentity') -eq "Yes" }
                     $sysAssignedCount = if ($systemAssignedResults) { $systemAssignedResults.Count } else { 0 }
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { $AuditResults.Count } else { 1 }
+                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($sysAssignedCount / $auditCount) * 100, 1)
                     if ($percentage -eq 0) { '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' }
                     elseif ($percentage -lt 50) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
@@ -3707,7 +3764,7 @@ function toggleCollapsible(elementId) {
             <div class="stat-card">
                 <div class="stat-number">$(if ($AuditResults) { 
                     $userAssignedSum = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'UserAssignedIdentityCount') -ne 'N/A' } | Measure-Object -Property UserAssignedIdentityCount -Sum -ErrorAction SilentlyContinue
-                    if ($userAssignedSum -and (Get-SafeProperty -Object $userAssignedSum -PropertyName 'Sum') -ne 'N/A') { $userAssignedSum.Sum } else { "N/A" }
+                    if ($userAssignedSum -and (Get-SafeProperty -Object $userAssignedSum -PropertyName 'Sum') -ne 'N/A') { Get-SafeProperty -Object $userAssignedSum -PropertyName 'Sum' -DefaultValue 'N/A' } else { "N/A" }
                 } else { "N/A" })</div>
                 <div class="stat-label">User-Assigned Identities</div>
                 $(if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' })
@@ -3718,10 +3775,10 @@ function toggleCollapsible(elementId) {
                     if ($rbacResults) { $rbacResults.Count } else { 0 }
                 } else { "N/A" })</div>
                 <div class="stat-label">Using RBAC</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and $AuditResults.Count -gt 0) { 
+                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
                     $rbacResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -ne 'N/A' -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0') -gt 0) }
                     $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { $AuditResults.Count } else { 1 }
+                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
                     if ($percentage -ge 90) { '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' }
                     elseif ($percentage -ge 60) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
@@ -3733,18 +3790,18 @@ function toggleCollapsible(elementId) {
         <h4>Key Identity Recommendations:</h4>
         <ul>
             <li><strong>Migrate to Managed Identities:</strong> Replace service principals with managed identities where possible for enhanced security</li>
-            <li><strong>Implement RBAC:</strong> Move from legacy access policies to Azure RBAC for fine-grained access control$(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and $AuditResults.Count -gt 0) { 
+            <li><strong>Implement RBAC:</strong> Move from legacy access policies to Azure RBAC for fine-grained access control$(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
                 $rbacResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount') -ne 'N/A' -and ([int](Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0') -gt 0) }
                 $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { $AuditResults.Count } else { 1 }
+                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                 $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
                 " ($percentage% currently using RBAC)"
             })</li>
             <li><strong>Apply Least Privilege:</strong> Review and reduce over-privileged role assignments</li>
-            <li><strong>Enable System-Assigned Identities:</strong> Configure system-assigned managed identities on Key Vault resources$(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and $AuditResults.Count -gt 0) { 
+            <li><strong>Enable System-Assigned Identities:</strong> Configure system-assigned managed identities on Key Vault resources$(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A' -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
                 $systemAssignedResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SystemAssignedIdentity') -eq "Yes" }
                 $sysAssignedCount = if ($systemAssignedResults) { $systemAssignedResults.Count } else { 0 }
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { $AuditResults.Count } else { 0 }
+                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0 } else { 0 }
                 " ($sysAssignedCount of $auditCount vaults have system-assigned identities)"
             })</li>
         </ul>
@@ -3769,23 +3826,23 @@ function toggleCollapsible(elementId) {
                     if ($secretResults) { $secretResults.Count } else { 0 }
                 } else { "N/A" })</div>
                 <div class="stat-label">Vaults Storing Secrets</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
+                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
                     $secretResults = $AuditResults | Where-Object { 
                         $secretCount = Get-SafeProperty -Object $_ -PropertyName 'SecretCount' -DefaultValue '0'
                         try { [int]$secretCount -gt 0 } catch { $false }
                     }
                     $secretVaultCount = if ($secretResults) { $secretResults.Count } else { 0 }
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($secretVaultCount / $auditCount) * 100, 1)
                     '<div class="stat-percentage" style="color: #667eea;">' + $percentage + '%</div>'
                 } else { if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' } else { '<div class="stat-percentage" style="color: #667eea;">N/A</div>' } })
             </div>
             <div class="stat-card">
-                <div class="stat-number">$(if ($AuditResults) { ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -and ((Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq "Yes" -or (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq $true) }).Count } else { "N/A" })</div>
+                <div class="stat-number">$(if ($AuditResults) { @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -and ((Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq "Yes" -or (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq $true) }).Count } else { "N/A" })</div>
                 <div class="stat-label">Secret Access Monitoring</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                    $monitoringCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -and ((Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq "Yes" -or (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq $true) }).Count
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                    $monitoringCount = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -and ((Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq "Yes" -or (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq $true) }).Count
+                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($monitoringCount / $auditCount) * 100, 1)
                     if ($percentage -eq 0) { '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' }
                     elseif ($percentage -lt 50) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
@@ -3801,13 +3858,13 @@ function toggleCollapsible(elementId) {
                     if ($rbacResults) { $rbacResults.Count } else { 0 }
                 } else { "N/A" })</div>
                 <div class="stat-label">Granular Secret Access</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
+                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
                     $rbacResults = $AuditResults | Where-Object { 
                         $rbacCount = Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0'
                         try { [int]$rbacCount -gt 0 } catch { $false }
                     }
                     $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
                     if ($percentage -ge 90) { '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' }
                     elseif ($percentage -ge 60) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
@@ -3815,11 +3872,11 @@ function toggleCollapsible(elementId) {
                 } else { if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' } else { '<div class="stat-percentage" style="color: #dc3545">0%</div>' } })
             </div>
             <div class="stat-card">
-                <div class="stat-number">$(if ($AuditResults) { ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }).Count } else { "N/A" })</div>
+                <div class="stat-number">$(if ($AuditResults) { @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }).Count } else { "N/A" })</div>
                 <div class="stat-label">Secret Recovery Protection</div>
-                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                    $softDeleteCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }).Count
-                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                    $softDeleteCount = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }).Count
+                    $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($softDeleteCount / $auditCount) * 100, 1)
                     if ($percentage -eq 0) { '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' }
                     elseif ($percentage -lt 50) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
@@ -3840,34 +3897,34 @@ function toggleCollapsible(elementId) {
         
         <h4>📊 Compliance & Security Insights:</h4>
         <ul>
-            <li><strong>Audit Trail:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $diagnosticsCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -and ((Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq "Yes" -or (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq $true) }).Count
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+            <li><strong>Audit Trail:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $diagnosticsCount = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -and ((Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq "Yes" -or (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq $true) }).Count
+                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                 $percentage = [math]::Round(($diagnosticsCount / $auditCount) * 100, 1)
                 "$percentage% of vaults have diagnostic logging enabled"
             } else { "Diagnostic logging status unknown for partial data" }), providing visibility into secret access patterns and potential security incidents.</li>
-            <li><strong>Network Isolation:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $privateEndpointCount = ($AuditResults | Where-Object { 
+            <li><strong>Network Isolation:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $privateEndpointCount = @($AuditResults | Where-Object { 
                     $peCount = Get-SafeProperty -Object $_ -PropertyName 'PrivateEndpointCount' -DefaultValue '0'
                     try { [int]$peCount -gt 0 } catch { $false }
                 }).Count
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                 $percentage = [math]::Round(($privateEndpointCount / $auditCount) * 100, 1)
                 "$percentage% of vaults use private endpoints"
             } else { "Private endpoint usage unknown for partial data" }), protecting secrets from unauthorized network access.</li>
-            <li><strong>Identity-Based Access:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
+            <li><strong>Identity-Based Access:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
                 $rbacResults = $AuditResults | Where-Object { 
                     $rbacCount = Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0'
                     try { [int]$rbacCount -gt 0 } catch { $false }
                 }
-                $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                $rbacCount = if ($rbacResults) { @($rbacResults).Count } else { 0 }
+                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                 $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
                 "$percentage% of vaults use RBAC"
             } else { "RBAC usage unknown for partial data" }) for granular secret permissions instead of legacy access policies.</li>
-            <li><strong>Secret Recovery:</strong> Soft delete is enabled on $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $softDeleteCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }).Count
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+            <li><strong>Secret Recovery:</strong> Soft delete is enabled on $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $softDeleteCount = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }).Count
+                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                 $percentage = [math]::Round(($softDeleteCount / $auditCount) * 100, 1)
                 "$percentage% of vaults"
             } else { "unknown percentage for partial data" }), enabling secret recovery in case of accidental deletion.</li>
@@ -3893,14 +3950,14 @@ function toggleCollapsible(elementId) {
         
         <h4>Network Security:</h4>
         <ul>
-            <li><strong>Private Endpoints:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $privateEndpointCount = ($AuditResults | Where-Object { 
+            <li><strong>Private Endpoints:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $privateEndpointCount = (@($AuditResults | Where-Object { 
                     $peCount = Get-SafeProperty -Object $_ -PropertyName 'PrivateEndpointCount' -DefaultValue '0'
                     try { [int]$peCount -gt 0 } catch { $false }
-                }).Count
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+                })).Count
+                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                 "$privateEndpointCount of $auditCount vaults"
-                $percentage = [math]::Round(($privateEndpointCount / $AuditResults.Count) * 100, 1)
+                $percentage = [math]::Round(($privateEndpointCount / $auditCount) * 100, 1)
                 " ($percentage%)"
             } else { "Status unknown for partial data" }) have private endpoints configured</li>
             <li><strong>Network ACLs:</strong> Implement network access control lists to restrict access</li>
@@ -3909,22 +3966,22 @@ function toggleCollapsible(elementId) {
         
         <h4>Monitoring & Compliance:</h4>
         <ul>
-            <li><strong>Event Hub Integration:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $eventHubCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'EventHubEnabled') -eq "Yes" }).Count
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+            <li><strong>Event Hub Integration:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $eventHubCount = (@($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'EventHubEnabled') -eq "Yes" })).Count
+                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                 $percentage = [math]::Round(($eventHubCount / $auditCount) * 100, 1)
                 "$eventHubCount of $auditCount vaults ($percentage%)"
             } else { "Status unknown for partial data" }) have Event Hub enabled for real-time monitoring</li>
-            <li><strong>Log Analytics Integration:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and $AuditResults.Count -gt 0) { 
-                $logAnalyticsCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'LogAnalyticsEnabled') -eq "Yes" }).Count
-                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { $AuditResults.Count } else { 1 }
+            <li><strong>Log Analytics Integration:</strong> $(if ($AuditResults -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -and (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $logAnalyticsCount = (@($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'LogAnalyticsEnabled') -eq "Yes" })).Count
+                $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                 $percentage = [math]::Round(($logAnalyticsCount / $auditCount) * 100, 1)
                 "$logAnalyticsCount of $auditCount vaults ($percentage%)"
             } else { "Status unknown for partial data" }) have Log Analytics enabled for centralized query and alerting</li>
-            <li><strong>Storage Account Logging:</strong> $(if ($AuditResults.Count -gt 0) { 
-                $storageCount = ($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'StorageAccountEnabled') -eq "Yes" }).Count
-                $percentage = [math]::Round(($storageCount / $AuditResults.Count) * 100, 1)
-                "$storageCount of $($AuditResults.Count) vaults ($percentage%)"
+            <li><strong>Storage Account Logging:</strong> $(if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $storageCount = (@($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'StorageAccountEnabled') -eq "Yes" })).Count
+                $percentage = [math]::Round(($storageCount / (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1)) * 100, 1)
+                "$storageCount of $((Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0)) vaults ($percentage%)"
             } else { "Status unknown for partial data" }) have storage account logging configured</li>
             <li><strong>Azure Sentinel Integration:</strong> Connect Key Vault logs to Azure Sentinel for advanced threat detection</li>
             <li><strong>Azure Policy:</strong> Implement automated compliance enforcement</li>
@@ -3980,46 +4037,46 @@ function toggleCollapsible(elementId) {
         
         <h4>📊 Audit Statistics:</h4>
         <ul>
-            $(if ($AuditStats -and $AuditStats.SubscriptionCount) { "<li>Subscriptions analyzed: $($AuditStats.SubscriptionCount)</li>" } else { "<li>Subscriptions analyzed: $(if ($IsPartialResults) { 'N/A (partial data)' } else { 'N/A' })</li>" })
-            <li>Key Vaults $(if ($IsPartialResults) { "processed" } else { "discovered" }): $($AuditResults.Count)$(if ($IsPartialResults -and $CheckpointData -and $CheckpointData.TotalVaults) { " of $($CheckpointData.TotalVaults) total discovered" })</li>
-            <li>Compliance rate: $(if ($AuditResults.Count -gt 0) { 
-                $compliantCount = ($AuditResults | Where-Object { $_.ComplianceScore -ge 90 }).Count
-                $percentage = [math]::Round(($compliantCount / $AuditResults.Count) * 100, 1)
+            $(if ((Get-SafeProperty -Object $AuditStats -PropertyName 'SubscriptionCount' -DefaultValue $null)) { "<li>Subscriptions analyzed: $((Get-SafeProperty -Object $AuditStats -PropertyName 'SubscriptionCount' -DefaultValue 'N/A'))</li>" } else { "<li>Subscriptions analyzed: $(if ($IsPartialResults) { 'N/A (partial data)' } else { 'N/A' })</li>" })
+            <li>Key Vaults $(if ($IsPartialResults) { "processed" } else { "discovered" }): $((Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0))$(if ($IsPartialResults -and $CheckpointData -and $CheckpointData.TotalVaults) { " of $($CheckpointData.TotalVaults) total discovered" })</li>
+            <li>Compliance rate: $(if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $compliantCount = (@($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'ComplianceScore' -DefaultValue 0) -ge 90 })).Count
+                $percentage = [math]::Round(($compliantCount / (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1)) * 100, 1)
                 "$percentage% ($compliantCount fully compliant)"
             } else { "N/A" })</li>
-            <li>RBAC adoption: $(if ($AuditResults.Count -gt 0) { 
+            <li>RBAC adoption: $(if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
                 $rbacResults = $AuditResults | Where-Object { 
                     $rbacCount = Get-SafeProperty -Object $_ -PropertyName 'RBACAssignmentCount' -DefaultValue '0'
                     try { [int]$rbacCount -gt 0 } catch { $false }
                 }
                 $rbacCount = if ($rbacResults) { $rbacResults.Count } else { 0 }
-                $percentage = [math]::Round(($rbacCount / $AuditResults.Count) * 100, 1)
+                $percentage = [math]::Round(($rbacCount / (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1)) * 100, 1)
                 "$percentage% ($rbacCount vaults using RBAC)"
             } else { "N/A" })</li>
-            <li>Event Hub integration: $(if ($AuditResults.Count -gt 0) { 
-                $eventHubCount = ($AuditResults | Where-Object { $_.EventHubEnabled -eq "Yes" }).Count
-                $percentage = [math]::Round(($eventHubCount / $AuditResults.Count) * 100, 1)
+            <li>Event Hub integration: $(if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $eventHubCount = (@($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'EventHubEnabled') -eq "Yes" })).Count
+                $percentage = [math]::Round(($eventHubCount / (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1)) * 100, 1)
                 "$percentage% ($eventHubCount vaults configured)"
             } else { "N/A" })</li>
-            <li>Log Analytics integration: $(if ($AuditResults.Count -gt 0) { 
-                $logAnalyticsCount = ($AuditResults | Where-Object { $_.LogAnalyticsEnabled -eq "Yes" }).Count
-                $percentage = [math]::Round(($logAnalyticsCount / $AuditResults.Count) * 100, 1)
+            <li>Log Analytics integration: $(if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $logAnalyticsCount = (@($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'LogAnalyticsEnabled') -eq "Yes" })).Count
+                $percentage = [math]::Round(($logAnalyticsCount / (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1)) * 100, 1)
                 "$percentage% ($logAnalyticsCount vaults configured)"
             } else { "N/A" })</li>
-            <li>Storage Account logging: $(if ($AuditResults.Count -gt 0) { 
-                $storageCount = ($AuditResults | Where-Object { $_.StorageAccountEnabled -eq "Yes" }).Count
-                $percentage = [math]::Round(($storageCount / $AuditResults.Count) * 100, 1)
+            <li>Storage Account logging: $(if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $storageCount = (@($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'StorageAccountEnabled') -eq "Yes" })).Count
+                $percentage = [math]::Round(($storageCount / (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1)) * 100, 1)
                 "$percentage% ($storageCount vaults configured)"
             } else { "N/A" })</li>
-            <li>Private endpoint adoption: $(if ($AuditResults.Count -gt 0) { 
-                $privateEndpointCount = ($AuditResults | Where-Object { 
-                    try { [int]$_.PrivateEndpointCount -gt 0 } catch { $false }
-                }).Count
-                $percentage = [math]::Round(($privateEndpointCount / $AuditResults.Count) * 100, 1)
+            <li>Private endpoint adoption: $(if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
+                $privateEndpointCount = (@($AuditResults | Where-Object { 
+                    try { [int](Get-SafeProperty -Object $_ -PropertyName 'PrivateEndpointCount' -DefaultValue '0') -gt 0 } catch { $false }
+                })).Count
+                $percentage = [math]::Round(($privateEndpointCount / (Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1)) * 100, 1)
                 "$percentage% ($privateEndpointCount vaults secured)"
             } else { "N/A" })</li>
-            $(if ($AuditStats -and $AuditStats.ExecutionTimeMinutes) { "<li>Total execution time: $($AuditStats.ExecutionTimeMinutes) minutes</li>" } else { "<li>Total execution time: $(if ($IsPartialResults) { 'N/A (partial data)' } else { 'N/A' })</li>" })
-            $(if ($AuditStats -and $AuditStats.AuthenticationRefreshes) { "<li>Authentication refreshes: $($AuditStats.AuthenticationRefreshes)</li>" } else { "<li>Authentication refreshes: $(if ($IsPartialResults) { 'N/A (partial data)' } else { '0' })</li>" })
+            $(if ((Get-SafeProperty -Object $AuditStats -PropertyName 'ExecutionTimeMinutes' -DefaultValue $null)) { "<li>Total execution time: $((Get-SafeProperty -Object $AuditStats -PropertyName 'ExecutionTimeMinutes' -DefaultValue 'N/A')) minutes</li>" } else { "<li>Total execution time: $(if ($IsPartialResults) { 'N/A (partial data)' } else { 'N/A' })</li>" })
+            $(if ((Get-SafeProperty -Object $AuditStats -PropertyName 'AuthenticationRefreshes' -DefaultValue $null)) { "<li>Authentication refreshes: $((Get-SafeProperty -Object $AuditStats -PropertyName 'AuthenticationRefreshes' -DefaultValue '0'))</li>" } else { "<li>Authentication refreshes: $(if ($IsPartialResults) { 'N/A (partial data)' } else { '0' })</li>" })
             $(if ($IsPartialResults) { 
                 "<li><strong>Report Type:</strong> PARTIAL RESULTS - Generated from $(if ($PartialDataSource -eq "csv") { "CSV file data" } else { "checkpoint data" })</li>"
                 if ($CheckpointData -and $CheckpointData.ExecutionId) { "<li><strong>Original Execution ID:</strong> $($CheckpointData.ExecutionId)</li>" }
@@ -4039,15 +4096,15 @@ function toggleCollapsible(elementId) {
                 else { "<li><strong>Source Data:</strong> Extracted from checkpoint data</li>" }
             } else {
                 "<li><strong>CSV Data:</strong> $(($OutputPath -replace '\.html$', '.csv'))</li>"
-                "<li><strong>Error Log:</strong> $(($OutputPath -replace 'KeyVaultComprehensiveAudit_.*\.html$', 'KeyVaultAudit_errors_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.log'))</li>"
-                "<li><strong>Permissions Log:</strong> $(($OutputPath -replace 'KeyVaultComprehensiveAudit_.*\.html$', 'KeyVaultAudit_permissions_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.log'))</li>"
-                "<li><strong>Data Issues Log:</strong> $(($OutputPath -replace 'KeyVaultComprehensiveAudit_.*\.html$', 'KeyVaultAudit_dataissues_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.log'))</li>"
+                "<li><strong>Error Log:</strong> $(($OutputPath -replace 'KeyVaultComprehensiveAudit_.*\.html$', "KeyVaultAudit_errors_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"))</li>"
+                "<li><strong>Permissions Log:</strong> $(($OutputPath -replace 'KeyVaultComprehensiveAudit_.*\.html$', "KeyVaultAudit_permissions_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"))</li>"
+                "<li><strong>Data Issues Log:</strong> $(($OutputPath -replace 'KeyVaultComprehensiveAudit_.*\.html$', "KeyVaultAudit_dataissues_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"))</li>"
             })
         </ul>
         
         <h4>🔍 Enhanced Features Implemented:</h4>
         <ul>
-            <li>✅ Comprehensive managed identity detection and analysis$(if ($AuditResults.Count -gt 0) { 
+            <li>✅ Comprehensive managed identity detection and analysis$(if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 0) -gt 0) { 
                 $systemAssignedResults = $AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SystemAssignedIdentity') -and (Get-SafeProperty -Object $_ -PropertyName 'SystemAssignedIdentity') -eq "Yes" }
                 $sysAssignedCount = if ($systemAssignedResults) { $systemAssignedResults.Count } else { 0 }
                 $userAssignedSum = $AuditResults | Where-Object { Get-SafeProperty -Object $_ -PropertyName 'UserAssignedIdentityCount' } | Measure-Object -Property UserAssignedIdentityCount -Sum -ErrorAction SilentlyContinue
@@ -4058,7 +4115,7 @@ function toggleCollapsible(elementId) {
             <li>✅ RBAC least-privilege recommendations based on current assignments</li>
             <li>✅ Real-time compliance scoring with Microsoft baseline alignment</li>
             <li>✅ Enhanced progress tracking with intelligent ETA calculations</li>
-            <li>✅ Automatic token refresh and seamless re-authentication$(if ($AuditStats -and $AuditStats.AuthenticationRefreshes) { " (Refreshes: $($AuditStats.AuthenticationRefreshes))" } else { " (Refreshes: N/A)" })</li>
+            <li>✅ Automatic token refresh and seamless re-authentication$(if ((Get-SafeProperty -Object $AuditStats -PropertyName 'AuthenticationRefreshes' -DefaultValue $null)) { " (Refreshes: $((Get-SafeProperty -Object $AuditStats -PropertyName 'AuthenticationRefreshes' -DefaultValue 'N/A')))" } else { " (Refreshes: N/A)" })</li>
             <li>✅ Comprehensive error handling and permissions logging</li>
             <li>✅ Network security assessment including private endpoint analysis</li>
             <li>✅ Complete diagnostic configuration analysis (Event Hub, Log Analytics, Storage)</li>
@@ -4075,10 +4132,10 @@ function toggleCollapsible(elementId) {
         <h3>⚠️ Important Notes</h3>
         <ul>
             $(if ($IsPartialResults) { 
-                "<li><strong>Partial Data Report:</strong> This report contains analysis for only $($AuditResults.Count) Key Vaults and may not reflect the complete organizational security posture.</li>"
+                "<li><strong>Partial Data Report:</strong> This report contains analysis for only $(Get-SafeProperty -Object $AuditResults -PropertyName 'Count') Key Vaults and may not reflect the complete organizational security posture.</li>"
                 if ($CheckpointData -and $CheckpointData.TotalVaults) { 
-                    $completionPercentage = [math]::Round(($AuditResults.Count / $CheckpointData.TotalVaults) * 100, 1)
-                    "<li><strong>Data Completeness:</strong> Represents $completionPercentage% of originally discovered Key Vaults ($($AuditResults.Count) of $($CheckpointData.TotalVaults)).</li>"
+                    $completionPercentage = [math]::Round(((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') / $CheckpointData.TotalVaults) * 100, 1)
+                    "<li><strong>Data Completeness:</strong> Represents $completionPercentage% of originally discovered Key Vaults ($(Get-SafeProperty -Object $AuditResults -PropertyName 'Count') of $($CheckpointData.TotalVaults)).</li>"
                 }
                 "<li><strong>Resume Instructions:</strong> To complete the full audit, use the <code>-Resume</code> parameter with the original execution ID if checkpoint files are available.</li>"
                 "<li><strong>Data Source:</strong> Generated from $(if ($PartialDataSource -eq "csv") { "CSV file import" } else { "checkpoint recovery data" }).</li>"
@@ -4086,7 +4143,7 @@ function toggleCollapsible(elementId) {
             <li><strong>Permissions:</strong> Some data may be incomplete due to insufficient permissions. Check the permissions log for details.</li>
             <li><strong>Best Practices:</strong> This audit reflects current Microsoft recommendations as of $(Get-Date -Format 'MMMM yyyy').</li>
             <li><strong>Continuous Improvement:</strong> Regular audits are recommended to maintain security posture.</li>
-            <li><strong>Authentication:</strong> Script performed $(if ($AuditStats -and $AuditStats.AuthenticationRefreshes) { $AuditStats.AuthenticationRefreshes } else { "0" }) token refresh(es) to maintain connectivity.</li>
+            <li><strong>Authentication:</strong> Script performed $(if ((Get-SafeProperty -Object $AuditStats -PropertyName 'AuthenticationRefreshes' -DefaultValue $null)) { (Get-SafeProperty -Object $AuditStats -PropertyName 'AuthenticationRefreshes' -DefaultValue '0') } else { "0" }) token refresh(es) to maintain connectivity.</li>
             $(if ($IsPartialResults) { 
                 "<li><strong>Statistical Accuracy:</strong> Percentages and averages in this partial report reflect only the processed subset and should not be extrapolated to represent complete organizational metrics.</li>"
             })
@@ -4105,18 +4162,24 @@ function toggleCollapsible(elementId) {
         })
         <p>For questions or support, contact your Azure security team.</p>
         $(if ($IsPartialResults) { 
-            "<p style='font-size: 0.9em; margin-top: 15px;'><strong>Data Provenance:</strong> Report generated from partial dataset | Processed: $($AuditResults.Count) vaults$(if ($CheckpointData -and $CheckpointData.TotalVaults) { " of $($CheckpointData.TotalVaults) total" }) | Source: $(if ($PartialDataSource -eq "csv") { "CSV import" } else { "checkpoint recovery" })</p>"
+            "<p style='font-size: 0.9em; margin-top: 15px;'><strong>Data Provenance:</strong> Report generated from partial dataset | Processed: $(Get-SafeProperty -Object $AuditResults -PropertyName 'Count') vaults$(if ($CheckpointData -and $CheckpointData.TotalVaults) { " of $($CheckpointData.TotalVaults) total" }) | Source: $(if ($PartialDataSource -eq "csv") { "CSV import" } else { "checkpoint recovery" })</p>"
         })
     </footer>
 </body>
 </html>
 "@
-    Write-Verbose "HTML content string generation completed"
-    Write-Verbose "HTML content generation completed successfully"
+    Write-UserMessage "HTML content string generation completed" -Type Verbose
+    Write-UserMessage "HTML content generation completed successfully" -Type Verbose
     
     } catch {
-        Write-Host "❌ Error generating comprehensive HTML report: $_" -ForegroundColor Red
-        Write-UserMessage -Message "Error generating comprehensive HTML report: $_" -Type Error
+        $errorMessage = "An error occurred during HTML report generation. Exception type: $($_.GetType().Name)"
+        Write-Host "❌ Error generating comprehensive HTML report: $errorMessage" -ForegroundColor Red
+        Write-Warning $errorMessage
+        Write-Verbose "Full exception details: $_"
+        Write-Verbose "Exception message: $($_.Exception.Message)"
+        Write-Verbose "Stack trace: $($_.Exception.StackTrace)"
+        Write-Verbose "Line number: $($_.InvocationInfo.ScriptLineNumber)"
+        Write-Verbose "Command: $($_.InvocationInfo.Line)"
         return $false
     }
     
@@ -4673,7 +4736,8 @@ function Import-PartialResultsFromCsv {
                         [int]($_.ComplianceScore -replace '%', '') 
                     } | Where-Object { $null -ne $_ }
                     if ($scores.Count -gt 0) {
-                        [math]::Round(($scores | Measure-Object -Average).Average, 1) 
+                        $scoreMeasure = $scores | Measure-Object -Average
+                        [math]::Round((Get-SafeProperty -Object $scoreMeasure -PropertyName 'Average' -DefaultValue 0), 1) 
                     } else { 0 }
                 } else { 0 }
                 CompanyAverageScore = if ($global:auditResults -and $global:auditResults.Count -gt 0) { 
@@ -4681,7 +4745,8 @@ function Import-PartialResultsFromCsv {
                         try { [int]((Get-SafeProperty -Object $_ -PropertyName 'CompanyComplianceScore') -replace '%', '') } catch { 0 }
                     } | Where-Object { $null -ne $_ }
                     if ($scores.Count -gt 0) {
-                        [math]::Round(($scores | Measure-Object -Average).Average, 1) 
+                        $companyScoreMeasure = $scores | Measure-Object -Average
+                        [math]::Round((Get-SafeProperty -Object $companyScoreMeasure -PropertyName 'Average' -DefaultValue 0), 1) 
                     } else { 0 }
                 } else { 0 }
                 HighRiskVaults = if ($global:auditResults) { 
@@ -6301,14 +6366,16 @@ if ($PSBoundParameters.ContainsKey('ReportFromCsv')) {
             try { [int]($_.ComplianceScore -replace '%', '') } catch { 0 }
         }
         $averageComplianceScore = if ($msScores.Count -gt 0) { 
-            [math]::Round(($msScores | Measure-Object -Average).Average, 1) 
+            $msMeasure = $msScores | Measure-Object -Average
+            [math]::Round((Get-SafeProperty -Object $msMeasure -PropertyName 'Average' -DefaultValue 0), 1) 
         } else { 0 }
         
         $companyScores = $global:auditResults | ForEach-Object { 
             try { [int]($_.CompanyComplianceScore -replace '%', '') } catch { 0 }
         }
         $companyAverageScore = if ($companyScores.Count -gt 0) { 
-            [math]::Round(($companyScores | Measure-Object -Average).Average, 1) 
+            $companyMeasure = $companyScores | Measure-Object -Average
+            [math]::Round((Get-SafeProperty -Object $companyMeasure -PropertyName 'Average' -DefaultValue 0), 1) 
         } else { 0 }
         
         $executiveSummary = @{
@@ -6643,7 +6710,7 @@ if ($PSBoundParameters.ContainsKey('Resume') -or $PSBoundParameters.ContainsKey(
             if ($resumeData.Statistics) {
                 $global:auditStats = $resumeData.Statistics
                 Write-Host "📈 Restored audit statistics" -ForegroundColor Gray
-                Write-ResumeLog "Statistics" "Restored previous audit statistics" "Successful: $($global:auditStats.SuccessfulVaults) | Errors: $($global:auditStats.ProcessingErrors)"
+                Write-ResumeLog "Statistics" "Restored previous audit statistics" "Successful: $(Get-SafeProperty -Object $global:auditStats -PropertyName 'SuccessfulVaults' -DefaultValue 0) | Errors: $(Get-SafeProperty -Object $global:auditStats -PropertyName 'ProcessingErrors' -DefaultValue 0)"
             }
             
             # Handle ProcessPartial mode - generate reports and exit
@@ -6818,6 +6885,7 @@ $global:serviceProviderCount = 0
 $global:managedIdentityCount = 0
 $global:systemManagedIdentityCount = 0
 $global:userManagedIdentityCount = 0
+$global:accessPolicyCount = 0
 
 # --- Production Memory Management and Checkpoint System ---
 function Invoke-MemoryCleanup {
@@ -6888,7 +6956,8 @@ function Invoke-MemoryCleanup {
                                 } elseif ($variable.Value -is [String]) {
                                     $varSize = "$($variable.Value.Length) chars"
                                 } elseif ($variable.Value -is [PSCustomObject]) {
-                                    $propCount = ($variable.Value.PSObject.Properties | Measure-Object).Count
+                                    $propertiesMeasure = $variable.Value.PSObject.Properties | Measure-Object
+                                    $propCount = Get-SafeProperty -Object $propertiesMeasure -PropertyName 'Count' -DefaultValue 0
                                     $varSize = "$propCount properties"
                                 }
                             }
@@ -7139,6 +7208,8 @@ function Get-AuthenticationMode {
     [CmdletBinding()]
     param()
     
+    $verboseEnabled = $VerbosePreference -eq 'Continue'
+    
     # Store authentication decision process in global context
     $authDecision = @{
         StartTime = Get-Date
@@ -7154,7 +7225,7 @@ function Get-AuthenticationMode {
     
     # First, detect Azure Cloud Shell with comprehensive logging
     Write-Verbose "Testing for Azure Cloud Shell environment..."
-    $isCloudShell = Test-CloudShellEnvironment -Quiet:(-not $Verbose) -Verbose:$Verbose
+    $isCloudShell = Test-CloudShellEnvironment -Quiet:(-not $verboseEnabled) -Verbose:$verboseEnabled
     $authDecision.DetectionResults.CloudShell = $isCloudShell
     
     if ($isCloudShell) {
@@ -7164,7 +7235,7 @@ function Get-AuthenticationMode {
         Write-UserMessage -Message "Azure Cloud Shell environment detected - using optimal authentication" -Type Success
         Write-UserMessage -Message "Selected: Interactive browser authentication (optimal for Cloud Shell)" -Type Success
         
-        if ($Verbose) {
+        if ($verboseEnabled) {
             Write-UserMessage -Message "Reasoning: Cloud Shell provides secure browser context for interactive auth" -Type Debug
         }
         
@@ -7174,7 +7245,7 @@ function Get-AuthenticationMode {
     
     # Check for managed identity/automation environment with comprehensive logging
     Write-Verbose "Testing for Managed Identity/automation environment..."
-    $hasManagedIdentity = Test-ManagedIdentityEnvironment -Quiet:(-not $Verbose) -Verbose:$Verbose
+    $hasManagedIdentity = Test-ManagedIdentityEnvironment -Quiet:(-not $verboseEnabled) -Verbose:$verboseEnabled
     $authDecision.DetectionResults.ManagedIdentity = $hasManagedIdentity
     
     if ($hasManagedIdentity) {
@@ -7184,7 +7255,7 @@ function Get-AuthenticationMode {
         Write-UserMessage -Message "Managed Identity/Automation environment detected - using app-only authentication" -Type Success
         Write-UserMessage -Message "Selected: Managed Identity authentication (optimal for automation)" -Type Success
         
-        if ($Verbose) {
+        if ($verboseEnabled) {
             Write-UserMessage -Message "Reasoning: MSI environment provides secure automated authentication without explicit credentials" -Type Debug
         }
         
@@ -7207,7 +7278,7 @@ function Get-AuthenticationMode {
         Write-UserMessage -Message "Service Principal credentials detected in environment variables" -Type Success
         Write-UserMessage -Message "Selected: Service Principal authentication (using environment credentials)" -Type Success
         
-        if ($Verbose) {
+        if ($verboseEnabled) {
             Write-UserMessage -Message "Reasoning: Complete service principal credentials found in environment" -Type Debug
             Write-UserMessage -Message "Client ID: $env:AZURE_CLIENT_ID" -Type Debug
             Write-UserMessage -Message "Tenant ID: $env:AZURE_TENANT_ID" -Type Debug
@@ -7229,6 +7300,28 @@ function Get-AuthenticationMode {
             Write-UserMessage -Message "Failed to prepare Service Principal credentials: $($_.Exception.Message)" -Type Error
             Write-Verbose "Service Principal credential preparation failed, falling back to interactive prompt"
         }
+    }
+    
+    # Check for local Windows environment - default to interactive authentication
+    Write-Verbose "Testing for local Windows environment..."
+    $isLocalWindows = $PSVersionTable.PSVersion.Major -ge 5 -and $env:OS -eq "Windows_NT" -and 
+                     (-not $hasManagedIdentity) -and (-not $isCloudShell) -and (-not $hasServicePrincipalCreds)
+    
+    $authDecision.DetectionResults.LocalWindows = $isLocalWindows
+    
+    if ($isLocalWindows) {
+        $authDecision.SelectedMethod = "Interactive Browser"
+        $authDecision.Reasoning = "Local Windows environment detected - interactive authentication optimal for desktop use"
+        
+        Write-UserMessage -Message "Local Windows environment detected - using interactive authentication" -Type Success
+        Write-UserMessage -Message "Selected: Interactive browser authentication (optimal for local desktop)" -Type Success
+        
+        if ($verboseEnabled) {
+            Write-UserMessage -Message "Reasoning: Local Windows desktop environment with no Azure automation indicators" -Type Debug
+        }
+        
+        Write-Verbose "Authentication mode selected: Interactive (local Windows detected)"
+        return @{}  # Default interactive authentication
     }
     
     # Environment cannot be confidently determined - provide interactive prompt with comprehensive guidance
@@ -7260,7 +7353,7 @@ function Get-AuthenticationMode {
                 Write-UserMessage -Message "Selected: Interactive browser authentication" -Type Success
                 Write-Information "   → This will open a browser window for Azure login"
                 
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-UserMessage -Message "Reasoning: User manually selected interactive browser authentication" -Type Debug
                 }
                 
@@ -7293,7 +7386,7 @@ function Get-AuthenticationMode {
                 
                 $clientSecret = Read-Host "Enter Client Secret" -AsSecureString
                 
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-UserMessage -Message "Reasoning: User provided service principal credentials interactively" -Type Debug
                     Write-UserMessage -Message "Client ID: $clientId" -Type Debug
                     Write-UserMessage -Message "Tenant ID: $tenantId" -Type Debug
@@ -7320,7 +7413,7 @@ function Get-AuthenticationMode {
                 Write-Information "   → You will receive a device code to enter at https://microsoft.com/devicelogin"
                 Write-UserMessage -Message "Note: Consider using interactive or app-only authentication for better user experience" -Type Warning
                 
-                if ($Verbose) {
+                if ($verboseEnabled) {
                     Write-UserMessage -Message "Reasoning: User manually selected device code authentication as fallback" -Type Debug
                 }
                 
@@ -7363,8 +7456,10 @@ function Initialize-AzAuth {
         [switch]$Force
     )
     
+    $verboseEnabled = $VerbosePreference -eq 'Continue'
+    
     try {
-        Write-Verbose "Starting Azure authentication initialization..."
+        Write-UserMessage "Starting Azure authentication initialization..." -Type Verbose
         
         # Store authentication attempt in global context
         $authAttempt = @{
@@ -7400,14 +7495,14 @@ function Initialize-AzAuth {
             Write-ErrorLog "Auth" "Starting enhanced authentication mode detection"
             Write-UserMessage -Message "Analyzing environment for optimal authentication method..." -Type Info
             
-            $authMode = Get-AuthenticationMode -Verbose:$Verbose
+            $authMode = Get-AuthenticationMode -Verbose:$verboseEnabled
             
             # Map authentication mode to user-friendly description
-            $authMethodDescription = if ($authMode.Identity) {
+            $authMethodDescription = if ($authMode.ContainsKey('Identity') -and $authMode.Identity) {
                 "Managed Identity (MSI)"
-            } elseif ($authMode.ServicePrincipal) {
+            } elseif ($authMode.ContainsKey('ServicePrincipal') -and $authMode.ServicePrincipal) {
                 "Service Principal (Client ID: $($authMode.Credential.UserName))"
-            } elseif ($authMode.UseDeviceAuthentication) {
+            } elseif ($authMode.ContainsKey('UseDeviceAuthentication') -and $authMode.UseDeviceAuthentication) {
                 "Device Code Authentication"
             } else {
                 "Interactive Browser Authentication"
@@ -7420,11 +7515,11 @@ function Initialize-AzAuth {
             Write-UserMessage -Message "Authentication method selected: $authMethodDescription" -Type Success
             
             # Show authentication flow explanation to user
-            if ($authMode.Identity) {
+            if ($authMode.ContainsKey('Identity') -and $authMode.Identity) {
                 Write-UserMessage -Message "Using Managed Identity based on MSI environment detection" -Type Info
-            } elseif ($authMode.ServicePrincipal) {
+            } elseif ($authMode.ContainsKey('ServicePrincipal') -and $authMode.ServicePrincipal) {
                 Write-UserMessage -Message "Using Service Principal based on available client credentials" -Type Info
-            } elseif ($authMode.UseDeviceAuthentication) {
+            } elseif ($authMode.ContainsKey('UseDeviceAuthentication') -and $authMode.UseDeviceAuthentication) {
                 Write-UserMessage -Message "Using Device Code authentication as environment fallback" -Type Info
             } else {
                 Write-UserMessage -Message "Using Interactive Browser authentication for local environment" -Type Info
@@ -7467,7 +7562,7 @@ function Initialize-AzAuth {
         
         # Enhanced token validation with managed identity support
         try {
-            Write-Verbose "Validating Azure access token..."
+            Write-UserMessage "Validating Azure access token..." -Type Verbose
             $token = Get-AzAccessToken -ErrorAction Stop
             
             # Parse expiry time more robustly with managed identity format handling
@@ -7488,7 +7583,7 @@ function Initialize-AzAuth {
                     throw "Token ExpiresOn property is null or invalid - managed identity format issue"
                 }
                 
-                Write-Verbose "Token expiry time parsed successfully: $expiryTime"
+                Write-UserMessage "Token expiry time parsed successfully: $expiryTime" -Type Verbose
             } catch {
                 # Handle managed identity ExpiresOn format issues
                 Write-UserMessage -Message "Token expiration parsing failed: $($_.Exception.Message)" -Type Warning
@@ -7500,7 +7595,7 @@ function Initialize-AzAuth {
             }
             
             $timeUntilExpiry = $expiryTime - (Get-Date)
-            Write-Verbose "Time until token expiry: $($timeUntilExpiry.TotalMinutes) minutes"
+            Write-UserMessage "Time until token expiry: $($timeUntilExpiry.TotalMinutes) minutes" -Type Verbose
             
             # Enhanced token refresh for production (refresh when < 15 minutes remaining)
             if ($timeUntilExpiry.TotalMinutes -lt 15) {
@@ -7543,7 +7638,7 @@ function Initialize-AzAuth {
                     throw "Token refresh failed after multiple attempts. Please check your credentials."
                 }
             } else {
-                Write-Verbose "Token is valid for $([math]::Round($timeUntilExpiry.TotalMinutes, 1)) more minutes"
+                Write-UserMessage "Token is valid for $([math]::Round($timeUntilExpiry.TotalMinutes, 1)) more minutes" -Type Verbose
             }
             
             return $true
@@ -8228,7 +8323,7 @@ function Get-DiagnosticsConfiguration {
         Write-UserMessage -Message "Retrieving diagnostic settings for $KeyVaultName..." -Type Debug
         $diagnostics = Get-AzDiagnosticSetting -ResourceId $ResourceId -ErrorAction Stop
         
-        Write-UserMessage -Message "Raw diagnostic response type: $($diagnostics.GetType().Name), Count: $(if ($diagnostics) { if ($diagnostics.GetType().IsArray) { if ($diagnostics.PSObject.Properties['Count']) { $diagnostics.PSObject.Properties['Count'].Value } else { 'NoCount' } } elseif ($diagnostics -is [System.Collections.IEnumerable] -and $diagnostics -isnot [string]) { ($diagnostics | Measure-Object).Count } else { 1 } } else { 0 })" -Type Debug
+        Write-UserMessage -Message "Raw diagnostic response type: $(if ($diagnostics) { $diagnostics.GetType().Name } else { 'null' }), Count: $(if ($diagnostics) { if ($diagnostics.GetType().IsArray) { if ($diagnostics.PSObject.Properties['Count']) { $diagnostics.PSObject.Properties['Count'].Value } else { 'NoCount' } } elseif ($diagnostics -is [System.Collections.IEnumerable] -and $diagnostics -isnot [string]) { ($diagnostics | Measure-Object).Count } else { 1 } } else { 0 })" -Type Debug
         
         if ($diagnostics -and (($diagnostics.GetType().IsArray -and ($diagnostics.PSObject.Properties['Count'] -and ([int]$diagnostics.PSObject.Properties['Count'].Value -gt 0))) -or (-not $diagnostics.GetType().IsArray -and $diagnostics))) {
             # Handle both single object and array results from Get-AzDiagnosticSetting
@@ -8573,6 +8668,7 @@ function Get-KeyVaultWorkloadAnalysis {
         SecretCount = 0
         KeyCount = 0
         CertificateCount = 0
+        ManagedStorageAccountCount = 0
         SecretTypes = @()
         WorkloadCategories = @()
         EnvironmentType = "Unknown"
@@ -8583,6 +8679,9 @@ function Get-KeyVaultWorkloadAnalysis {
         ExpirationAnalysis = @()
         RotationAnalysis = @()
         AppServiceIntegration = @()
+        RiskLevel = "Low"
+        RiskFactors = @()
+        CriticalFindings = @()
     }
     
     try {
@@ -8663,10 +8762,10 @@ function Get-KeyVaultWorkloadAnalysis {
         }
         
         # Analyze secret naming patterns for workload identification
-        $databaseSecrets = ($secrets.Name | Where-Object { $_ -match "db|database|sql|conn|connection" }).Count
-        $apiSecrets = ($secrets.Name | Where-Object { $_ -match "api|key|token|auth" }).Count
-        $certSecrets = ($secrets.Name | Where-Object { $_ -match "cert|certificate|ssl|tls" }).Count
-        $storageSecrets = ($secrets.Name | Where-Object { $_ -match "storage|blob|queue|table" }).Count
+        $databaseSecrets = (@($secrets.Name | Where-Object { $_ -match "db|database|sql|conn|connection" })).Count
+        $apiSecrets = (@($secrets.Name | Where-Object { $_ -match "api|key|token|auth" })).Count
+        $certSecrets = (@($secrets.Name | Where-Object { $_ -match "cert|certificate|ssl|tls" })).Count
+        $storageSecrets = (@($secrets.Name | Where-Object { $_ -match "storage|blob|queue|table" })).Count
         
         # Categorize workload based on secret patterns
         if ($databaseSecrets -gt 0) { $workloadData.WorkloadCategories += "Database Services" }
@@ -8845,6 +8944,23 @@ function Get-KeyVaultWorkloadAnalysis {
         }
     }
     
+    try {
+        # Analyze managed storage accounts
+        $managedStorageAccounts = Get-AzKeyVaultManagedStorageAccount -VaultName $KeyVaultName -ErrorAction Stop
+        $workloadData.ManagedStorageAccountCount = $managedStorageAccounts.Count
+        
+        if ($managedStorageAccounts.Count -gt 0) {
+            $workloadData.WorkloadCategories += "Storage Account Key Management"
+            $workloadData.SecurityInsights += "✅ Key Vault managed storage accounts: $($managedStorageAccounts.Count) accounts with automatic key rotation"
+            $workloadData.OptimizationRecommendations += "Continue using Key Vault for storage account key management to ensure automatic rotation"
+        }
+        
+    } catch {
+        if ($_.Exception.Message -notlike "*Forbidden*" -and $_.Exception.Message -notlike "*Authorization*") {
+            Write-DataIssuesLog "WorkloadAnalysis" "Error analyzing managed storage accounts" $KeyVaultName $_.Exception.Message
+        }
+    }
+    
     # Generate enhanced security insights based on comprehensive analysis
     $totalItems = $workloadData.SecretCount + $workloadData.KeyCount + $workloadData.CertificateCount
     
@@ -8880,6 +8996,63 @@ function Get-KeyVaultWorkloadAnalysis {
     
     if ($workloadData.CertificateCount -gt 0) {
         $workloadData.OptimizationRecommendations += "Enable certificate auto-renewal to prevent service disruptions from expired certificates"
+    }
+    
+    # Risk Assessment
+    $riskScore = 0
+    $criticalCount = 0
+    
+    # High risk factors
+    if ($workloadData.SecretCount -eq 0 -and $workloadData.KeyCount -eq 0 -and $workloadData.CertificateCount -eq 0) {
+        $workloadData.RiskFactors += "Empty vault - potential unused resource"
+        $riskScore += 2
+    }
+    
+    if ($workloadData.SecretCount -gt 100) {
+        $workloadData.RiskFactors += "High secret count ($($workloadData.SecretCount)) - monitor for secret sprawl"
+        $riskScore += 3
+    }
+    
+    if ($workloadData.CertificateCount -gt 0) {
+        $expiredCerts = ($workloadData.ExpirationAnalysis | Where-Object { $_ -like "*EXPIRED*" }).Count
+        if ($expiredCerts -gt 0) {
+            $workloadData.CriticalFindings += "$expiredCerts certificates have EXPIRED"
+            $criticalCount += $expiredCerts
+            $riskScore += 5
+        }
+        
+        $nearExpirationCerts = ($workloadData.ExpirationAnalysis | Where-Object { $_ -like "*expires in*" }).Count
+        if ($nearExpirationCerts -gt 0) {
+            $workloadData.RiskFactors += "$nearExpirationCerts certificates expiring within 30 days"
+            $riskScore += 2
+        }
+    }
+    
+    if ($workloadData.SecretCount -gt 0) {
+        $secretsWithoutExpiration = ($workloadData.ExpirationAnalysis | Where-Object { $_ -like "*no expiration*" }).Count
+        if ($secretsWithoutExpiration -gt 0) {
+            $workloadData.RiskFactors += "$secretsWithoutExpiration secrets without expiration dates"
+            $riskScore += 1
+        }
+    }
+    
+    if ($workloadData.KeyCount -gt 0) {
+        $keysWithoutExpiration = ($workloadData.ExpirationAnalysis | Where-Object { $_ -like "*no expiration*" }).Count
+        if ($keysWithoutExpiration -gt 0) {
+            $workloadData.RiskFactors += "$keysWithoutExpiration keys without expiration dates"
+            $riskScore += 1
+        }
+    }
+    
+    # Determine risk level
+    if ($criticalCount -gt 0) {
+        $workloadData.RiskLevel = "Critical"
+    } elseif ($riskScore -ge 5) {
+        $workloadData.RiskLevel = "High"
+    } elseif ($riskScore -ge 3) {
+        $workloadData.RiskLevel = "Medium"
+    } else {
+        $workloadData.RiskLevel = "Low"
     }
     
     return $workloadData
@@ -9696,11 +9869,11 @@ if ($PSBoundParameters.ContainsKey('SingleVault')) {
         # Build vault data for compliance assessment (matching main audit structure)
         $vaultData = @{
             KeyVaultName = $kv.VaultName
-            DiagnosticsEnabled = $diagnostics.Enabled
-            LogAnalyticsEnabled = $diagnostics.LogAnalyticsEnabled
-            EventHubEnabled = $diagnostics.EventHubEnabled
-            StorageAccountEnabled = $diagnostics.StorageAccountEnabled
-            EnabledLogCategories = $diagnostics.LogCategories
+            DiagnosticsEnabled = if ($diagnostics) { $diagnostics.Enabled } else { $false }
+            LogAnalyticsEnabled = if ($diagnostics) { $diagnostics.LogAnalyticsEnabled } else { $false }
+            EventHubEnabled = if ($diagnostics) { $diagnostics.EventHubEnabled } else { $false }
+            StorageAccountEnabled = if ($diagnostics) { $diagnostics.StorageAccountEnabled } else { $false }
+            EnabledLogCategories = if ($diagnostics) { $diagnostics.LogCategories } else { @() }
             SoftDeleteEnabled = if ($kv.PSObject.Properties['EnableSoftDelete']) { $kv.EnableSoftDelete } else { "Unknown" }
             PurgeProtectionEnabled = if ($kv.PSObject.Properties['EnablePurgeProtection']) { $kv.EnablePurgeProtection } else { "Unknown" }
             PublicNetworkAccess = $networkConfig.PublicNetworkAccess
@@ -9715,11 +9888,15 @@ if ($PSBoundParameters.ContainsKey('SingleVault')) {
             SecretCount = $workloadAnalysis.SecretCount
             KeyCount = $workloadAnalysis.KeyCount
             CertificateCount = $workloadAnalysis.CertificateCount
-            AuditEventEnabled = "AuditEvent" -in $diagnostics.LogCategories
-            PolicyEvaluationEnabled = "AzurePolicyEvaluationDetails" -in $diagnostics.LogCategories
+            ManagedStorageAccountCount = $workloadAnalysis.ManagedStorageAccountCount
+            AuditEventEnabled = if ($diagnostics -and $diagnostics.LogCategories) { "AuditEvent" -in $diagnostics.LogCategories } else { $false }
+            PolicyEvaluationEnabled = if ($diagnostics -and $diagnostics.LogCategories) { "AzurePolicyEvaluationDetails" -in $diagnostics.LogCategories } else { $false }
             RBACEnabled = $(if ($rbacAssignments.PSObject.Properties['Count']) { $rbacAssignments.PSObject.Properties['Count'].Value -gt 0 } else { if ($rbacAssignments) { ($rbacAssignments | Measure-Object).Count -gt 0 } else { $false } })
             SystemAssignedIdentity = $systemAssignedIdentity
             OverPrivilegedAssignments = $overPrivileged
+            RiskLevel = $workloadAnalysis.RiskLevel
+            RiskFactors = $workloadAnalysis.RiskFactors -join " | "
+            CriticalFindings = $workloadAnalysis.CriticalFindings -join " | "
         }
         
         Write-Host "🏆 Calculating compliance scores..." -ForegroundColor Yellow
@@ -9769,16 +9946,16 @@ if ($PSBoundParameters.ContainsKey('SingleVault')) {
             ResourceId = $kv.ResourceId
             Location = $kv.Location
             ResourceGroupName = $kv.ResourceGroupName
-            DiagnosticsEnabled = $diagnostics.Enabled
-            EnabledLogCategories = $diagnostics.LogCategories -join ","
-            EnabledMetricCategories = $diagnostics.MetricCategories -join ","
-            LogAnalyticsEnabled = $diagnostics.LogAnalyticsEnabled
-            LogAnalyticsWorkspaceName = $diagnostics.LogAnalyticsWorkspaceName
-            EventHubEnabled = $diagnostics.EventHubEnabled
-            EventHubNamespace = $diagnostics.EventHubNamespace
-            EventHubName = $diagnostics.EventHubName
-            StorageAccountEnabled = $diagnostics.StorageAccountEnabled
-            StorageAccountName = $diagnostics.StorageAccountName
+            DiagnosticsEnabled = if ($diagnostics) { $diagnostics.Enabled } else { $false }
+            EnabledLogCategories = if ($diagnostics -and $diagnostics.LogCategories) { $diagnostics.LogCategories -join "," } else { "" }
+            EnabledMetricCategories = if ($diagnostics -and $diagnostics.MetricCategories) { $diagnostics.MetricCategories -join "," } else { "" }
+            LogAnalyticsEnabled = if ($diagnostics) { $diagnostics.LogAnalyticsEnabled } else { $false }
+            LogAnalyticsWorkspaceName = if ($diagnostics) { $diagnostics.LogAnalyticsWorkspaceName } else { "" }
+            EventHubEnabled = if ($diagnostics) { $diagnostics.EventHubEnabled } else { $false }
+            EventHubNamespace = if ($diagnostics) { $diagnostics.EventHubNamespace } else { "" }
+            EventHubName = if ($diagnostics) { $diagnostics.EventHubName } else { "" }
+            StorageAccountEnabled = if ($diagnostics) { $diagnostics.StorageAccountEnabled } else { $false }
+            StorageAccountName = if ($diagnostics) { $diagnostics.StorageAccountName } else { "" }
             AccessPolicyCount = $accessPolicyCountSafe
             AccessPolicyDetails = $accessPolicies -join " | "
             RBACRoleAssignments = ($rbacAssignments | ForEach-Object { "$($_.PrincipalName): $($_.RoleDefinitionName)" }) -join " | "
@@ -9814,6 +9991,7 @@ if ($PSBoundParameters.ContainsKey('SingleVault')) {
             SecretCount = $workloadAnalysis.SecretCount
             KeyCount = $workloadAnalysis.KeyCount
             CertificateCount = $workloadAnalysis.CertificateCount
+            ManagedStorageAccountCount = $workloadAnalysis.ManagedStorageAccountCount
             WorkloadCategories = $workloadAnalysis.WorkloadCategories -join " | "
             EnvironmentType = $workloadAnalysis.EnvironmentType
             PrimaryWorkload = $workloadAnalysis.PrimaryWorkload
@@ -9825,6 +10003,9 @@ if ($PSBoundParameters.ContainsKey('SingleVault')) {
             ExpirationAnalysis = $workloadAnalysis.ExpirationAnalysis -join " | "
             RotationAnalysis = $workloadAnalysis.RotationAnalysis -join " | "
             AppServiceIntegration = $workloadAnalysis.AppServiceIntegration -join " | "
+            RiskLevel = $workloadAnalysis.RiskLevel
+            RiskFactors = $workloadAnalysis.RiskFactors -join " | "
+            CriticalFindings = $workloadAnalysis.CriticalFindings -join " | "
             LastAuditDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
             ErrorsEncountered = ""
         }
@@ -11062,8 +11243,70 @@ foreach ($kvItem in $vaultsToProcess) {
     $maxRetries = 3
     $vaultProcessed = $false
     
+    # Initialize variables defensively to prevent null reference errors
+    $accessPolicies = @()
+    $rbacAssignments = @()
+    $diagnostics = $null
+    # ...existing code...
+    $identityAnalysis = @{
+        ServicePrincipals = @()
+        Users = @()
+        Groups = @()
+    }
+    $networkConfig = @{
+        PublicNetworkAccess = "Unknown"
+        NetworkAclsConfigured = $false
+        PrivateEndpointCount = 0
+    }
+    $overPrivileged = @()
+    $workloadAnalysis = @{
+        SecretCount = 0
+        KeyCount = 0
+        CertificateCount = 0
+        WorkloadCategories = @()
+        EnvironmentType = "Unknown"
+        PrimaryWorkload = "Unknown"
+        SecurityInsights = @()
+        OptimizationRecommendations = @()
+    }
+    $diagnostics = @{
+        Enabled = $false
+        LogCategories = @()
+        MetricCategories = @()
+        LogAnalyticsEnabled = $false
+        LogAnalyticsWorkspaceName = ""
+        EventHubEnabled = $false
+        EventHubNamespace = ""
+        EventHubName = ""
+        StorageAccountEnabled = $false
+        StorageAccountName = ""
+    }
+    $connectedManagedIdentities = @()
+    $systemAssignedIdentity = $false
+    $systemAssignedPrincipalId = ""
+    $userAssignedIdentityCount = 0
+    $userAssignedIdentityIds = @()
+    $complianceStatus = "Unknown"
+    $complianceScore = 0
+    $companyComplianceScore = 0
+    $companyComplianceStatus = "Unknown"
+    $recommendations = @()
+    
     while (-not $vaultProcessed -and $retryCount -lt $maxRetries) {
         try {
+            # Defensive: Always initialize $diagnostics as empty hashtable at the start of each try
+            $diagnostics = @{
+                Enabled = $false
+                LogCategories = @()
+                MetricCategories = @()
+                LogAnalyticsEnabled = $false
+                LogAnalyticsWorkspaceName = ""
+                EventHubEnabled = $false
+                EventHubNamespace = ""
+                EventHubName = ""
+                StorageAccountEnabled = $false
+                StorageAccountName = ""
+            }
             # Set context for this vault's subscription with retry
             try {
                 Set-AzContext -SubscriptionId $kvItem.SubscriptionId -ErrorAction Stop | Out-Null
@@ -11081,28 +11324,166 @@ foreach ($kvItem in $vaultsToProcess) {
             Show-Progress -Phase "Processing" -Current $sessionIndex -Total $totalToProcess -CurrentItem $kv.VaultName -Operation "Data Collection"
             
             # Get diagnostics configuration
-            $diagnostics = Get-DiagnosticsConfiguration -ResourceId $kv.ResourceId -KeyVaultName $kv.VaultName
+            $actualDiagnostics = Get-DiagnosticsConfiguration -ResourceId $kv.ResourceId -KeyVaultName $kv.VaultName
+            if ($actualDiagnostics -and $actualDiagnostics -is [hashtable]) {
+                # Merge actual diagnostics into defaults
+                foreach ($key in $actualDiagnostics.Keys) {
+                    $diagnostics[$key] = $actualDiagnostics[$key]
+                }
+            }
             
             # Get RBAC assignments
             $rbacAssignments = Get-RBACAssignments -ResourceId $kv.ResourceId -KeyVaultName $kv.VaultName
+            if ($null -eq $rbacAssignments) { $rbacAssignments = @() }
             
             # Analyze identities
             $identityAnalysis = Get-ServicePrincipalsAndManagedIdentities -Assignments $rbacAssignments
+            if ($null -eq $identityAnalysis) { 
+                $identityAnalysis = @{
+                    ServicePrincipals = @()
+                    Users = @()
+                    Groups = @()
+                }
+            }
             
             # Get access policies
             $accessPolicies = Get-AccessPolicyDetails -KeyVault $kv
+            if ($null -eq $accessPolicies) { $accessPolicies = @() }
             
             # Get network security config
             $networkConfig = Get-NetworkSecurityConfig -KeyVault $kv
+            if ($null -eq $networkConfig) { 
+                $networkConfig = @{
+                    PublicNetworkAccess = "Unknown"
+                    NetworkAclsConfigured = $false
+                    PrivateEndpointCount = 0
+                }
+            }
             
             # Analyze over-privileged assignments
             $overPrivileged = Get-OverPrivilegedUsers -Assignments $rbacAssignments
+            if ($null -eq $overPrivileged) { $overPrivileged = @() }
             
             # Get Key Vault workload analysis
             $workloadAnalysis = Get-KeyVaultWorkloadAnalysis -KeyVaultName $kv.VaultName
+            if ($null -eq $workloadAnalysis) { 
+                $workloadAnalysis = @{
+                    SecretCount = 0
+                    KeyCount = 0
+                    CertificateCount = 0
+                    WorkloadCategories = @()
+                    EnvironmentType = "Unknown"
+                    PrimaryWorkload = "Unknown"
+                    SecurityInsights = @()
+                    OptimizationRecommendations = @()
+                }
+            }
+            
+            # Get connected managed identities (placeholder - may need to implement this function)
+            # $connectedManagedIdentities = Get-ConnectedManagedIdentities -KeyVault $kv
+            # For now, ensure it's not null
+            if ($null -eq $connectedManagedIdentities) { $connectedManagedIdentities = @() }
             
             $vaultProcessed = $true
             $global:auditStats.SuccessfulVaults++
+            
+            # Calculate defensive counts before hashtable creation to avoid syntax issues
+            $accessPolicyCountSafe2 = if ($null -ne $accessPolicies -and $accessPolicies -is [System.Collections.ICollection]) { $accessPolicies.Count } else { 0 }
+            $rbacAssignmentCountSafe2 = if ($null -ne $rbacAssignments -and $rbacAssignments -is [System.Collections.ICollection]) { $rbacAssignments.Count } else { 0 }
+            $servicePrincipalCountSafe2 = if ($null -ne $identityAnalysis -and $null -ne $identityAnalysis.ServicePrincipals -and $identityAnalysis.ServicePrincipals -is [System.Collections.ICollection]) { $identityAnalysis.ServicePrincipals.Count } else { 0 }
+            $userCountSafe2 = if ($null -ne $identityAnalysis -and $null -ne $identityAnalysis.Users -and $identityAnalysis.Users -is [System.Collections.ICollection]) { $identityAnalysis.Users.Count } else { 0 }
+            $groupCountSafe2 = if ($null -ne $identityAnalysis -and $null -ne $identityAnalysis.Groups -and $identityAnalysis.Groups -is [System.Collections.ICollection]) { $identityAnalysis.Groups.Count } else { 0 }
+            $managedIdentityCountSafe2 = if ($null -ne $connectedManagedIdentities -and $connectedManagedIdentities -is [System.Collections.ICollection]) { $connectedManagedIdentities.Count } else { 0 }
+            
+            # Build result record
+            $result = [PSCustomObject]@{
+                SubscriptionId = $kvItem.SubscriptionId
+                SubscriptionName = $kvItem.SubscriptionName
+                KeyVaultName = $kv.VaultName
+                ResourceId = $kv.ResourceId
+                Location = $kv.Location
+                ResourceGroupName = $kv.ResourceGroupName
+                DiagnosticsEnabled = $diagnostics.Enabled
+                EnabledLogCategories = $diagnostics.LogCategories -join ","
+                EnabledMetricCategories = $diagnostics.MetricCategories -join ","
+                LogAnalyticsEnabled = $diagnostics.LogAnalyticsEnabled
+                LogAnalyticsWorkspaceName = $diagnostics.LogAnalyticsWorkspaceName
+                EventHubEnabled = $diagnostics.EventHubEnabled
+                EventHubNamespace = $diagnostics.EventHubNamespace
+                EventHubName = $diagnostics.EventHubName
+                StorageAccountEnabled = $diagnostics.StorageAccountEnabled
+                StorageAccountName = $diagnostics.StorageAccountName
+                AccessPolicyCount = $accessPolicyCountSafe2
+                AccessPolicyDetails = $accessPolicies -join " | "
+                RBACRoleAssignments = ($rbacAssignments | ForEach-Object { "$($_.PrincipalName): $($_.RoleDefinitionName)" }) -join " | "
+                RBACAssignmentCount = $rbacAssignmentCountSafe2
+                TotalIdentitiesWithAccess = $rbacAssignmentCountSafe2 + $accessPolicyCountSafe2
+                ServicePrincipalCount = $servicePrincipalCountSafe2
+                UserCount = $userCountSafe2
+                GroupCount = $groupCountSafe2
+                ManagedIdentityCount = $managedIdentityCountSafe2
+                ServicePrincipalDetails = $identityAnalysis.ServicePrincipals -join " | "
+                ManagedIdentityDetails = $connectedManagedIdentities -join " | "
+                SoftDeleteEnabled = $(if ($kv.PSObject.Properties.Name -contains 'EnableSoftDelete') { $kv.EnableSoftDelete } else { "Unknown" })
+                PurgeProtectionEnabled = $(if ($kv.PSObject.Properties.Name -contains 'EnablePurgeProtection') { $kv.EnablePurgeProtection } else { "Unknown" })
+                PublicNetworkAccess = $networkConfig.PublicNetworkAccess
+                NetworkAclsConfigured = $networkConfig.NetworkAclsConfigured
+                PrivateEndpointCount = $networkConfig.PrivateEndpointCount
+                SystemAssignedIdentity = $systemAssignedIdentity
+                SystemAssignedPrincipalId = $systemAssignedPrincipalId
+                UserAssignedIdentityCount = $userAssignedIdentityCount
+                UserAssignedIdentityIds = $userAssignedIdentityIds -join ","
+                ConnectedManagedIdentityCount = if ($null -ne $connectedManagedIdentities -and $connectedManagedIdentities -is [System.Collections.ICollection]) { $connectedManagedIdentities.Count } else { 0 }
+                ComplianceStatus = $complianceStatus
+                ComplianceScore = $complianceScore
+                CompanyComplianceScore = $companyComplianceScore
+                CompanyComplianceStatus = $companyComplianceStatus
+                ComplianceIssues = ""
+                ComplianceRecommendations = ($recommendations -join "; ")
+                VaultRecommendations = ($recommendations | Select-Object -First 10) -join "; "
+                SecurityEnhancements = ($recommendations | Where-Object { $_ -like "*Private*" -or $_ -like "*System*" -or $_ -like "*Log*" -or $_ -like "*secret*" -or $_ -like "*Key Vault*" }) -join "; "
+                RBACRecommendations = ($recommendations | Where-Object { $_ -like "*Reduce*" -or $_ -like "*Consider reducing*" -or $_ -like "*Replace*" }) -join "; "
+                OverPrivilegedAssignments = $overPrivileged -join "; "
+                # Workload Analysis Data
+                SecretCount = $workloadAnalysis.SecretCount
+                KeyCount = $workloadAnalysis.KeyCount
+                CertificateCount = $workloadAnalysis.CertificateCount
+                ManagedStorageAccountCount = $workloadAnalysis.ManagedStorageAccountCount
+                WorkloadCategories = $workloadAnalysis.WorkloadCategories -join " | "
+                EnvironmentType = $workloadAnalysis.EnvironmentType
+                PrimaryWorkload = $workloadAnalysis.PrimaryWorkload
+                SecurityInsights = $workloadAnalysis.SecurityInsights -join " | "
+                OptimizationRecommendations = $workloadAnalysis.OptimizationRecommendations -join " | "
+                RiskLevel = $workloadAnalysis.RiskLevel
+                RiskFactors = $workloadAnalysis.RiskFactors -join " | "
+                CriticalFindings = $workloadAnalysis.CriticalFindings -join " | "
+                TotalItems = ($workloadAnalysis.SecretCount + $workloadAnalysis.KeyCount + $workloadAnalysis.CertificateCount)
+            }
+            
+            $global:auditResults += $result
+        
+        # Write result to CSV immediately for real-time output (if CSV path is available)
+        if ($csvPath) {
+            Write-VaultResultToCSV -VaultResult $result -CsvFilePath $csvPath -IsFirstResult ($global:auditResults.Count -eq 1)
+        } else {
+            Write-Host "⚠️ CSV path not yet initialized, skipping real-time CSV write for $($result.KeyVaultName)" -ForegroundColor Yellow
+        }
+        
+        # Perform targeted cleanup of vault-specific variables after adding result
+        try {
+            $cleanupVars = @('rbacAssignments', 'accessPolicies', 'identityAnalysis', 'networkConfig', 
+                           'overPrivileged', 'workloadAnalysis', 'diagnostics', 'vaultData', 
+                           'complianceResult', 'recommendations', 'result', 'connectedManagedIdentities')
+            
+            foreach ($varName in $cleanupVars) {
+                if (Get-Variable -Name $varName -Scope "Script" -ErrorAction SilentlyContinue) {
+                    Remove-Variable -Name $varName -Scope "Script" -ErrorAction SilentlyContinue
+                }
+            }
+        } catch {
+            # Variable cleanup failure should not break script execution
+            Write-Verbose "Error cleanup variable removal failed: $($_.Exception.Message)"
+        }
             
         } catch {
             $retryCount++
@@ -11258,6 +11639,8 @@ foreach ($kvItem in $vaultsToProcess) {
         }
         
         # Enhanced connected managed identities processing with error handling
+        # Ensure rbacAssignments is initialized
+        if (-not (Get-Variable -Name 'rbacAssignments' -ErrorAction SilentlyContinue)) { $rbacAssignments = @() }
         $connectedManagedIdentities = @()
         foreach ($assignment in $rbacAssignments) {
             try {
@@ -11300,6 +11683,22 @@ foreach ($kvItem in $vaultsToProcess) {
         $complianceStatus = Get-ComplianceStatus -Score $complianceScore -Framework "Microsoft"
         $companyComplianceStatus = Get-ComplianceStatus -Score $companyComplianceScore -Framework "Company"
         
+        # Ensure diagnostics is initialized for executive summary
+        if (-not (Get-Variable -Name 'diagnostics' -ErrorAction SilentlyContinue)) { 
+            $diagnostics = @{
+                Enabled = $false
+                LogCategories = @()
+                MetricCategories = @()
+                LogAnalyticsEnabled = $false
+                LogAnalyticsWorkspaceName = ""
+                EventHubEnabled = $false
+                EventHubNamespace = ""
+                EventHubName = ""
+                StorageAccountEnabled = $false
+                StorageAccountName = ""
+            }
+        }
+        
         # Update Microsoft framework executive summary
         switch ($complianceStatus) {
             "Fully Compliant" { $executiveSummary.FullyCompliant++; $executiveSummary.MicrosoftFullyCompliant++ }
@@ -11314,29 +11713,42 @@ foreach ($kvItem in $vaultsToProcess) {
             "Non-Compliant" { $executiveSummary.CompanyNonCompliant++ }
         }
         
-        if ($diagnostics.Enabled) { $executiveSummary.WithDiagnostics++ }
-        if ($diagnostics.EventHubEnabled) { $executiveSummary.WithEventHub++ }
-        if ($diagnostics.LogAnalyticsEnabled) { $executiveSummary.WithLogAnalytics++ }
-        if ($diagnostics.StorageAccountEnabled) { $executiveSummary.WithStorageAccount++ }
+        if ($diagnostics -and $diagnostics.Enabled) { $executiveSummary.WithDiagnostics++ }
+        if ($diagnostics -and $diagnostics.EventHubEnabled) { $executiveSummary.WithEventHub++ }
+        if ($diagnostics -and $diagnostics.LogAnalyticsEnabled) { $executiveSummary.WithLogAnalytics++ }
+        if ($diagnostics -and $diagnostics.StorageAccountEnabled) { $executiveSummary.WithStorageAccount++ }
         if ($networkConfig.PrivateEndpointCount -gt 0) { $executiveSummary.WithPrivateEndpoints++ }
-        if ((Get-SafeProperty -Object $rbacAssignments -PropertyName 'Count' -DefaultValue 0) -gt 0) { $executiveSummary.UsingRBAC++ }
-        if ((Get-SafeProperty -Object $accessPolicies -PropertyName 'Count' -DefaultValue 0) -gt 0) { $executiveSummary.UsingAccessPolicies++ }
+        $rbacCount = if ($null -ne $rbacAssignments -and $rbacAssignments -is [array]) { $rbacAssignments.Count } else { 0 }
+        if ($rbacCount -gt 0) { $executiveSummary.UsingRBAC++ }
+        $accessPolicyCount = if ($null -ne $accessPolicies -and $accessPolicies -is [array]) { $accessPolicies.Count } else { 0 }
+        if ($accessPolicyCount -gt 0) { $executiveSummary.UsingAccessPolicies++ }
         
         # Update global access policy counter (using defensive count)
-        if ($accessPolicies) { $global:accessPolicyCount += (Get-SafeProperty -Object $accessPolicies -PropertyName 'Count' -DefaultValue 0) }
+        if ($accessPolicies) { $global:accessPolicyCount += $accessPolicyCount }
         
         # Generate recommendations
         $recommendations = New-SecurityRecommendations -VaultData $vaultData
         
     } catch {
-        $errorMsg = "Failed to analyze vault $($kv.VaultName): $_"
+        # Always initialize $diagnostics as the first line in the catch block
+        $diagnostics = @{
+            Enabled = $false
+            LogCategories = @()
+            MetricCategories = @()
+            LogAnalyticsEnabled = $false
+            LogAnalyticsWorkspaceName = ""
+            EventHubEnabled = $false
+            EventHubNamespace = ""
+            EventHubName = ""
+            StorageAccountEnabled = $false
+            StorageAccountName = ""
+        }
+        $errorMsg = "Failed to analyze vault $($kv.VaultName): $($_.ToString())"
         Write-UserMessage -Message "[VaultAnalysis] [$($kv.VaultName)] $errorMsg" -Type Error
         Write-ErrorLog "VaultAnalysis" $errorMsg $kv.VaultName
-        
         if ($_.Exception.Message -like "*Forbidden*" -or $_.Exception.Message -like "*Authorization*") {
             Write-PermissionsLog "VaultAnalysis" "Insufficient permissions to analyze vault" $kv.VaultName
         }
-        
         # Add minimal record for failed analysis
         $global:auditResults += [PSCustomObject]@{
             SubscriptionId = $kvItem.SubscriptionId
@@ -11347,10 +11759,18 @@ foreach ($kvItem in $vaultsToProcess) {
             ResourceGroupName = $kv.ResourceGroupName
             ComplianceStatus = "Analysis Failed"
             ComplianceScore = 0
+            CompanyComplianceScore = 0
+            CompanyComplianceStatus = "Collection Failed"
+            DiagnosticsEnabled = $diagnostics.Enabled
+            EventHubEnabled = $diagnostics.EventHubEnabled
+            LogAnalyticsEnabled = $diagnostics.LogAnalyticsEnabled
+            StorageAccountEnabled = $diagnostics.StorageAccountEnabled
+            RBACAssignmentCount = 0
+            PrivateEndpointCount = 0
             ErrorsEncountered = $_.Exception.Message
             LastAuditDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
         }
-        
+
         # Perform cleanup of any partially created variables after error
         try {
             $cleanupVars = @('rbacAssignments', 'accessPolicies', 'identityAnalysis', 'networkConfig', 
@@ -11369,143 +11789,87 @@ foreach ($kvItem in $vaultsToProcess) {
     }
 }
 
-# Update final executive summary with calculations        
-    while (-not $vaultProcessed -and $retryCount -lt $maxRetries) {
-        
-        try {
-            # Calculate defensive counts before hashtable creation to avoid syntax issues
-            $accessPolicyCountSafe2 = if (($accessPolicies | Get-Member -Name 'Count' -MemberType Properties)) { $accessPolicies.Count } else { ($accessPolicies | Measure-Object).Count }
-            $rbacAssignmentCountSafe2 = if (($rbacAssignments | Get-Member -Name 'Count' -MemberType Properties)) { $rbacAssignments.Count } else { ($rbacAssignments | Measure-Object).Count }
-            $servicePrincipalCountSafe2 = if (($identityAnalysis.ServicePrincipals | Get-Member -Name 'Count' -MemberType Properties)) { $identityAnalysis.ServicePrincipals.Count } else { ($identityAnalysis.ServicePrincipals | Measure-Object).Count }
-            $userCountSafe2 = if (($identityAnalysis.Users | Get-Member -Name 'Count' -MemberType Properties)) { $identityAnalysis.Users.Count } else { ($identityAnalysis.Users | Measure-Object).Count }
-            $groupCountSafe2 = if (($identityAnalysis.Groups | Get-Member -Name 'Count' -MemberType Properties)) { $identityAnalysis.Groups.Count } else { ($identityAnalysis.Groups | Measure-Object).Count }
-            $managedIdentityCountSafe2 = if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count }
-            
-            # Build result record
-            $result = [PSCustomObject]@{
-                SubscriptionId = $kvItem.SubscriptionId
-                SubscriptionName = $kvItem.SubscriptionName
-                KeyVaultName = $kv.VaultName
-                ResourceId = $kv.ResourceId
-                Location = $kv.Location
-                ResourceGroupName = $kv.ResourceGroupName
-                DiagnosticsEnabled = $diagnostics.Enabled
-                EnabledLogCategories = $diagnostics.LogCategories -join ","
-                EnabledMetricCategories = $diagnostics.MetricCategories -join ","
-                LogAnalyticsEnabled = $diagnostics.LogAnalyticsEnabled
-                LogAnalyticsWorkspaceName = $diagnostics.LogAnalyticsWorkspaceName
-                EventHubEnabled = $diagnostics.EventHubEnabled
-                EventHubNamespace = $diagnostics.EventHubNamespace
-                EventHubName = $diagnostics.EventHubName
-                StorageAccountEnabled = $diagnostics.StorageAccountEnabled
-                StorageAccountName = $diagnostics.StorageAccountName
-                AccessPolicyCount = $accessPolicyCountSafe2
-                AccessPolicyDetails = $accessPolicies -join " | "
-                RBACRoleAssignments = ($rbacAssignments | ForEach-Object { "$($_.PrincipalName): $($_.RoleDefinitionName)" }) -join " | "
-                RBACAssignmentCount = $rbacAssignmentCountSafe2
-                TotalIdentitiesWithAccess = $rbacAssignmentCountSafe2 + $accessPolicyCountSafe2
-                ServicePrincipalCount = $servicePrincipalCountSafe2
-                UserCount = $userCountSafe2
-                GroupCount = $groupCountSafe2
-                ManagedIdentityCount = $managedIdentityCountSafe2
-                ServicePrincipalDetails = $identityAnalysis.ServicePrincipals -join " | "
-                ManagedIdentityDetails = $connectedManagedIdentities -join " | "
-                SoftDeleteEnabled = $(if ($kv.PSObject.Properties.Name -contains 'EnableSoftDelete') { $kv.EnableSoftDelete } else { "Unknown" })
-                PurgeProtectionEnabled = $(if ($kv.PSObject.Properties.Name -contains 'EnablePurgeProtection') { $kv.EnablePurgeProtection } else { "Unknown" })
-                PublicNetworkAccess = $networkConfig.PublicNetworkAccess
-                NetworkAclsConfigured = $networkConfig.NetworkAclsConfigured
-                PrivateEndpointCount = $networkConfig.PrivateEndpointCount
-                SystemAssignedIdentity = $systemAssignedIdentity
-                SystemAssignedPrincipalId = $systemAssignedPrincipalId
-                UserAssignedIdentityCount = $userAssignedIdentityCount
-                UserAssignedIdentityIds = $userAssignedIdentityIds -join ","
-                ConnectedManagedIdentityCount = if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count }
-                ComplianceStatus = $complianceStatus
-                ComplianceScore = $complianceScore
-                CompanyComplianceScore = $companyComplianceScore
-                CompanyComplianceStatus = $companyComplianceStatus
-                ComplianceIssues = ""
-                ComplianceRecommendations = ($recommendations -join "; ")
-                VaultRecommendations = ($recommendations | Select-Object -First 10) -join "; "
-                SecurityEnhancements = ($recommendations | Where-Object { $_ -like "*Private*" -or $_ -like "*System*" -or $_ -like "*Log*" -or $_ -like "*secret*" -or $_ -like "*Key Vault*" }) -join "; "
-                RBACRecommendations = ($recommendations | Where-Object { $_ -like "*Reduce*" -or $_ -like "*Consider reducing*" -or $_ -like "*Replace*" }) -join "; "
-                OverPrivilegedAssignments = $overPrivileged -join "; "
-                # Workload Analysis Data
-                SecretCount = $workloadAnalysis.SecretCount
-                KeyCount = $workloadAnalysis.KeyCount
-                CertificateCount = $workloadAnalysis.CertificateCount
-                WorkloadCategories = $workloadAnalysis.WorkloadCategories -join " | "
-                EnvironmentType = $workloadAnalysis.EnvironmentType
-                PrimaryWorkload = $workloadAnalysis.PrimaryWorkload
-                SecurityInsights = $workloadAnalysis.SecurityInsights -join " | "
-                OptimizationRecommendations = $workloadAnalysis.OptimizationRecommendations -join " | "
-                TotalItems = ($workloadAnalysis.SecretCount + $workloadAnalysis.KeyCount + $workloadAnalysis.CertificateCount)
-            }
-            
-            $global:auditResults += $result
-            $vaultProcessed = $true
-        
-        # Write result to CSV immediately for real-time output (if CSV path is available)
-        if ($csvPath) {
-            Write-VaultResultToCSV -VaultResult $result -CsvFilePath $csvPath -IsFirstResult ($global:auditResults.Count -eq 1)
-        } else {
-            Write-Host "⚠️ CSV path not yet initialized, skipping real-time CSV write for $($result.KeyVaultName)" -ForegroundColor Yellow
-        }
-        
-        # Perform targeted cleanup of vault-specific variables after adding result
-        try {
-            $cleanupVars = @('rbacAssignments', 'accessPolicies', 'identityAnalysis', 'networkConfig', 
-                           'overPrivileged', 'workloadAnalysis', 'diagnostics', 'vaultData', 
-                           'complianceResult', 'recommendations', 'result', 'connectedManagedIdentities')
-            
-            foreach ($varName in $cleanupVars) {
-                if (Get-Variable -Name $varName -ErrorAction SilentlyContinue) {
-                    Remove-Variable -Name $varName -Force -ErrorAction SilentlyContinue
-                }
-            }
-        } catch {
-            # Variable cleanup failure should not break script execution
-            Write-Verbose "Vault-specific variable cleanup failed: $($_.Exception.Message)"
-        }
-        
-    } catch {
-        $errorMsg = "Failed to analyze vault $($kv.VaultName): $_"
-        Write-ErrorLog "VaultAnalysis" $errorMsg $kv.VaultName
-        
-        if ($_.Exception.Message -like "*Forbidden*" -or $_.Exception.Message -like "*Authorization*") {
-            Write-PermissionsLog "VaultAnalysis" "Insufficient permissions to analyze vault" $kv.VaultName
-        }
-        
-        # Add minimal record for failed analysis
-        $global:auditResults += [PSCustomObject]@{
-            SubscriptionId = $kvItem.SubscriptionId
-            SubscriptionName = $kvItem.SubscriptionName
-            KeyVaultName = $kv.VaultName
-            ResourceId = $kv.ResourceId
-            Location = $kv.Location
-            ResourceGroupName = $kv.ResourceGroupName
-            ComplianceStatus = "Analysis Failed"
-            ComplianceScore = 0
-            ErrorsEncountered = $_.Exception.Message
-            LastAuditDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        }
-        
-        # Perform cleanup of any partially created variables after error
-        try {
-            $cleanupVars = @('rbacAssignments', 'accessPolicies', 'identityAnalysis', 'networkConfig', 
-                           'overPrivileged', 'workloadAnalysis', 'diagnostics', 'vaultData', 
-                           'complianceResult', 'recommendations', 'result', 'connectedManagedIdentities')
-            
-            foreach ($varName in $cleanupVars) {
-                if (Get-Variable -Name $varName -ErrorAction SilentlyContinue) {
-                    Remove-Variable -Name $varName -Force -ErrorAction SilentlyContinue
-                }
-            }
-        } catch {
-            # Variable cleanup failure should not break script execution
-            Write-Verbose "Error cleanup variable removal failed: $($_.Exception.Message)"
-        }
-    }
+
+
+# Calculate comprehensive executive summary from audit results
+# Ensure $global:auditResults is an array
+if (-not $global:auditResults -or $global:auditResults -isnot [array]) {
+    Write-UserMessage "WARNING: `$global:auditResults is not an array, initializing as empty array" -Type Verbose
+    $global:auditResults = @()
+}
+
+Write-UserMessage "Executive Summary: Processing $($global:auditResults.Count) audit results" -Type Verbose
+
+$compliantVaults = @($global:auditResults | Where-Object { $_.ComplianceStatus -eq "Fully Compliant" }).Count
+$partiallyCompliantVaults = @($global:auditResults | Where-Object { $_.ComplianceStatus -eq "Partially Compliant" }).Count
+$nonCompliantVaults = @($global:auditResults | Where-Object { $_.ComplianceStatus -eq "Non-Compliant" }).Count
+$highRiskVaults = @($global:auditResults | Where-Object {
+    try { [int]$_.ComplianceScore -le 50 } catch { $false }
+}).Count
+
+$compliancePercentage = if ($global:auditResults.Count -gt 0) {
+    [math]::Round(($compliantVaults / $global:auditResults.Count) * 100, 1)
+} else { 0 }
+
+$averageComplianceScore = if ($global:auditResults.Count -gt 0) {
+    $scoreMeasure = $global:auditResults | Where-Object { $_.ComplianceScore -and $_.ComplianceScore -ne "N/A" } |
+        Measure-Object -Property ComplianceScore -Average
+    [math]::Round((Get-SafeProperty -Object $scoreMeasure -PropertyName 'Average' -DefaultValue 0), 1)
+} else { 0 }
+
+$companyScores = $global:auditResults | Where-Object { $_.CompanyComplianceScore -and $_.CompanyComplianceScore -ne "N/A" } |
+    Select-Object -ExpandProperty CompanyComplianceScore
+$companyAverageScore = if ($companyScores -and ($companyScores -is [array] -or $companyScores -is [System.Collections.IEnumerable]) -and $companyScores.Count -gt 0) {
+    $companyMeasure = $companyScores | Measure-Object -Average
+    [math]::Round((Get-SafeProperty -Object $companyMeasure -PropertyName 'Average' -DefaultValue 0), 1)
+} else { 0 }$executiveSummary = @{
+    TotalKeyVaults = $global:auditResults.Count
+    CompliantVaults = $compliantVaults
+    PartiallyCompliantVaults = $partiallyCompliantVaults
+    NonCompliantVaults = $nonCompliantVaults
+    HighRiskVaults = $highRiskVaults
+    CompliancePercentage = $compliancePercentage
+    AverageComplianceScore = $averageComplianceScore
+    CompanyAverageScore = $companyAverageScore
+    WithDiagnostics = @($global:auditResults | Where-Object {
+        $_.DiagnosticsEnabled -eq "Yes" -or $_.DiagnosticsEnabled -eq $true
+    }).Count
+    WithEventHub = @($global:auditResults | Where-Object {
+        $_.EventHubEnabled -eq "Yes" -or $_.EventHubEnabled -eq $true
+    }).Count
+    WithLogAnalytics = @($global:auditResults | Where-Object {
+        $_.LogAnalyticsEnabled -eq "Yes" -or $_.LogAnalyticsEnabled -eq $true
+    }).Count
+    UsingRBAC = @($global:auditResults | Where-Object { 
+        try { [int]$_.RBACAssignmentCount -gt 0 } catch { $false }
+    }).Count
+    WithPrivateEndpoints = @($global:auditResults | Where-Object { 
+        try { [int]$_.PrivateEndpointCount -gt 0 } catch { $false }
+    }).Count
+    TotalSubscriptions = ($global:auditResults | Select-Object -ExpandProperty SubscriptionId -Unique | Measure-Object).Count
+    FullyCompliant = $compliantVaults
+    PartiallyCompliant = $partiallyCompliantVaults
+    NonCompliant = $nonCompliantVaults
+    UsingAccessPolicies = @($global:auditResults | Where-Object { 
+        try { [int]$_.AccessPolicyCount -gt 0 } catch { $false }
+    }).Count
+    WithStorageAccount = @($global:auditResults | Where-Object { 
+        $_.StorageAccountEnabled -eq "Yes" -or $_.StorageAccountEnabled -eq $true 
+    }).Count
+    # Microsoft Framework Compliance
+    MicrosoftFullyCompliant = $compliantVaults
+    MicrosoftPartiallyCompliant = $partiallyCompliantVaults
+    MicrosoftNonCompliant = $nonCompliantVaults
+    # Company Framework Compliance
+    CompanyFullyCompliant = @($global:auditResults | Where-Object { $_.CompanyComplianceStatus -eq "Fully Compliant" }).Count
+    CompanyPartiallyCompliant = @($global:auditResults | Where-Object { $_.CompanyComplianceStatus -eq "Partially Compliant" }).Count
+    CompanyNonCompliant = @($global:auditResults | Where-Object { $_.CompanyComplianceStatus -eq "Non-Compliant" }).Count
+    CompanyComplianceScore = $companyAverageScore
+    # Additional metrics
+    TotalServicePrincipals = 0  # Will be updated below
+    TotalManagedIdentities = 0  # Will be updated below
+    UserManagedIdentities = 0   # Will be updated below
+    SystemManagedIdentities = 0 # Will be updated below
 }
 
 # Update final executive summary with calculations
@@ -11540,22 +11904,18 @@ try {
 
 # Initialize variables needed for HTML report generation
 $IsPartialResults = $false
-Write-Verbose "IsPartialResults initialized to: $IsPartialResults"
+Write-UserMessage "IsPartialResults initialized to: $IsPartialResults" -Type Verbose
 
 # Generate comprehensive HTML report using the unified function
 Write-Host "📊 Generating comprehensive HTML report..." -ForegroundColor Cyan
 
 # Use the comprehensive HTML generation function for consistent formatting
-Write-Verbose "About to call New-ComprehensiveHtmlReport..."
+Write-UserMessage "About to call New-ComprehensiveHtmlReport..." -Type Verbose
 
 # Defensive check to prevent crash when no vaults are processed
 if (-not $global:auditResults -or $global:auditResults.Count -eq 0) {
     Write-Warning "No vault data was successfully processed. Generating a failure report."
     
-    # Ensure variables exist before trying to access them in the failure report
-    if (-not $executionTime) { $executionTime = New-TimeSpan -Start $global:startTime }
-    if (-not $vaultsToProcess) { $vaultsToProcess = @() }
-
     $failureReport = [PSCustomObject]@{
         KeyVaultName                  = "No Vaults Processed"
         KeyVaultUri                   = "N/A"
@@ -11600,12 +11960,52 @@ if (-not $global:auditResults -or $global:auditResults.Count -eq 0) {
         ReportColor                   = "#FF0000"
         ReportStatus                  = "Failure"
         ReportSummary                 = "No Key Vaults were successfully analyzed."
+        # Add properties expected by HTML template with default values
+        ComplianceScore               = 0
+        CompanyComplianceScore        = 0
+        ComplianceStatus              = "Non-Compliant"
+        ResourceGroupName             = "N/A"
+        DiagnosticsEnabled            = "No"
+        EnabledLogCategories          = "N/A"
+        LogAnalyticsEnabled           = "No"
+        EventHubEnabled               = "No"
+        StorageAccountEnabled         = "No"
+        AccessPolicyCount             = 0
+        RBACAssignmentCount           = 0
+        ServicePrincipalCount         = 0
+        ManagedIdentityCount          = 0
+        SystemAssignedIdentity        = "No"
+        UserAssignedIdentityCount     = 0
+        UserAssignedIdentityIds       = "N/A"
+        SystemAssignedPrincipalId     = "N/A"
+        SoftDeleteEnabled             = "No"
+        PurgeProtectionEnabled        = "No"
+        PublicNetworkAccess           = "N/A"
+        PrivateEndpointCount          = 0
+        SecretCount                   = 0
+        KeyCount                      = 0
+        CertificateCount              = 0
+        EnvironmentType               = "N/A"
+        PrimaryWorkload               = "N/A"
+        WorkloadCategories            = "N/A"
+        ComplianceRecommendations     = "No recommendations available - no vaults were processed"
+        ServicePrincipalDetails       = "N/A"
+        ManagedIdentityDetails        = "N/A"
+        RBACRoleAssignments           = "N/A"
+        AccessPolicyDetails           = "N/A"
+        NetworkAclsConfigured         = "N/A"
+        StorageAccountName            = "N/A"
+        EventHubNamespace             = "N/A"
+        EventHubName                  = "N/A"
+        LogAnalyticsWorkspaceName     = "N/A"
+        ResourceId                    = "N/A"
+        LastAuditDate                 = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     }
     $global:auditResults = @($failureReport)
 }
 
 $htmlGenerated = New-ComprehensiveHtmlReport -OutputPath $htmlPath -AuditResults $global:auditResults -ExecutiveSummary $executiveSummary -AuditStats $global:auditStats -IsPartialResults $IsPartialResults
-Write-Verbose "New-ComprehensiveHtmlReport call completed"
+Write-UserMessage "New-ComprehensiveHtmlReport call completed" -Type Verbose
 
 if ($htmlGenerated) {
     # Success - report will be shown in final summary
@@ -11664,31 +12064,31 @@ Write-Host "==================" -ForegroundColor Green
 Write-Host ""
 
 # Summary table
-$rbacPercentage = [math]::Round(($executiveSummary.UsingRBAC / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1)
-$diagnosticsPercentage = [math]::Round(($executiveSummary.WithDiagnostics / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1)
-$eventHubPercentage = [math]::Round(($executiveSummary.WithEventHub / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1)
-$logAnalyticsPercentage = [math]::Round(($executiveSummary.WithLogAnalytics / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1)
-$storageAccountPercentage = [math]::Round(($executiveSummary.WithStorageAccount / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1)
-$privateEndpointsPercentage = [math]::Round(($executiveSummary.WithPrivateEndpoints / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1)
-$compliancePercentage = [math]::Round(($executiveSummary.FullyCompliant / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1)
+$rbacPercentage = [math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'UsingRBAC' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1)
+$diagnosticsPercentage = [math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'WithDiagnostics' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1)
+$eventHubPercentage = [math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'WithEventHub' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1)
+$logAnalyticsPercentage = [math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'WithLogAnalytics' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1)
+$storageAccountPercentage = [math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'WithStorageAccount' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1)
+$privateEndpointsPercentage = [math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'WithPrivateEndpoints' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1)
+$compliancePercentage = [math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'FullyCompliant' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1)
 
 $summaryData = @(
-    @{Metric="Total Subscriptions"; Value=$executiveSummary.TotalSubscriptions; Percentage="N/A"}
-    @{Metric="Skipped Subscriptions"; Value=$global:auditStats.SkippedSubscriptions; Percentage="N/A"}
-    @{Metric="Total Key Vaults"; Value=$executiveSummary.TotalKeyVaults; Percentage="N/A"}
-    @{Metric="Fully Compliant"; Value=$executiveSummary.FullyCompliant; Percentage="$([math]::Round(($executiveSummary.FullyCompliant / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1))%"}
-    @{Metric="Partially Compliant"; Value=$executiveSummary.PartiallyCompliant; Percentage="$([math]::Round(($executiveSummary.PartiallyCompliant / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1))%"}
-    @{Metric="Non-Compliant"; Value=$executiveSummary.NonCompliant; Percentage="$([math]::Round(($executiveSummary.NonCompliant / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1))%"}
-    @{Metric="Using RBAC"; Value=$executiveSummary.UsingRBAC; Percentage="$rbacPercentage%"}
-    @{Metric="Using Access Policies"; Value=$executiveSummary.UsingAccessPolicies; Percentage="$([math]::Round(($executiveSummary.UsingAccessPolicies / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1))%"}
-    @{Metric="Total Service Principals"; Value=$executiveSummary.TotalServicePrincipals; Percentage="N/A"}
-    @{Metric="Total Managed Identities"; Value=$executiveSummary.TotalManagedIdentities; Percentage="N/A"}
-    @{Metric="With Diagnostics"; Value=$executiveSummary.WithDiagnostics; Percentage="$diagnosticsPercentage%"}
-    @{Metric="Event Hub Enabled"; Value=$executiveSummary.WithEventHub; Percentage="$eventHubPercentage%"}
-    @{Metric="Log Analytics"; Value=$executiveSummary.WithLogAnalytics; Percentage="$logAnalyticsPercentage%"}
-    @{Metric="Storage Logging"; Value=$executiveSummary.WithStorageAccount; Percentage="$storageAccountPercentage%"}
-    @{Metric="Private Endpoints"; Value=$executiveSummary.WithPrivateEndpoints; Percentage="$privateEndpointsPercentage%"}
-    @{Metric="System Identities"; Value=$executiveSummary.SystemManagedIdentities; Percentage="$([math]::Round(($executiveSummary.SystemManagedIdentities / [math]::Max($executiveSummary.TotalKeyVaults, 1)) * 100, 1))%"}
+    @{Metric="Total Subscriptions"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalSubscriptions' -DefaultValue 0); Percentage="N/A"}
+    @{Metric="Skipped Subscriptions"; Value=(Get-SafeProperty -Object $global:auditStats -PropertyName 'SkippedSubscriptions' -DefaultValue 0); Percentage="N/A"}
+    @{Metric="Total Key Vaults"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 0); Percentage="N/A"}
+    @{Metric="Fully Compliant"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'FullyCompliant' -DefaultValue 0); Percentage="$([math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'FullyCompliant' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1))%"}
+    @{Metric="Partially Compliant"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'PartiallyCompliant' -DefaultValue 0); Percentage="$([math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'PartiallyCompliant' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1))%"}
+    @{Metric="Non-Compliant"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'NonCompliant' -DefaultValue 0); Percentage="$([math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'NonCompliant' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1))%"}
+    @{Metric="Using RBAC"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'UsingRBAC' -DefaultValue 0); Percentage="$rbacPercentage%"}
+    @{Metric="Using Access Policies"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'UsingAccessPolicies' -DefaultValue 0); Percentage="$([math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'UsingAccessPolicies' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1))%"}
+    @{Metric="Total Service Principals"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalServicePrincipals' -DefaultValue 0); Percentage="N/A"}
+    @{Metric="Total Managed Identities"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalManagedIdentities' -DefaultValue 0); Percentage="N/A"}
+    @{Metric="With Diagnostics"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'WithDiagnostics' -DefaultValue 0); Percentage="$diagnosticsPercentage%"}
+    @{Metric="Event Hub Enabled"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'WithEventHub' -DefaultValue 0); Percentage="$eventHubPercentage%"}
+    @{Metric="Log Analytics"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'WithLogAnalytics' -DefaultValue 0); Percentage="$logAnalyticsPercentage%"}
+    @{Metric="Storage Logging"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'WithStorageAccount' -DefaultValue 0); Percentage="$storageAccountPercentage%"}
+    @{Metric="Private Endpoints"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'WithPrivateEndpoints' -DefaultValue 0); Percentage="$privateEndpointsPercentage%"}
+    @{Metric="System Identities"; Value=(Get-SafeProperty -Object $executiveSummary -PropertyName 'SystemManagedIdentities' -DefaultValue 0); Percentage="$([math]::Round(((Get-SafeProperty -Object $executiveSummary -PropertyName 'SystemManagedIdentities' -DefaultValue 0) / [math]::Max((Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 1), 1)) * 100, 1))%"}
 )
 
 $summaryData | Format-Table -Property @{Label="Metric"; Expression={$_.Metric}; Width=25}, 
@@ -11710,7 +12110,7 @@ if ($compliancePercentage -ge 90) {
 
 # Log completion
 Write-ErrorLog "Audit" "Azure Key Vault Comprehensive Audit completed successfully"
-Write-ErrorLog "Audit" "Summary: $($executiveSummary.TotalKeyVaults) vaults analyzed, $compliancePercentage% compliance rate, $($global:auditStats.TokenRefreshCount) token refresh(es)"
+Write-ErrorLog "Audit" "Summary: $(Get-SafeProperty -Object $executiveSummary -PropertyName 'TotalKeyVaults' -DefaultValue 0) vaults analyzed, $compliancePercentage% compliance rate, $(Get-SafeProperty -Object $global:auditStats -PropertyName 'TokenRefreshCount' -DefaultValue 0) token refresh(es)"
 Write-PermissionsLog "Audit" "Audit completed with permissions validation logged"
 Write-DataIssuesLog "Audit" "Data collection completed - check logs for any collection issues"
 
@@ -11736,13 +12136,13 @@ Write-Host ""
 Write-Host "📊 PRODUCTION AUDIT STATISTICS" -ForegroundColor Cyan
 Write-Host "===============================" -ForegroundColor Cyan
 Write-Host "Execution Duration: $executionTimeMinutes minutes ($executionTimeFormatted)" -ForegroundColor White
-Write-Host "Successful Vaults: $($global:auditStats.SuccessfulVaults)" -ForegroundColor Green
-Write-Host "Skipped Vaults: $($global:auditStats.SkippedVaults)" -ForegroundColor $(if ($global:auditStats.SkippedVaults -gt 0) { "Yellow" } else { "Green" })
-Write-Host "Total Retries: $($global:auditStats.TotalRetries)" -ForegroundColor $(if ($global:auditStats.TotalRetries -gt 0) { "Yellow" } else { "Green" })
-Write-Host "Token Refreshes: $($global:auditStats.TokenRefreshCount)" -ForegroundColor Cyan
-Write-Host "Processing Errors: $($global:auditStats.ProcessingErrors)" -ForegroundColor $(if ($global:auditStats.ProcessingErrors -gt 0) { "Red" } else { "Green" })
-Write-Host "Permission Errors: $($global:auditStats.PermissionErrors)" -ForegroundColor $(if ($global:auditStats.PermissionErrors -gt 0) { "Red" } else { "Green" })
-Write-Host "Authentication Errors: $($global:auditStats.AuthenticationErrors)" -ForegroundColor $(if ($global:auditStats.AuthenticationErrors -gt 0) { "Red" } else { "Green" })
+Write-Host "Successful Vaults: $(Get-SafeProperty -Object $global:auditStats -PropertyName 'SuccessfulVaults' -DefaultValue 0)" -ForegroundColor Green
+Write-Host "Skipped Vaults: $(Get-SafeProperty -Object $global:auditStats -PropertyName 'SkippedVaults' -DefaultValue 0)" -ForegroundColor $(if ((Get-SafeProperty -Object $global:auditStats -PropertyName 'SkippedVaults' -DefaultValue 0) -gt 0) { "Yellow" } else { "Green" })
+Write-Host "Total Retries: $(Get-SafeProperty -Object $global:auditStats -PropertyName 'TotalRetries' -DefaultValue 0)" -ForegroundColor $(if ((Get-SafeProperty -Object $global:auditStats -PropertyName 'TotalRetries' -DefaultValue 0) -gt 0) { "Yellow" } else { "Green" })
+Write-Host "Token Refreshes: $(Get-SafeProperty -Object $global:auditStats -PropertyName 'TokenRefreshCount' -DefaultValue 0)" -ForegroundColor Cyan
+Write-Host "Processing Errors: $(Get-SafeProperty -Object $global:auditStats -PropertyName 'ProcessingErrors' -DefaultValue 0)" -ForegroundColor $(if ((Get-SafeProperty -Object $global:auditStats -PropertyName 'ProcessingErrors' -DefaultValue 0) -gt 0) { "Red" } else { "Green" })
+Write-Host "Permission Errors: $(Get-SafeProperty -Object $global:auditStats -PropertyName 'PermissionErrors' -DefaultValue 0)" -ForegroundColor $(if ((Get-SafeProperty -Object $global:auditStats -PropertyName 'PermissionErrors' -DefaultValue 0) -gt 0) { "Red" } else { "Green" })
+Write-Host "Authentication Errors: $(Get-SafeProperty -Object $global:auditStats -PropertyName 'AuthenticationErrors' -DefaultValue 0)" -ForegroundColor $(if ((Get-SafeProperty -Object $global:auditStats -PropertyName 'AuthenticationErrors' -DefaultValue 0) -gt 0) { "Red" } else { "Green" })
 Write-Host "Skipped Subscriptions: $($global:auditStats.SkippedSubscriptions)" -ForegroundColor $(if ($global:auditStats.SkippedSubscriptions -gt 0) { "Yellow" } else { "Green" })
 
 Write-Host ""
