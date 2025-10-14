@@ -9719,33 +9719,33 @@ if ($PSBoundParameters.ContainsKey('SingleVault')) {
         }
         
         Write-Host "📋 Building comprehensive vault data..." -ForegroundColor Yellow
-        # Build vault data for compliance assessment (matching main audit structure)
+        # Build vault data for compliance assessment (matching main audit structure) with defensive null checks
         $vaultData = @{
             KeyVaultName = $kv.VaultName
-            DiagnosticsEnabled = $diagnostics.Enabled
-            LogAnalyticsEnabled = $diagnostics.LogAnalyticsEnabled
-            EventHubEnabled = $diagnostics.EventHubEnabled
-            StorageAccountEnabled = $diagnostics.StorageAccountEnabled
-            EnabledLogCategories = $diagnostics.LogCategories
+            DiagnosticsEnabled = if ($diagnostics) { $diagnostics.Enabled } else { $false }
+            LogAnalyticsEnabled = if ($diagnostics) { $diagnostics.LogAnalyticsEnabled } else { $false }
+            EventHubEnabled = if ($diagnostics) { $diagnostics.EventHubEnabled } else { $false }
+            StorageAccountEnabled = if ($diagnostics) { $diagnostics.StorageAccountEnabled } else { $false }
+            EnabledLogCategories = if ($diagnostics -and $diagnostics.LogCategories) { $diagnostics.LogCategories } else { @() }
             SoftDeleteEnabled = if ($kv.PSObject.Properties['EnableSoftDelete']) { $kv.EnableSoftDelete } else { "Unknown" }
             PurgeProtectionEnabled = if ($kv.PSObject.Properties['EnablePurgeProtection']) { $kv.EnablePurgeProtection } else { "Unknown" }
-            PublicNetworkAccess = $networkConfig.PublicNetworkAccess
-            PrivateEndpointCount = $networkConfig.PrivateEndpointCount
-            NetworkAclsConfigured = $networkConfig.NetworkAclsConfigured
+            PublicNetworkAccess = if ($networkConfig) { $networkConfig.PublicNetworkAccess } else { "Unknown" }
+            PrivateEndpointCount = if ($networkConfig) { $networkConfig.PrivateEndpointCount } else { 0 }
+            NetworkAclsConfigured = if ($networkConfig) { $networkConfig.NetworkAclsConfigured } else { "Unknown" }
             AccessPolicyCount = if ($accessPolicies.PSObject.Properties['Count']) { $accessPolicies.PSObject.Properties['Count'].Value } else { if ($accessPolicies) { ($accessPolicies | Measure-Object).Count } else { 0 } }
             RBACAssignmentCount = if ($rbacAssignments.PSObject.Properties['Count']) { $rbacAssignments.PSObject.Properties['Count'].Value } else { if ($rbacAssignments) { ($rbacAssignments | Measure-Object).Count } else { 0 } }
             ServicePrincipalCount = if ($identityAnalysis.ServicePrincipals.PSObject.Properties['Count']) { $identityAnalysis.ServicePrincipals.PSObject.Properties['Count'].Value } else { if ($identityAnalysis.ServicePrincipals) { ($identityAnalysis.ServicePrincipals | Measure-Object).Count } else { 0 } }
             UserCount = if ($identityAnalysis.Users.PSObject.Properties['Count']) { $identityAnalysis.Users.PSObject.Properties['Count'].Value } else { if ($identityAnalysis.Users) { ($identityAnalysis.Users | Measure-Object).Count } else { 0 } }
             GroupCount = if ($identityAnalysis.Groups.PSObject.Properties['Count']) { $identityAnalysis.Groups.PSObject.Properties['Count'].Value } else { if ($identityAnalysis.Groups) { ($identityAnalysis.Groups | Measure-Object).Count } else { 0 } }
             ConnectedManagedIdentityCount = if ($connectedManagedIdentities.PSObject.Properties['Count']) { $connectedManagedIdentities.PSObject.Properties['Count'].Value } else { if ($connectedManagedIdentities) { ($connectedManagedIdentities | Measure-Object).Count } else { 0 } }
-            SecretCount = $workloadAnalysis.SecretCount
-            KeyCount = $workloadAnalysis.KeyCount
-            CertificateCount = $workloadAnalysis.CertificateCount
-            AuditEventEnabled = "AuditEvent" -in $diagnostics.LogCategories
-            PolicyEvaluationEnabled = "AzurePolicyEvaluationDetails" -in $diagnostics.LogCategories
+            SecretCount = if ($workloadAnalysis) { $workloadAnalysis.SecretCount } else { 0 }
+            KeyCount = if ($workloadAnalysis) { $workloadAnalysis.KeyCount } else { 0 }
+            CertificateCount = if ($workloadAnalysis) { $workloadAnalysis.CertificateCount } else { 0 }
+            AuditEventEnabled = if ($diagnostics -and $diagnostics.LogCategories) { "AuditEvent" -in $diagnostics.LogCategories } else { $false }
+            PolicyEvaluationEnabled = if ($diagnostics -and $diagnostics.LogCategories) { "AzurePolicyEvaluationDetails" -in $diagnostics.LogCategories } else { $false }
             RBACEnabled = $(if ($rbacAssignments.PSObject.Properties['Count']) { $rbacAssignments.PSObject.Properties['Count'].Value -gt 0 } else { if ($rbacAssignments) { ($rbacAssignments | Measure-Object).Count -gt 0 } else { $false } })
             SystemAssignedIdentity = $systemAssignedIdentity
-            OverPrivilegedAssignments = $overPrivileged
+            OverPrivilegedAssignments = if ($overPrivileged) { $overPrivileged } else { @() }
         }
         
         Write-Host "🏆 Calculating compliance scores..." -ForegroundColor Yellow
@@ -9795,16 +9795,16 @@ if ($PSBoundParameters.ContainsKey('SingleVault')) {
             ResourceId = $kv.ResourceId
             Location = $kv.Location
             ResourceGroupName = $kv.ResourceGroupName
-            DiagnosticsEnabled = $diagnostics.Enabled
-            EnabledLogCategories = $diagnostics.LogCategories -join ","
-            EnabledMetricCategories = $diagnostics.MetricCategories -join ","
-            LogAnalyticsEnabled = $diagnostics.LogAnalyticsEnabled
-            LogAnalyticsWorkspaceName = $diagnostics.LogAnalyticsWorkspaceName
-            EventHubEnabled = $diagnostics.EventHubEnabled
-            EventHubNamespace = $diagnostics.EventHubNamespace
-            EventHubName = $diagnostics.EventHubName
-            StorageAccountEnabled = $diagnostics.StorageAccountEnabled
-            StorageAccountName = $diagnostics.StorageAccountName
+            DiagnosticsEnabled = if ($diagnostics) { $diagnostics.Enabled } else { $false }
+            EnabledLogCategories = if ($diagnostics -and $diagnostics.LogCategories) { $diagnostics.LogCategories -join "," } else { "" }
+            EnabledMetricCategories = if ($diagnostics -and $diagnostics.MetricCategories) { $diagnostics.MetricCategories -join "," } else { "" }
+            LogAnalyticsEnabled = if ($diagnostics) { $diagnostics.LogAnalyticsEnabled } else { $false }
+            LogAnalyticsWorkspaceName = if ($diagnostics) { $diagnostics.LogAnalyticsWorkspaceName } else { "" }
+            EventHubEnabled = if ($diagnostics) { $diagnostics.EventHubEnabled } else { $false }
+            EventHubNamespace = if ($diagnostics) { $diagnostics.EventHubNamespace } else { "" }
+            EventHubName = if ($diagnostics) { $diagnostics.EventHubName } else { "" }
+            StorageAccountEnabled = if ($diagnostics) { $diagnostics.StorageAccountEnabled } else { $false }
+            StorageAccountName = if ($diagnostics) { $diagnostics.StorageAccountName } else { "" }
             AccessPolicyCount = $accessPolicyCountSafe
             AccessPolicyDetails = $accessPolicies -join " | "
             RBACRoleAssignments = ($rbacAssignments | ForEach-Object { "$($_.PrincipalName): $($_.RoleDefinitionName)" }) -join " | "
@@ -10000,7 +10000,7 @@ if ($PSBoundParameters.ContainsKey('SingleVault')) {
         Write-Host "💾 Output Directory: $outDir" -ForegroundColor Cyan
         
         # Show compliance issues if any
-        if ($diagnostics.ComplianceIssues -and $diagnostics.ComplianceIssues.Count -gt 0) {
+        if ($diagnostics -and $diagnostics.ComplianceIssues -and $diagnostics.ComplianceIssues.Count -gt 0) {
             Write-Host ""
             Write-Host "⚠️ Compliance Issues Found:" -ForegroundColor Yellow
             foreach ($issue in $diagnostics.ComplianceIssues) {
@@ -11088,6 +11088,16 @@ foreach ($kvItem in $vaultsToProcess) {
     $maxRetries = 3
     $vaultProcessed = $false
     
+    # Initialize all variables that might be used after error recovery
+    # This prevents "variable cannot be retrieved because it has not been set" errors
+    $diagnostics = $null
+    $rbacAssignments = $null
+    $identityAnalysis = $null
+    $accessPolicies = $null
+    $networkConfig = $null
+    $overPrivileged = $null
+    $workloadAnalysis = $null
+    
     while (-not $vaultProcessed -and $retryCount -lt $maxRetries) {
         try {
             # Set context for this vault's subscription with retry
@@ -11218,6 +11228,11 @@ foreach ($kvItem in $vaultsToProcess) {
             }
         }
     }
+    
+    # Skip further processing if vault failed after all retries
+    if (-not $vaultProcessed) {
+        continue
+    }
         
     try {
         # Enhanced managed identity analysis
@@ -11305,19 +11320,19 @@ foreach ($kvItem in $vaultsToProcess) {
             }
         }
         
-        # Build comprehensive vault data
+        # Build comprehensive vault data with defensive null checks
         $vaultData = @{
             SoftDeleteEnabled = if ($kv.PSObject.Properties['EnableSoftDelete']) { $kv.EnableSoftDelete -eq $true } else { $false }
             PurgeProtectionEnabled = if ($kv.PSObject.Properties['EnablePurgeProtection']) { $kv.EnablePurgeProtection -eq $true } else { $false }
-            DiagnosticsEnabled = $diagnostics.Enabled
-            EventHubEnabled = $diagnostics.EventHubEnabled
-            LogAnalyticsEnabled = $diagnostics.LogAnalyticsEnabled
-            AuditEventEnabled = "AuditEvent" -in $diagnostics.LogCategories
-            PolicyEvaluationEnabled = "AzurePolicyEvaluationDetails" -in $diagnostics.LogCategories
-            RBACEnabled = $rbacAssignments.Count -gt 0
-            PrivateEndpointCount = $networkConfig.PrivateEndpointCount
+            DiagnosticsEnabled = if ($diagnostics) { $diagnostics.Enabled } else { $false }
+            EventHubEnabled = if ($diagnostics) { $diagnostics.EventHubEnabled } else { $false }
+            LogAnalyticsEnabled = if ($diagnostics) { $diagnostics.LogAnalyticsEnabled } else { $false }
+            AuditEventEnabled = if ($diagnostics -and $diagnostics.LogCategories) { "AuditEvent" -in $diagnostics.LogCategories } else { $false }
+            PolicyEvaluationEnabled = if ($diagnostics -and $diagnostics.LogCategories) { "AzurePolicyEvaluationDetails" -in $diagnostics.LogCategories } else { $false }
+            RBACEnabled = if ($rbacAssignments) { $rbacAssignments.Count -gt 0 } else { $false }
+            PrivateEndpointCount = if ($networkConfig) { $networkConfig.PrivateEndpointCount } else { 0 }
             SystemAssignedIdentity = $systemAssignedIdentity
-            OverPrivilegedAssignments = $overPrivileged
+            OverPrivilegedAssignments = if ($overPrivileged) { $overPrivileged } else { @() }
         }
         
         # Calculate dual compliance frameworks
@@ -11340,11 +11355,11 @@ foreach ($kvItem in $vaultsToProcess) {
             "Non-Compliant" { $executiveSummary.CompanyNonCompliant++ }
         }
         
-        if ($diagnostics.Enabled) { $executiveSummary.WithDiagnostics++ }
-        if ($diagnostics.EventHubEnabled) { $executiveSummary.WithEventHub++ }
-        if ($diagnostics.LogAnalyticsEnabled) { $executiveSummary.WithLogAnalytics++ }
-        if ($diagnostics.StorageAccountEnabled) { $executiveSummary.WithStorageAccount++ }
-        if ($networkConfig.PrivateEndpointCount -gt 0) { $executiveSummary.WithPrivateEndpoints++ }
+        if ($diagnostics -and $diagnostics.Enabled) { $executiveSummary.WithDiagnostics++ }
+        if ($diagnostics -and $diagnostics.EventHubEnabled) { $executiveSummary.WithEventHub++ }
+        if ($diagnostics -and $diagnostics.LogAnalyticsEnabled) { $executiveSummary.WithLogAnalytics++ }
+        if ($diagnostics -and $diagnostics.StorageAccountEnabled) { $executiveSummary.WithStorageAccount++ }
+        if ($networkConfig -and $networkConfig.PrivateEndpointCount -gt 0) { $executiveSummary.WithPrivateEndpoints++ }
         if ((Get-SafeProperty -Object $rbacAssignments -PropertyName 'Count' -DefaultValue 0) -gt 0) { $executiveSummary.UsingRBAC++ }
         if ((Get-SafeProperty -Object $accessPolicies -PropertyName 'Count' -DefaultValue 0) -gt 0) { $executiveSummary.UsingAccessPolicies++ }
         
@@ -11407,7 +11422,7 @@ foreach ($kvItem in $vaultsToProcess) {
             $groupCountSafe2 = if (($identityAnalysis.Groups | Get-Member -Name 'Count' -MemberType Properties)) { $identityAnalysis.Groups.Count } else { ($identityAnalysis.Groups | Measure-Object).Count }
             $managedIdentityCountSafe2 = if (($connectedManagedIdentities | Get-Member -Name 'Count' -MemberType Properties)) { $connectedManagedIdentities.Count } else { ($connectedManagedIdentities | Measure-Object).Count }
             
-            # Build result record
+            # Build result record with defensive null checks
             $result = [PSCustomObject]@{
                 SubscriptionId = $kvItem.SubscriptionId
                 SubscriptionName = $kvItem.SubscriptionName
@@ -11415,16 +11430,16 @@ foreach ($kvItem in $vaultsToProcess) {
                 ResourceId = $kv.ResourceId
                 Location = $kv.Location
                 ResourceGroupName = $kv.ResourceGroupName
-                DiagnosticsEnabled = $diagnostics.Enabled
-                EnabledLogCategories = $diagnostics.LogCategories -join ","
-                EnabledMetricCategories = $diagnostics.MetricCategories -join ","
-                LogAnalyticsEnabled = $diagnostics.LogAnalyticsEnabled
-                LogAnalyticsWorkspaceName = $diagnostics.LogAnalyticsWorkspaceName
-                EventHubEnabled = $diagnostics.EventHubEnabled
-                EventHubNamespace = $diagnostics.EventHubNamespace
-                EventHubName = $diagnostics.EventHubName
-                StorageAccountEnabled = $diagnostics.StorageAccountEnabled
-                StorageAccountName = $diagnostics.StorageAccountName
+                DiagnosticsEnabled = if ($diagnostics) { $diagnostics.Enabled } else { $false }
+                EnabledLogCategories = if ($diagnostics -and $diagnostics.LogCategories) { $diagnostics.LogCategories -join "," } else { "" }
+                EnabledMetricCategories = if ($diagnostics -and $diagnostics.MetricCategories) { $diagnostics.MetricCategories -join "," } else { "" }
+                LogAnalyticsEnabled = if ($diagnostics) { $diagnostics.LogAnalyticsEnabled } else { $false }
+                LogAnalyticsWorkspaceName = if ($diagnostics) { $diagnostics.LogAnalyticsWorkspaceName } else { "" }
+                EventHubEnabled = if ($diagnostics) { $diagnostics.EventHubEnabled } else { $false }
+                EventHubNamespace = if ($diagnostics) { $diagnostics.EventHubNamespace } else { "" }
+                EventHubName = if ($diagnostics) { $diagnostics.EventHubName } else { "" }
+                StorageAccountEnabled = if ($diagnostics) { $diagnostics.StorageAccountEnabled } else { $false }
+                StorageAccountName = if ($diagnostics) { $diagnostics.StorageAccountName } else { "" }
                 AccessPolicyCount = $accessPolicyCountSafe2
                 AccessPolicyDetails = $accessPolicies -join " | "
                 RBACRoleAssignments = ($rbacAssignments | ForEach-Object { "$($_.PrincipalName): $($_.RoleDefinitionName)" }) -join " | "
