@@ -2937,6 +2937,238 @@ function Invoke-PartialResults {
     }
 }
 
+function Get-GapAnalysis {
+    <#
+    .SYNOPSIS
+    Generates comprehensive gap analysis comparing current state to Microsoft and industry best practices
+    .DESCRIPTION
+    Analyzes audit results to identify gaps between current implementation and recommended practices,
+    providing both short-term quick wins and long-term strategic recommendations
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [array]$AuditResults,
+        [Parameter(Mandatory)]
+        [hashtable]$ExecutiveSummary
+    )
+    
+    $totalVaults = Get-SafeCount $AuditResults
+    if ($totalVaults -eq 0) {
+        return @{
+            TotalGaps = 0
+            CriticalGaps = @()
+            QuickWins = @()
+            LongTermRecommendations = @()
+            Statistics = @{}
+        }
+    }
+    
+    # Calculate current state metrics
+    $vaultsWithDiagnostics = Get-SafeCount @($AuditResults | Where-Object { $_.DiagnosticsEnabled -eq $true -or $_.DiagnosticsEnabled -eq "Yes" })
+    $vaultsWithEventHub = Get-SafeCount @($AuditResults | Where-Object { $_.EventHubEnabled -eq $true -or $_.EventHubEnabled -eq "Yes" })
+    $vaultsWithLogAnalytics = Get-SafeCount @($AuditResults | Where-Object { $_.LogAnalyticsEnabled -eq $true -or $_.LogAnalyticsEnabled -eq "Yes" })
+    $vaultsWithPrivateEndpoints = Get-SafeCount @($AuditResults | Where-Object { $_.PrivateEndpointCount -gt 0 })
+    $vaultsWithSoftDelete = Get-SafeCount @($AuditResults | Where-Object { $_.SoftDeleteEnabled -eq $true -or $_.SoftDeleteEnabled -eq "True" -or $_.SoftDeleteEnabled -eq "Yes" })
+    $vaultsWithPurgeProtection = Get-SafeCount @($AuditResults | Where-Object { $_.PurgeProtectionEnabled -eq $true -or $_.PurgeProtectionEnabled -eq "True" -or $_.PurgeProtectionEnabled -eq "Yes" })
+    $vaultsUsingRBAC = Get-SafeCount @($AuditResults | Where-Object { $_.RBACAssignmentCount -gt 0 })
+    $vaultsPublicAccess = Get-SafeCount @($AuditResults | Where-Object { $_.PublicNetworkAccess -eq "Enabled" -or $_.PublicNetworkAccess -eq "True" })
+    $vaultsWithSystemIdentity = Get-SafeCount @($AuditResults | Where-Object { $_.SystemAssignedIdentity -eq $true -or $_.SystemAssignedIdentity -eq "Yes" -or $_.SystemAssignedIdentity -eq "True" })
+    
+    # Microsoft Best Practices Baseline (100% compliance targets)
+    $microsoftBaseline = @{
+        DiagnosticsEnabled = 100
+        EventHubEnabled = 100
+        LogAnalyticsEnabled = 80
+        PrivateEndpoints = 100
+        SoftDeleteEnabled = 100
+        PurgeProtectionEnabled = 100
+        RBACEnabled = 100
+        PublicAccessDisabled = 100
+        SystemIdentityEnabled = 60
+    }
+    
+    # Calculate current percentages
+    $currentState = @{
+        DiagnosticsEnabled = if ($totalVaults -gt 0) { [math]::Round(($vaultsWithDiagnostics / $totalVaults) * 100, 1) } else { 0 }
+        EventHubEnabled = if ($totalVaults -gt 0) { [math]::Round(($vaultsWithEventHub / $totalVaults) * 100, 1) } else { 0 }
+        LogAnalyticsEnabled = if ($totalVaults -gt 0) { [math]::Round(($vaultsWithLogAnalytics / $totalVaults) * 100, 1) } else { 0 }
+        PrivateEndpoints = if ($totalVaults -gt 0) { [math]::Round(($vaultsWithPrivateEndpoints / $totalVaults) * 100, 1) } else { 0 }
+        SoftDeleteEnabled = if ($totalVaults -gt 0) { [math]::Round(($vaultsWithSoftDelete / $totalVaults) * 100, 1) } else { 0 }
+        PurgeProtectionEnabled = if ($totalVaults -gt 0) { [math]::Round(($vaultsWithPurgeProtection / $totalVaults) * 100, 1) } else { 0 }
+        RBACEnabled = if ($totalVaults -gt 0) { [math]::Round(($vaultsUsingRBAC / $totalVaults) * 100, 1) } else { 0 }
+        PublicAccessDisabled = if ($totalVaults -gt 0) { [math]::Round((($totalVaults - $vaultsPublicAccess) / $totalVaults) * 100, 1) } else { 0 }
+        SystemIdentityEnabled = if ($totalVaults -gt 0) { [math]::Round(($vaultsWithSystemIdentity / $totalVaults) * 100, 1) } else { 0 }
+    }
+    
+    # Identify gaps
+    $criticalGaps = @()
+    $quickWins = @()
+    $longTermRecommendations = @()
+    
+    # Critical Gaps (>40% gap from baseline)
+    if ($currentState.SoftDeleteEnabled -lt 60) {
+        $gap = 100 - $currentState.SoftDeleteEnabled
+        $vaultsToFix = $totalVaults - $vaultsWithSoftDelete
+        $criticalGaps += @{
+            Category = "Soft Delete Protection"
+            CurrentState = "$($currentState.SoftDeleteEnabled)%"
+            Target = "100%"
+            Gap = "$gap%"
+            VaultsAffected = $vaultsToFix
+            Impact = "CRITICAL - Data recovery capability at risk"
+            Effort = "Low - Can be enabled via PowerShell/Portal"
+            Timeline = "Immediate (1-2 weeks)"
+        }
+    }
+    
+    if ($currentState.PurgeProtectionEnabled -lt 60) {
+        $gap = 100 - $currentState.PurgeProtectionEnabled
+        $vaultsToFix = $totalVaults - $vaultsWithPurgeProtection
+        $criticalGaps += @{
+            Category = "Purge Protection"
+            CurrentState = "$($currentState.PurgeProtectionEnabled)%"
+            Target = "100%"
+            Gap = "$gap%"
+            VaultsAffected = $vaultsToFix
+            Impact = "CRITICAL - Permanent deletion prevention required for compliance"
+            Effort = "Low - Can be enabled via PowerShell/Portal (irreversible once set)"
+            Timeline = "Immediate (1-2 weeks)"
+        }
+    }
+    
+    if ($currentState.DiagnosticsEnabled -lt 60) {
+        $gap = 100 - $currentState.DiagnosticsEnabled
+        $vaultsToFix = $totalVaults - $vaultsWithDiagnostics
+        $criticalGaps += @{
+            Category = "Diagnostic Settings"
+            CurrentState = "$($currentState.DiagnosticsEnabled)%"
+            Target = "100%"
+            Gap = "$gap%"
+            VaultsAffected = $vaultsToFix
+            Impact = "HIGH - Audit trail and security monitoring missing"
+            Effort = "Low - Configure via PowerShell/Portal"
+            Timeline = "Short-term (2-4 weeks)"
+        }
+    }
+    
+    # Quick Wins (Easy fixes, 20-40% gap)
+    if ($currentState.RBACEnabled -lt $microsoftBaseline.RBACEnabled -and $currentState.RBACEnabled -ge 60) {
+        $gap = $microsoftBaseline.RBACEnabled - $currentState.RBACEnabled
+        $vaultsToFix = $totalVaults - $vaultsUsingRBAC
+        $quickWins += @{
+            Category = "RBAC Adoption"
+            CurrentState = "$($currentState.RBACEnabled)%"
+            Target = "100%"
+            Gap = "$gap%"
+            VaultsAffected = $vaultsToFix
+            Benefit = "Modern access control with better audit trail"
+            Effort = "Medium - Requires permission mapping and testing"
+            Timeline = "Short-term (1-2 months)"
+        }
+    }
+    
+    if ($currentState.LogAnalyticsEnabled -lt $microsoftBaseline.LogAnalyticsEnabled -and $currentState.LogAnalyticsEnabled -ge 40) {
+        $gap = $microsoftBaseline.LogAnalyticsEnabled - $currentState.LogAnalyticsEnabled
+        $vaultsToFix = $totalVaults - $vaultsWithLogAnalytics
+        $quickWins += @{
+            Category = "Log Analytics Integration"
+            CurrentState = "$($currentState.LogAnalyticsEnabled)%"
+            Target = "80%"
+            Gap = "$gap%"
+            VaultsAffected = $vaultsToFix
+            Benefit = "Centralized log querying and alerting capabilities"
+            Effort = "Low - Configure diagnostic settings to existing workspace"
+            Timeline = "Short-term (2-4 weeks)"
+        }
+    }
+    
+    if ($currentState.EventHubEnabled -lt $microsoftBaseline.EventHubEnabled -and $currentState.EventHubEnabled -ge 40) {
+        $gap = $microsoftBaseline.EventHubEnabled - $currentState.EventHubEnabled
+        $vaultsToFix = $totalVaults - $vaultsWithEventHub
+        $quickWins += @{
+            Category = "Event Hub Integration"
+            CurrentState = "$($currentState.EventHubEnabled)%"
+            Target = "100%"
+            Gap = "$gap%"
+            VaultsAffected = $vaultsToFix
+            Benefit = "Real-time event streaming for security monitoring"
+            Effort = "Medium - Requires Event Hub namespace setup"
+            Timeline = "Short-term (1-2 months)"
+        }
+    }
+    
+    # Long-term Strategic Recommendations (>6 months effort)
+    if ($currentState.PrivateEndpoints -lt 90) {
+        $gap = 100 - $currentState.PrivateEndpoints
+        $vaultsToFix = $totalVaults - $vaultsWithPrivateEndpoints
+        $longTermRecommendations += @{
+            Category = "Private Endpoint Adoption"
+            CurrentState = "$($currentState.PrivateEndpoints)%"
+            Target = "100%"
+            Gap = "$gap%"
+            VaultsAffected = $vaultsToFix
+            Benefit = "Eliminates public internet exposure, reduces attack surface"
+            Effort = "High - Requires network architecture changes, VNet configuration"
+            Timeline = "Long-term (6-12 months)"
+            Dependencies = "VNet setup, DNS configuration, application connectivity updates"
+        }
+    }
+    
+    if ($currentState.PublicAccessDisabled -lt 90) {
+        $gap = 100 - $currentState.PublicAccessDisabled
+        $vaultsToFix = $vaultsPublicAccess
+        $longTermRecommendations += @{
+            Category = "Public Access Restriction"
+            CurrentState = "$($currentState.PublicAccessDisabled)%"
+            Target = "100%"
+            Gap = "$gap%"
+            VaultsAffected = $vaultsToFix
+            Benefit = "Zero-trust network architecture compliance"
+            Effort = "High - Requires application testing and connectivity validation"
+            Timeline = "Long-term (6-12 months)"
+            Dependencies = "Private endpoints or service endpoints must be configured first"
+        }
+    }
+    
+    # Add system identity recommendation if beneficial
+    if ($currentState.SystemIdentityEnabled -lt 50 -and $vaultsUsingRBAC -gt ($totalVaults / 2)) {
+        $gap = 60 - $currentState.SystemIdentityEnabled
+        $vaultsToFix = $totalVaults - $vaultsWithSystemIdentity
+        $longTermRecommendations += @{
+            Category = "Managed Identity Adoption"
+            CurrentState = "$($currentState.SystemIdentityEnabled)%"
+            Target = "60%"
+            Gap = "$gap%"
+            VaultsAffected = $vaultsToFix
+            Benefit = "Passwordless authentication, automatic credential rotation"
+            Effort = "Medium - Requires application code changes for Azure SDK integration"
+            Timeline = "Long-term (3-6 months)"
+            Dependencies = "Application support for managed identities, testing and validation"
+        }
+    }
+    
+    return @{
+        TotalGaps = $criticalGaps.Count + $quickWins.Count + $longTermRecommendations.Count
+        CriticalGaps = $criticalGaps
+        QuickWins = $quickWins
+        LongTermRecommendations = $longTermRecommendations
+        Statistics = @{
+            TotalVaults = $totalVaults
+            CurrentState = $currentState
+            MicrosoftBaseline = $microsoftBaseline
+            VaultsWithDiagnostics = $vaultsWithDiagnostics
+            VaultsWithEventHub = $vaultsWithEventHub
+            VaultsWithLogAnalytics = $vaultsWithLogAnalytics
+            VaultsWithPrivateEndpoints = $vaultsWithPrivateEndpoints
+            VaultsWithSoftDelete = $vaultsWithSoftDelete
+            VaultsWithPurgeProtection = $vaultsWithPurgeProtection
+            VaultsUsingRBAC = $vaultsUsingRBAC
+            VaultsPublicAccess = $vaultsPublicAccess
+        }
+    }
+}
+
 function New-ComprehensiveHtmlReport {
     <#
     .SYNOPSIS
@@ -3035,6 +3267,11 @@ function New-ComprehensiveHtmlReport {
         }
         
         Write-Verbose "Report context: $($reportContext | ConvertTo-Json -Compress)"
+        
+        # Generate gap analysis
+        Write-Verbose "Generating gap analysis..."
+        $gapAnalysis = Get-GapAnalysis -AuditResults $AuditResults -ExecutiveSummary $ExecutiveSummary
+        Write-Verbose "Gap analysis generated: $($gapAnalysis.TotalGaps) total gaps identified"
         
         # Use main HTML generation logic but adapt for partial results
         $testModeAnimation = ""
@@ -3989,6 +4226,173 @@ function toggleCollapsible(elementId) {
             <li><strong class="non-compliant">Non-Compliant:</strong> 0-59 points - Immediate action required</li>
         </ul>
     </div>
+    
+    <!-- Gap Analysis Section -->
+    $(if ($gapAnalysis -and $gapAnalysis.TotalGaps -gt 0) { @"
+    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h2 style="color: #667eea; margin-top: 0;">📊 Gap Analysis & Remediation Roadmap</h2>
+        <p style="font-size: 1.1em; color: #555;">Comparison of current state vs. Microsoft best practices and industry standards with prioritized recommendations</p>
+        
+        <!-- Summary Stats -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 2em; font-weight: bold;">$($gapAnalysis.TotalGaps)</div>
+                <div style="font-size: 0.9em; opacity: 0.9;">Total Gaps Identified</div>
+            </div>
+            <div style="background: $(if ($gapAnalysis.CriticalGaps.Count -gt 0) { '#dc3545' } else { '#28a745' }); color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 2em; font-weight: bold;">$($gapAnalysis.CriticalGaps.Count)</div>
+                <div style="font-size: 0.9em; opacity: 0.9;">Critical Gaps</div>
+            </div>
+            <div style="background: #17a2b8; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 2em; font-weight: bold;">$($gapAnalysis.QuickWins.Count)</div>
+                <div style="font-size: 0.9em; opacity: 0.9;">Quick Wins</div>
+            </div>
+            <div style="background: #6c757d; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 2em; font-weight: bold;">$($gapAnalysis.LongTermRecommendations.Count)</div>
+                <div style="font-size: 0.9em; opacity: 0.9;">Long-term Initiatives</div>
+            </div>
+        </div>
+"@ })
+        
+        $(if ($gapAnalysis -and $gapAnalysis.CriticalGaps.Count -gt 0) {
+            $criticalGapsHtml = @"
+        <!-- Critical Gaps -->
+        <div style="margin: 30px 0;">
+            <h3 style="color: #dc3545; border-left: 4px solid #dc3545; padding-left: 10px;">🔴 Critical Gaps (Immediate Action Required)</h3>
+            <p style="color: #666; margin-bottom: 15px;">These gaps represent significant security or compliance risks and should be addressed immediately.</p>
+"@
+            foreach ($gap in $gapAnalysis.CriticalGaps) {
+                $criticalGapsHtml += @"
+            <div style="margin: 15px 0; padding: 15px; background: #fff5f5; border-left: 4px solid #dc3545; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0; color: #dc3545;">$($gap.Category)</h4>
+                        <div style="margin: 8px 0; color: #666;">
+                            <strong>Current:</strong> $($gap.CurrentState) | 
+                            <strong>Target:</strong> $($gap.Target) | 
+                            <strong>Gap:</strong> $($gap.Gap)
+                        </div>
+                    </div>
+                    <div style="background: #dc3545; color: white; padding: 8px 15px; border-radius: 4px; font-weight: bold; white-space: nowrap; margin-left: 15px;">
+                        $($gap.VaultsAffected) Vaults
+                    </div>
+                </div>
+                <div style="margin: 10px 0;">
+                    <div style="margin: 5px 0;"><strong>Impact:</strong> <span style="color: #dc3545;">$($gap.Impact)</span></div>
+                    <div style="margin: 5px 0;"><strong>Effort:</strong> $($gap.Effort)</div>
+                    <div style="margin: 5px 0;"><strong>Timeline:</strong> $($gap.Timeline)</div>
+                </div>
+            </div>
+"@
+            }
+            $criticalGapsHtml += "</div>"
+            $criticalGapsHtml
+        })
+        
+        $(if ($gapAnalysis -and $gapAnalysis.QuickWins.Count -gt 0) {
+            $quickWinsHtml = @"
+        <!-- Quick Wins -->
+        <div style="margin: 30px 0;">
+            <h3 style="color: #17a2b8; border-left: 4px solid #17a2b8; padding-left: 10px;">⚡ Quick Wins (Short-term Improvements)</h3>
+            <p style="color: #666; margin-bottom: 15px;">These improvements can be implemented relatively quickly and provide immediate security benefits.</p>
+"@
+            foreach ($gap in $gapAnalysis.QuickWins) {
+                $quickWinsHtml += @"
+            <div style="margin: 15px 0; padding: 15px; background: #f0f9ff; border-left: 4px solid #17a2b8; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0; color: #17a2b8;">$($gap.Category)</h4>
+                        <div style="margin: 8px 0; color: #666;">
+                            <strong>Current:</strong> $($gap.CurrentState) | 
+                            <strong>Target:</strong> $($gap.Target) | 
+                            <strong>Gap:</strong> $($gap.Gap)
+                        </div>
+                    </div>
+                    <div style="background: #17a2b8; color: white; padding: 8px 15px; border-radius: 4px; font-weight: bold; white-space: nowrap; margin-left: 15px;">
+                        $($gap.VaultsAffected) Vaults
+                    </div>
+                </div>
+                <div style="margin: 10px 0;">
+                    <div style="margin: 5px 0;"><strong>Benefit:</strong> <span style="color: #17a2b8;">$($gap.Benefit)</span></div>
+                    <div style="margin: 5px 0;"><strong>Effort:</strong> $($gap.Effort)</div>
+                    <div style="margin: 5px 0;"><strong>Timeline:</strong> $($gap.Timeline)</div>
+                </div>
+            </div>
+"@
+            }
+            $quickWinsHtml += "</div>"
+            $quickWinsHtml
+        })
+        
+        $(if ($gapAnalysis -and $gapAnalysis.LongTermRecommendations.Count -gt 0) {
+            $longTermHtml = @"
+        <!-- Long-term Recommendations -->
+        <div style="margin: 30px 0;">
+            <h3 style="color: #6c757d; border-left: 4px solid #6c757d; padding-left: 10px;">🎯 Long-term Strategic Initiatives</h3>
+            <p style="color: #666; margin-bottom: 15px;">These improvements require significant planning and coordination but provide substantial long-term security benefits.</p>
+"@
+            foreach ($gap in $gapAnalysis.LongTermRecommendations) {
+                $longTermHtml += @"
+            <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #6c757d; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0; color: #6c757d;">$($gap.Category)</h4>
+                        <div style="margin: 8px 0; color: #666;">
+                            <strong>Current:</strong> $($gap.CurrentState) | 
+                            <strong>Target:</strong> $($gap.Target) | 
+                            <strong>Gap:</strong> $($gap.Gap)
+                        </div>
+                    </div>
+                    <div style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 4px; font-weight: bold; white-space: nowrap; margin-left: 15px;">
+                        $($gap.VaultsAffected) Vaults
+                    </div>
+                </div>
+                <div style="margin: 10px 0;">
+                    <div style="margin: 5px 0;"><strong>Benefit:</strong> <span style="color: #6c757d;">$($gap.Benefit)</span></div>
+                    <div style="margin: 5px 0;"><strong>Effort:</strong> $($gap.Effort)</div>
+                    <div style="margin: 5px 0;"><strong>Timeline:</strong> $($gap.Timeline)</div>
+                    $(if ($gap.Dependencies) { "<div style='margin: 5px 0;'><strong>Dependencies:</strong> $($gap.Dependencies)</div>" })
+                </div>
+            </div>
+"@
+            }
+            $longTermHtml += "</div>"
+            $longTermHtml
+        })
+        
+        $(if ($gapAnalysis -and $gapAnalysis.TotalGaps -gt 0) { @"
+        <!-- Implementation Priority Matrix -->
+        <div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <h3 style="color: #667eea; margin-top: 0;">📋 Implementation Priority & Timeline</h3>
+            <div style="margin: 20px 0;">
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; align-items: center; margin: 10px 0; padding: 10px; background: white; border-radius: 4px;">
+                    <strong style="color: #dc3545;">Weeks 1-2 (Immediate):</strong>
+                    <div>Address all critical gaps (Soft Delete, Purge Protection, Diagnostic Settings)</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; align-items: center; margin: 10px 0; padding: 10px; background: white; border-radius: 4px;">
+                    <strong style="color: #17a2b8;">Weeks 3-8 (Short-term):</strong>
+                    <div>Implement quick wins (Log Analytics, Event Hub, RBAC adoption)</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; align-items: center; margin: 10px 0; padding: 10px; background: white; border-radius: 4px;">
+                    <strong style="color: #6c757d;">Months 3-12 (Long-term):</strong>
+                    <div>Plan and execute strategic initiatives (Private Endpoints, Public Access Restriction, Managed Identity adoption)</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Best Practices Reference -->
+        <div style="margin: 30px 0; padding: 15px; background: #e7f3ff; border-left: 4px solid #0066cc; border-radius: 4px;">
+            <h4 style="margin: 0 0 10px 0; color: #0066cc;">📚 Industry Standards & Best Practices References</h4>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #555;">
+                <li><strong>Microsoft Azure Key Vault Best Practices:</strong> <a href="https://learn.microsoft.com/azure/key-vault/general/best-practices" target="_blank">learn.microsoft.com/azure/key-vault/general/best-practices</a></li>
+                <li><strong>Microsoft Security Benchmark v3:</strong> <a href="https://learn.microsoft.com/security/benchmark/azure/" target="_blank">learn.microsoft.com/security/benchmark/azure/</a></li>
+                <li><strong>Azure Security Baseline for Key Vault:</strong> <a href="https://learn.microsoft.com/security/benchmark/azure/baselines/key-vault-security-baseline" target="_blank">Security Baseline Documentation</a></li>
+                <li><strong>CIS Microsoft Azure Foundations Benchmark:</strong> Center for Internet Security (CIS) controls for Azure resources</li>
+                <li><strong>NIST Cybersecurity Framework:</strong> Applicable controls for secrets management and access control</li>
+            </ul>
+        </div>
+    </div>
+"@ })
     
     <div style="margin-top: 30px; padding: 15px; background: #e9ecef; border-radius: 8px; font-size: 0.9em;">
         <h3>📋 Enhanced Compliance Framework</h3>
