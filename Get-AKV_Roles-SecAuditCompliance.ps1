@@ -3797,9 +3797,13 @@ function toggleCollapsible(elementId) {
                     $sysAssignedCount = Get-SafeCount $systemAssignedResults
                     $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($sysAssignedCount / $auditCount) * 100, 1)
-                    if ($percentage -eq 0) { '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' }
-                    elseif ($percentage -lt 50) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
-                    else { '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' }
+                    if ($percentage -eq 0) { 
+                        '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' 
+                    } elseif ($percentage -lt 50) { 
+                        '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' 
+                    } else { 
+                        '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' 
+                    }
                 } else { if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' } else { '<div class="stat-percentage" style="color: #dc3545">0%</div>' } })
             </div>
             <div class="stat-card">
@@ -3821,9 +3825,13 @@ function toggleCollapsible(elementId) {
                     $rbacCount = Get-SafeCount $rbacResults
                     $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count') -ne 'N/A') { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
-                    if ($percentage -ge 90) { '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' }
-                    elseif ($percentage -ge 60) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
-                    else { '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' }
+                    if ($percentage -ge 90) { 
+                        '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' 
+                    } elseif ($percentage -ge 60) { 
+                        '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' 
+                    } else { 
+                        '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' 
+                    }
                 } else { if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' } else { '<div class="stat-percentage" style="color: #dc3545">0%</div>' } })
             </div>
         </div>
@@ -3885,9 +3893,13 @@ function toggleCollapsible(elementId) {
                     $monitoringCount = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -and ((Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq "Yes" -or (Get-SafeProperty -Object $_ -PropertyName 'DiagnosticsEnabled') -eq $true) }).Count
                     $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($monitoringCount / $auditCount) * 100, 1)
-                    if ($percentage -eq 0) { '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' }
-                    elseif ($percentage -lt 50) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
-                    else { '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' }
+                    if ($percentage -eq 0) { 
+                        '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' 
+                    } elseif ($percentage -lt 50) { 
+                        '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' 
+                    } else { 
+                        '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' 
+                    }
                 } else { if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' } else { '<div class="stat-percentage" style="color: #dc3545">0%</div>' } })
             </div>
             <div class="stat-card">
@@ -3907,9 +3919,13 @@ function toggleCollapsible(elementId) {
                     $rbacCount = Get-SafeCount $rbacResults
                     $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($rbacCount / $auditCount) * 100, 1)
-                    if ($percentage -ge 90) { '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' }
-                    elseif ($percentage -ge 60) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
-                    else { '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' }
+                    if ($percentage -ge 90) { 
+                        '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' 
+                    } elseif ($percentage -ge 60) { 
+                        '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' 
+                    } else { 
+                        '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' 
+                    }
                 } else { if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' } else { '<div class="stat-percentage" style="color: #dc3545">0%</div>' } })
             </div>
             <div class="stat-card">
@@ -3919,9 +3935,13 @@ function toggleCollapsible(elementId) {
                     $softDeleteCount = @($AuditResults | Where-Object { (Get-SafeProperty -Object $_ -PropertyName 'SoftDeleteEnabled') -eq "Yes" }).Count
                     $auditCount = if ((Get-SafeProperty -Object $AuditResults -PropertyName 'Count')) { Get-SafeProperty -Object $AuditResults -PropertyName 'Count' -DefaultValue 1 } else { 1 }
                     $percentage = [math]::Round(($softDeleteCount / $auditCount) * 100, 1)
-                    if ($percentage -eq 0) { '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' }
-                    elseif ($percentage -lt 50) { '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' }
-                    else { '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' }
+                    if ($percentage -eq 0) { 
+                        '<div class="stat-percentage" style="color: #dc3545">' + $percentage + '%</div>' 
+                    } elseif ($percentage -lt 50) { 
+                        '<div class="stat-percentage" style="color: #ffc107">' + $percentage + '%</div>' 
+                    } else { 
+                        '<div class="stat-percentage" style="color: #28a745">' + $percentage + '%</div>' 
+                    }
                 } else { if ($IsPartialResults) { '<div class="stat-percentage" style="color: #ffc107;">Partial Data</div>' } else { '<div class="stat-percentage" style="color: #dc3545">0%</div>' } })
             </div>
         </div>
