@@ -265,25 +265,25 @@ param(
 # --- PS5 compatibility helpers inserted by generator ---
 function NullCoalesce {
     param(
-        [Parameter(Mandatory=True)][object],
-        [Parameter(Mandatory=True)][object]
+        [Parameter(Mandatory = $true)][object]$Left,
+        [Parameter(Mandatory = $true)][object]$Right
     )
-    if ( -ne ) { return  } else { return  }
+    if ($null -ne $Left) { return $Left } else { return $Right }
 }
 
 function ConvertTo-JsonCompact {
     param(
-        [Parameter(Mandatory=True)][object],
-        [int] = 2
+        [Parameter(Mandatory = $true)][object]$InputObject,
+        [int]$Depth = 2
     )
-    # Use native ConvertTo-JsonCompact -InputObject then remove newlines/indentation to approximate
+    # Use ConvertTo-Json then remove newlines/indentation to approximate -Compress
     try {
-         =  | ConvertTo-Json -Depth 
-        return ( -replace "(\r?\n)\s*", '')
+        $json = $InputObject | ConvertTo-Json -Depth $Depth
+        return ($json -replace "(\r?\n)\s*", '')
     } catch {
-        # Fallback: attempt default conversion
-         =  | ConvertTo-Json -Depth  -ErrorAction SilentlyContinue
-        if () { return ( -replace "(\r?\n)\s*", '') } else { return '' }
+        # Fallback: attempt default conversion with SilentlyContinue
+        $json = $InputObject | ConvertTo-Json -Depth $Depth -ErrorAction SilentlyContinue
+        if ($json) { return ($json -replace "(\r?\n)\s*", '') } else { return '' }
     }
 }
 # --- end helpers ---
@@ -678,8 +678,8 @@ function Build-MasterCsvRecord {
     }
 
     # Extract scalar values directly from the original Analysis object (prefer primitives)
-    $subscriptionIdVar = ($safe.Invoke($Analysis.SubscriptionId, '') -as NullCoalesce([string]),'')
-    $subscriptionNameVar = ($safe.Invoke($Analysis.SubscriptionName, '') -as NullCoalesce([string]),'')
+    $subscriptionIdVar = NullCoalesce(($safe.Invoke($Analysis.SubscriptionId, '') -as [string]), '')
+    $subscriptionNameVar = NullCoalesce(($safe.Invoke($Analysis.SubscriptionName, '') -as [string]), '')
     $tenantId = NullCoalesce(($Analysis.Vault.TenantId -as [string]),'')
     $resourceId = NullCoalesce(($Analysis.Vault.ResourceId -as [string]),'')
     $location = NullCoalesce(($Analysis.Location -as [string]),'')
@@ -786,7 +786,8 @@ function Build-MasterCsvRecord {
         }
     }
     # Prepare additional simple scalars for return
-    $vaultNameVar = NullCoalesce(($Analysis.VaultName -as [string]),(($Analysis.Vault -and $Analysis.Vault.Name)) -as NullCoalesce([string]),'')
+    # Prefer explicit nested coalesce: VaultName, Vault.Name, else empty string
+    $vaultNameVar = NullCoalesce(NullCoalesce(($Analysis.VaultName -as [string]), ( ($Analysis.Vault -and $Analysis.Vault.Name) -as [string] )), '')
     $resourceGroupVar = NullCoalesce(($Analysis.ResourceGroupName -as [string]),'')
 
     # Use previously computed scalars for private endpoints/diag names/policy count
@@ -876,8 +877,8 @@ function Build-MasterCsvRecord {
                     if ($null -eq $item) { continue }
                     # If item looks like a role assignment PSObject, format key fields
                     if ($item.PSObject -and ($item.PSObject.Properties.Name -contains 'RoleDefinitionName' -or $item.PSObject.Properties.Name -contains 'PrincipalId')) {
-                        $rname = NullCoalesce(($item.RoleDefinitionName -as [string]),($item.RoleName -as NullCoalesce([string])),'')
-                        $principalId = NullCoalesce(($item.PrincipalId -as [string]),($item.Principal -as NullCoalesce([string])),'')
+                        $rname = NullCoalesce(NullCoalesce(($item.RoleDefinitionName -as [string]), ($item.RoleName -as [string])), '')
+                        $principalId = NullCoalesce(NullCoalesce(($item.PrincipalId -as [string]), ($item.Principal -as [string])), '')
                         $ptype = NullCoalesce(($item.PrincipalType -as [string]),'')
                         if ($rname -or $principalId) { $parts += ("$($rname):$($ptype):$($principalId)") } else { $parts += (ConvertTo-JsonCompact -InputObject $item -Depth 2) }
                     } elseif ($item -is [hashtable]) {
@@ -1243,9 +1244,9 @@ function Collect-ExtraAzData {
 
                     # Capture provisioning state from Get-AzResource result if present
                     try {
-                        $prov = ''
+                            $prov = ''
                         if ($resource) {
-                            $prov = NullCoalesce(($resource.Properties.provisioningState -as [string]),($resource.ProvisioningState -as NullCoalesce([string])),'')
+                            $prov = NullCoalesce(NullCoalesce(($resource.Properties.provisioningState -as [string]), ($resource.ProvisioningState -as [string])), '')
                         }
                         $Analysis.Extra.ProvisioningState = $prov
                     } catch { $Analysis.Extra.ProvisioningState = NullCoalesce($Analysis.Extra.ProvisioningState,'') }
@@ -6245,7 +6246,7 @@ catch { $null }
                     try {
                         $vs = Get-PropValueLocal $props 'VaultScore'
                         $cs = Get-PropValueLocal $props 'ComplianceScore'
-                        $props['VaultScore'] = NullCoalesce(($vs -as [int]),($cs -as NullCoalesce([int])),0)
+                        $props['VaultScore'] = NullCoalesce(NullCoalesce(($vs -as [int]), ($cs -as [int])), 0)
                     } catch {
                         $props['VaultScore'] = NullCoalesce((Get-PropValueLocal $props 'ComplianceScore' -as [int]),0)
                     }
@@ -6411,7 +6412,7 @@ catch { $null }
                         # VaultScore
                         try {
                             $vs = $propsFb['VaultScore']; $cs = $propsFb['ComplianceScore']
-                            $propsFb['VaultScore'] = NullCoalesce(($vs -as [int]),($cs -as NullCoalesce([int])),0)
+                            $propsFb['VaultScore'] = NullCoalesce(NullCoalesce(($vs -as [int]), ($cs -as [int])), 0)
                         } catch { $propsFb['VaultScore'] = NullCoalesce(($propsFb['ComplianceScore'] -as [int]),0) }
 
                         # JsonFilePath

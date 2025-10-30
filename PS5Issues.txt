@@ -24,15 +24,15 @@ At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:276 char:30
 +                              ~
 Missing closing ')' in expression.
 At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:276 char:44
-+         [Parameter(Mandatory=True)][object],
-+                                            ~
-Parameter declarations are a comma-separated list of variable names with optional initializer expressions.
-At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:276 char:44
++         [Parameter(owershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:276 char:44
 +         [Parameter(Mandatory=True)][object],
 +                                            ~
 Missing ')' in function parameter list.
 At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:286 char:13
-+         if () { return ( -replace "(\r?\n)\s*", '') } else { return ' ...
++         if () { retMandatory=True)][object],
++                                            ~
+Parameter declarations are a comma-separated list of variable names with optional initializer expressions.
+At C:\Source\Github\purn ( -replace "(\r?\n)\s*", '') } else { return ' ...
 +             ~
 Missing condition in if statement after 'if ('.
 At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:681 char:73
