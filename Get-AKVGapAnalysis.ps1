@@ -1137,7 +1137,7 @@ function Collect-ExtraAzData {
             $vaultIndex = [Array]::IndexOf($parts, 'vaults') + 1
             if ($vaultIndex -gt 0 -and $vaultIndex -lt $parts.Count) { $vaultName = $parts[$vaultIndex] }
 
-            if ($vaultName) {
+                if ($vaultName) {
                 try {
                     # Protect Get-AzKeyVault with a timeout to avoid long hangs when the control plane is slow
                     Write-Log "Attempting Get-AzKeyVault (timeout 30s) for $vaultName in RG $rg" -Level 'DEBUG'
