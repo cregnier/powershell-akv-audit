@@ -56,6 +56,11 @@
     Specific Azure subscription ID to analyze. If not provided, analyzes all accessible subscriptions.
     Useful for targeted assessments or when working with specific subscription scopes.
 
+.PARAMETER TargetSubscriptionId
+    Forces analysis to start with a specific subscription ID first. Useful for testing Key Vault discovery
+    in a known subscription that contains vaults. The script will still analyze other subscriptions if
+    TestMode limits aren't reached.
+
 .PARAMETER OutputDirectory
     Custom output directory for reports and logs. Defaults to ~/Documents/KeyVaultGapAnalysis/.
     Must be writable and have sufficient space for large enterprise assessments.
@@ -232,6 +237,7 @@ param(
     [Parameter(Mandatory = $false)][switch]$TestMode,
     [Parameter(Mandatory = $false)][int]$Limit = 10,
     [Parameter(Mandatory = $false)][string]$SubscriptionId,
+    [Parameter(Mandatory = $false)][string]$TargetSubscriptionId,
     [Parameter(Mandatory = $false)][string]$OutputDirectory,
     [Parameter(Mandatory = $false)][switch]$SuppressAzureWarnings,
     [Parameter(Mandatory = $false)][switch]$SingleVault,
@@ -1595,6 +1601,19 @@ function Get-SubscriptionsToAnalyze {
     }
 
     Write-Log "Found $($subscriptions.Count) accessible subscription(s)" -Level "INFO"
+    
+    # If TargetSubscriptionId is specified, prioritize it to the front of the list for testing
+    if ($TargetSubscriptionId) {
+        $targetSub = $subscriptions | Where-Object { $_.Id -eq $TargetSubscriptionId }
+        if ($targetSub) {
+            $otherSubs = $subscriptions | Where-Object { $_.Id -ne $TargetSubscriptionId }
+            $subscriptions = @($targetSub) + $otherSubs
+            Write-Log "Prioritized target subscription $TargetSubscriptionId to the front of the analysis queue" -Level "INFO"
+        } else {
+            Write-Log "Target subscription $TargetSubscriptionId not found in accessible subscriptions" -Level "WARN"
+        }
+    }
+    
     return $subscriptions
 }
 
@@ -1612,6 +1631,20 @@ function Get-KeyVaultsInSubscription {
         # Verify we're in the right context
         $currentContext = Get-AzContext
         Write-Log "Current context after Set-AzContext: $($currentContext.Subscription.Name) ($($currentContext.Subscription.Id))" -Level 'DEBUG'
+
+        # Check for Key Vault Reader permissions before attempting discovery
+        try {
+            Write-Log "Checking for Key Vault Reader permissions in subscription $SubscriptionId" -Level 'DEBUG'
+            $roleAssignments = Get-AzRoleAssignment -Scope "/subscriptions/$SubscriptionId" -IncludeClassicAdministrators | 
+                Where-Object { $_.RoleDefinitionName -like "*Key Vault*" -or $_.RoleDefinitionName -eq "Reader" -or $_.RoleDefinitionName -eq "Owner" -or $_.RoleDefinitionName -eq "Contributor" }
+            if ($roleAssignments.Count -eq 0) {
+                Write-Log "No Key Vault related permissions found in subscription $SubscriptionId - this may explain why no vaults are found" -Level "WARN"
+            } else {
+                Write-Log "Found $($roleAssignments.Count) Key Vault related role assignments in subscription $SubscriptionId" -Level "DEBUG"
+            }
+        } catch {
+            Write-Log "Could not check permissions in subscription $SubscriptionId (may be expected): $($_.Exception.Message)" -Level "DEBUG"
+        }
 
         # Use timeout wrapper for listing key vaults in case the Az call stalls
         Write-Log "Listing Key Vaults in subscription $SubscriptionId via Get-AzKeyVault (with timeout)" -Level 'DEBUG'
