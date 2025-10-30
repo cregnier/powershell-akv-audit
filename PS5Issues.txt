@@ -1,22 +1,27 @@
-[2025-10-30 17:42:33] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
-[2025-10-30 17:42:33] [INFO]    Discovering accessible subscriptions...
-[2025-10-30 17:42:33] [DEBUG]   About to call Get-AzSubscription to discover accessible subscriptions
-[2025-10-30 17:42:33] [DEBUG]   Current Az context: curtus.regnier@intel.com
-[2025-10-30 17:42:34] [DEBUG]   Initial Get-AzSubscription returned 0 subscriptions
-[2025-10-30 17:42:34] [WARN]    Initial Get-AzSubscription returned 0 subscriptions, attempting recovery strategies...
-[2025-10-30 17:42:34] [DEBUG]   Context status when 0 subscriptions found: curtus.regnier@intel.com
-[2025-10-30 17:42:34] [INFO]    Attempting context recovery for empty subscription list...
-[2025-10-30 17:42:34] [DEBUG]   Context found, trying Set-AzContext...
-[2025-10-30 17:42:35] [INFO]    Attempting re-authentication for empty subscription list...
-[2025-10-30 17:42:35] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
-[2025-10-30 17:42:35] [WARN]    Still no subscriptions found, attempting interactive authentication...
-[2025-10-30 17:42:35] [INFO]    Please complete interactive authentication in the browser window that opens...
-[2025-10-30 17:42:47] [SUCCESS] Interactive authentication successful as: curtus.regnier@intel.com
-[2025-10-30 17:42:48] [INFO]    Interactive authentication successful, found 786 subscriptions
-[2025-10-30 17:42:48] [INFO]    Found 786 accessible subscription(s)
-[2025-10-30 17:42:48] [INFO]    Analyzing subscription:  ()
-[2025-10-30 17:42:48] [INFO]    Discovering Key Vaults in subscription ...
-[2025-10-30 17:42:48] [DEBUG]   Setting Az context to subscription:  (Set-AzContext)
-[2025-10-30 17:42:48] [ERROR]   Failed to discover Key Vaults in subscription : Cannot validate argument on parameter 'Subscription'. The argument is null or empty. Provide an argument that is
- not null or empty, and then try the command again.
-[2025-10-30 17:42:48] [INFO]    No Key Vaults found in subscription 
+ .\Get-AKVGapAnalysis.PS5.ps1 -TestMode -Limit 3 -SuppressAzureWarnings -SuppressModuleWarnings -UseParallelProcessing -MaxParallelJobs 9
+[2025-10-30 17:47:52] [INFO]    [DEBUG] Script-level PSBoundParameters: TestMode=True, Limit=3, SuppressAzureWarnings=True, SuppressModuleWarnings=True, UseParallelProcessing=True, MaxParallel
+Jobs=9
+[2025-10-30 17:47:52] [INFO]    Auto-running Invoke-GapAnalysis with script-level parameters (count: 6)
+[2025-10-30 17:47:53] [INFO]    Starting Azure Key Vault Gap Analysis vunreleased
+[2025-10-30 17:47:53] [INFO]    Test Mode: True
+[2025-10-30 17:47:53] [INFO]    Test Limit: 3 vaults
+[2025-10-30 17:47:53] [INFO]    Created run lock at: C:\Users\cregnier\AppData\Local\Temp\akv_gap_analysis_running.lock (PID: 22084)
+[2025-10-30 17:47:53] [INFO]    Effective parameters: TestMode=True Limit=3 UseParallelProcessing=True MaxParallelJobs=9 Resume=False
+[2025-10-30 17:47:53] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
+[2025-10-30 17:47:53] [INFO]    Discovering accessible subscriptions...
+[2025-10-30 17:47:53] [DEBUG]   About to call Get-AzSubscription to discover accessible subscriptions
+[2025-10-30 17:47:53] [DEBUG]   Current Az context: curtus.regnier@intel.com
+[2025-10-30 17:47:54] [DEBUG]   Initial Get-AzSubscription returned 786 subscriptions
+[2025-10-30 17:47:54] [INFO]    Found 786 accessible subscription(s)
+[2025-10-30 17:47:54] [INFO]    Analyzing subscription: cloudbroker-infosec (3559f006-51ca-4672-a115-77bb9e6133ec)
+[2025-10-30 17:47:54] [INFO]    Discovering Key Vaults in subscription 3559f006-51ca-4672-a115-77bb9e6133ec...
+[2025-10-30 17:47:54] [DEBUG]   Setting Az context to subscription: 3559f006-51ca-4672-a115-77bb9e6133ec (Set-AzContext)
+[2025-10-30 17:47:56] [DEBUG]   Listing Key Vaults in subscription 3559f006-51ca-4672-a115-77bb9e6133ec via Get-AzKeyVault (with timeout)
+[2025-10-30 17:47:56] [INFO]    [DEBUG] Starting background job for Get-AzKeyVault with timeout 60s
+[2025-10-30 17:47:57] [INFO]    [DEBUG] Started job Id=23 for Get-AzKeyVault
+[2025-10-30 17:47:57] [INFO]    Found 0 Key Vaults in subscription 3559f006-51ca-4672-a115-77bb9e6133ec
+[2025-10-30 17:47:57] [INFO]    No Key Vaults found in subscription cloudbroker-infosec
+[2025-10-30 17:47:57] [INFO]    Analyzing subscription: IT Infomation Secuirty - Cloud Security POC (955b7080-d19b-4193-b818-4aa8dafdac77)
+[2025-10-30 17:47:57] [INFO]    Discovering Key Vaults in subscription 955b7080-d19b-4193-b818-4aa8dafdac77...
+[2025-10-30 17:47:57] [DEBUG]   Setting Az context to subscription: 955b7080-d19b-4193-b818-4aa8dafdac77 (Set-AzContext)
+[2025-10-30 17:47:59] [DEBUG]   Listing Key Vaults in subscription 955b7080-d19b-4193-b818-4aa8dafdac77 via Get-AzKeyVault (with timeout)
