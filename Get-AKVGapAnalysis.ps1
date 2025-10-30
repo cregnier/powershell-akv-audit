@@ -1246,28 +1246,29 @@ function Collect-ExtraAzData {
                         }
                         $Analysis.Extra.LogAnalyticsWorkspaceIds = if ($laWs) { ($laWs | Select-Object -Unique) -join ';' } else { '' }
                     } catch { $Analysis.Extra.LogAnalyticsWorkspaceIds = $Analysis.Extra.LogAnalyticsWorkspaceIds ?? '' }
-                    } catch {
-                    # fallback: no kv details
-                    $err = $error[0]
-                    # annotate SKU as permission/network restricted when we cannot read vault details
-                    $msg = $err.Exception.Message -as [string]
-                    if ($msg -and ($msg -match 'Public network access is disabled' -or $msg -match 'ForbiddenByConnection')) {
-                        $Analysis.Extra.SkuName = 'NetworkRestricted'
-                    } elseif ($msg -and $msg -match 'Forbidden') {
-                        $Analysis.Extra.SkuName = 'PermissionDenied'
-                    } else {
-                        $Analysis.Extra.SkuName = $Analysis.Extra.SkuName ?? ''
                     }
-                    # record a permission issue for the inability to get vault details
-                    $PermissionsIssues += [PSCustomObject]@{
-                        Timestamp = (Get-Date).ToString('o')
-                        Subscription = $Analysis.SubscriptionId
-                        ResourceId = $resId
-                        Cmdlet = 'Get-AzKeyVault'
-                        ErrorMessage = $msg
-                        ErrorCode = ($err.Exception.Response | ConvertTo-Json -Depth 2 -ErrorAction SilentlyContinue) -replace '"','' -replace "[\r\n]+"," "
-                    }
+                } catch {
+                # fallback: no kv details
+                $err = $error[0]
+                # annotate SKU as permission/network restricted when we cannot read vault details
+                $msg = $err.Exception.Message -as [string]
+                if ($msg -and ($msg -match 'Public network access is disabled' -or $msg -match 'ForbiddenByConnection')) {
+                    $Analysis.Extra.SkuName = 'NetworkRestricted'
+                } elseif ($msg -and $msg -match 'Forbidden') {
+                    $Analysis.Extra.SkuName = 'PermissionDenied'
+                } else {
+                    $Analysis.Extra.SkuName = $Analysis.Extra.SkuName ?? ''
                 }
+                # record a permission issue for the inability to get vault details
+                $PermissionsIssues += [PSCustomObject]@{
+                    Timestamp = (Get-Date).ToString('o')
+                    Subscription = $Analysis.SubscriptionId
+                    ResourceId = $resId
+                    Cmdlet = 'Get-AzKeyVault'
+                    ErrorMessage = $msg
+                    ErrorCode = ($err.Exception.Response | ConvertTo-Json -Depth 2 -ErrorAction SilentlyContinue) -replace '"','' -replace "[\r\n]+"," "
+                }
+            }
             }
         } catch {
             # ignore errors
