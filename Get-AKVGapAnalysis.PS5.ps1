@@ -1429,22 +1429,35 @@ function Get-SubscriptionsToAnalyze {
     try {
         Write-Log "About to call Get-AzSubscription to discover accessible subscriptions" -Level 'DEBUG'
         $subscriptions = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
-
-        if ($SubscriptionId) {
-            $subscriptions = $subscriptions | Where-Object { $_.Id -eq $SubscriptionId }
-            if ($subscriptions.Count -eq 0) {
-                Write-Log "Specified subscription $SubscriptionId not found or not accessible" -Level "ERROR"
+    } catch {
+        # PS5.1 compatibility: Az modules may lose authentication context between cmdlets
+        # Try re-authenticating if subscription discovery fails
+        Write-Log "Get-AzSubscription failed, attempting re-authentication for PS5.1 compatibility: $($_.Exception.Message)" -Level "WARN"
+        try {
+            $authSuccess = Initialize-AzureAuthentication
+            if ($authSuccess) {
+                Write-Log "Re-authentication successful, retrying Get-AzSubscription" -Level "INFO"
+                $subscriptions = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
+            } else {
+                Write-Log "Re-authentication failed, cannot discover subscriptions" -Level "ERROR"
                 return @()
             }
+        } catch {
+            Write-Log "Re-authentication also failed: $($_.Exception.Message)" -Level "ERROR"
+            return @()
         }
-
-        Write-Log "Found $($subscriptions.Count) accessible subscription(s)" -Level "INFO"
-        return $subscriptions
-
-    } catch {
-        Write-Log "Failed to discover subscriptions: $($_.Exception.Message)" -Level "ERROR"
-        return @()
     }
+
+    if ($SubscriptionId) {
+        $subscriptions = $subscriptions | Where-Object { $_.Id -eq $SubscriptionId }
+        if ($subscriptions.Count -eq 0) {
+            Write-Log "Specified subscription $SubscriptionId not found or not accessible" -Level "ERROR"
+            return @()
+        }
+    }
+
+    Write-Log "Found $($subscriptions.Count) accessible subscription(s)" -Level "INFO"
+    return $subscriptions
 }
 
 # Key Vault discovery
@@ -2098,7 +2111,19 @@ function Get-AzurePlatformAssessment {
         Set-AzContext -SubscriptionId $SubscriptionId | Out-Null
 
         # Get subscription name
-        $subscription = Get-AzSubscription -SubscriptionId $SubscriptionId
+        try {
+            $subscription = Get-AzSubscription -SubscriptionId $SubscriptionId
+        } catch {
+            # PS5.1 compatibility: retry with re-authentication
+            Write-Log "Get-AzSubscription failed in platform assessment, attempting re-authentication: $($_.Exception.Message)" -Level "WARN"
+            $authSuccess = Initialize-AzureAuthentication
+            if ($authSuccess) {
+                Set-AzContext -SubscriptionId $SubscriptionId | Out-Null
+                $subscription = Get-AzSubscription -SubscriptionId $SubscriptionId
+            } else {
+                throw "Re-authentication failed for platform assessment"
+            }
+        }
         $assessment.SubscriptionName = $subscription.Name
 
         # Check Azure Policies related to Key Vault (with error handling)
@@ -4953,7 +4978,19 @@ catch { $null }
         if ($SubscriptionName) {
             # User specified subscription name
             Write-Log "Looking up subscription by name: $SubscriptionName (Get-AzSubscription)" -Level 'DEBUG'
-            $targetSubscription = Get-AzSubscription | Where-Object { $_.Name -eq $SubscriptionName }
+            try {
+                $targetSubscription = Get-AzSubscription | Where-Object { $_.Name -eq $SubscriptionName }
+            } catch {
+                # PS5.1 compatibility: retry with re-authentication
+                Write-Log "Get-AzSubscription failed for subscription lookup, attempting re-authentication: $($_.Exception.Message)" -Level "WARN"
+                $authSuccess = Initialize-AzureAuthentication
+                if ($authSuccess) {
+                    $targetSubscription = Get-AzSubscription | Where-Object { $_.Name -eq $SubscriptionName }
+                } else {
+                    Write-Log "Re-authentication failed for subscription lookup" -Level "ERROR"
+                    exit 1
+                }
+            }
             if (-not $targetSubscription) {
                 Write-Log "Specified subscription '$SubscriptionName' not found" -Level "ERROR"
                 exit 1
@@ -4962,7 +4999,19 @@ catch { $null }
             # Auto-discover subscription containing the vault
             Write-Log "Auto-discovering subscription containing vault '$VaultName'..." -Level "INFO"
             Write-Log "About to call Get-AzSubscription for auto-discovery" -Level 'DEBUG'
-            $subscriptionsToCheck = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
+            try {
+                $subscriptionsToCheck = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
+            } catch {
+                # PS5.1 compatibility: retry with re-authentication
+                Write-Log "Get-AzSubscription failed for auto-discovery, attempting re-authentication: $($_.Exception.Message)" -Level "WARN"
+                $authSuccess = Initialize-AzureAuthentication
+                if ($authSuccess) {
+                    $subscriptionsToCheck = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
+                } else {
+                    Write-Log "Re-authentication failed for auto-discovery" -Level "ERROR"
+                    exit 1
+                }
+            }
 
             foreach ($sub in $subscriptionsToCheck) {
                 Write-Log "Setting Az context to subscription $($sub.Name) ($($sub.Id)) before checking for vault" -Level 'DEBUG'
