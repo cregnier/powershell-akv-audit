@@ -1646,18 +1646,81 @@ function Get-KeyVaultsInSubscription {
             Write-Log "Could not check permissions in subscription $SubscriptionId (may be expected): $($_.Exception.Message)" -Level "DEBUG"
         }
 
-        # Use timeout wrapper for listing key vaults in case the Az call stalls
-        Write-Log "Listing Key Vaults in subscription $SubscriptionId via Get-AzKeyVault (with timeout)" -Level 'DEBUG'
+        # Try multiple approaches to list Key Vaults - PS5.1 compatibility issue
+        Write-Log "Listing Key Vaults in subscription $SubscriptionId via Get-AzKeyVault" -Level 'DEBUG'
+        
+        $keyVaults = @()
+        $discoveryAttempted = $false
+        
+        # Approach 1: Direct Get-AzKeyVault call (PS5.1 compatible)
         try {
-            $keyVaults = Invoke-WithTimeout -ScriptBlock { Get-AzKeyVault } -TimeoutSeconds 60 -CmdletName 'Get-AzKeyVault'
+            Write-Log "Attempting direct Get-AzKeyVault call (no background job)" -Level 'DEBUG'
+            $discoveryAttempted = $true
+            $directResult = Get-AzKeyVault -ErrorAction Stop
+            $keyVaults = @($directResult)  # Ensure it's an array
+            Write-Log "Direct Get-AzKeyVault succeeded: found $($keyVaults.Count) vaults" -Level 'DEBUG'
         } catch {
-            Write-Log "Get-AzKeyVault failed in subscription $SubscriptionId (may be due to permissions): $($_.Exception.Message)" -Level "WARN"
+            Write-Log "Direct Get-AzKeyVault failed: $($_.Exception.Message)" -Level 'WARN'
             $keyVaults = @()
         }
-
+        
+        # Approach 2: If direct call returned 0, try with explicit subscription parameter
+        if ($keyVaults.Count -eq 0 -and -not $discoveryAttempted) {
+            try {
+                Write-Log "Attempting Get-AzKeyVault with explicit -DefaultProfile parameter" -Level 'DEBUG'
+                $context = Get-AzContext
+                $keyVaults = @(Get-AzKeyVault -DefaultProfile $context -ErrorAction Stop)
+                Write-Log "Get-AzKeyVault with DefaultProfile succeeded: found $($keyVaults.Count) vaults" -Level 'DEBUG'
+            } catch {
+                Write-Log "Get-AzKeyVault with DefaultProfile failed: $($_.Exception.Message)" -Level 'WARN'
+                $keyVaults = @()
+            }
+        }
+        
+        # Approach 3: Background job approach as fallback
+        if ($keyVaults.Count -eq 0) {
+            try {
+                Write-Log "Attempting Get-AzKeyVault via background job (timeout wrapper)" -Level 'DEBUG'
+                $keyVaults = Invoke-WithTimeout -ScriptBlock { Get-AzKeyVault } -TimeoutSeconds 60 -CmdletName 'Get-AzKeyVault'
+                $keyVaults = @($keyVaults)  # Ensure it's an array
+                Write-Log "Background job Get-AzKeyVault succeeded: found $($keyVaults.Count) vaults" -Level 'DEBUG'
+            } catch {
+                Write-Log "Background job Get-AzKeyVault failed: $($_.Exception.Message)" -Level "WARN"
+                $keyVaults = @()
+            }
+        }
+        
+        # Final validation and logging
         Write-Log "Get-AzKeyVault returned $($keyVaults.Count) Key Vaults in subscription $SubscriptionId" -Level "INFO"
         if ($keyVaults.Count -eq 0) {
-            Write-Log "No Key Vaults found in subscription $SubscriptionId - this could be due to permissions or no vaults existing" -Level "DEBUG"
+            Write-Log "No Key Vaults found in subscription $SubscriptionId - tried direct call, DefaultProfile, and background job" -Level "WARN"
+            # Additional debugging: check if there are any vaults via different method
+            try {
+                Write-Log "Attempting to list resources of type Microsoft.KeyVault/vaults" -Level 'DEBUG'
+                $vaultResources = Get-AzResource -ResourceType "Microsoft.KeyVault/vaults" -ErrorAction SilentlyContinue
+                if ($vaultResources -and $vaultResources.Count -gt 0) {
+                    Write-Log "Found $($vaultResources.Count) Key Vault resources via Get-AzResource" -Level 'INFO'
+                    # Convert resource objects to Key Vault objects
+                    $keyVaults = $vaultResources | ForEach-Object {
+                        [PSCustomObject]@{
+                            VaultName = $_.Name
+                            ResourceGroupName = $_.ResourceGroupName
+                            Location = $_.Location
+                            ResourceId = $_.ResourceId
+                            Tags = $_.Tags
+                            Sku = $_.Sku
+                            Properties = $_.Properties
+                        }
+                    }
+                    Write-Log "Converted $($keyVaults.Count) resources to Key Vault objects" -Level 'INFO'
+                } else {
+                    Write-Log "No Key Vault resources found via Get-AzResource either" -Level 'DEBUG'
+                }
+            } catch {
+                Write-Log "Get-AzResource fallback also failed: $($_.Exception.Message)" -Level 'DEBUG'
+            }
+        } else {
+            Write-Log "Successfully discovered $($keyVaults.Count) Key Vaults using Get-AzKeyVault" -Level 'INFO'
         }
 
         return $keyVaults
