@@ -6928,8 +6928,6 @@ if ($env:AKV_RUN_HTML_ONLY -eq '1') {
             # fallback to a plain call if splatting fails for any reason
             Invoke-GapAnalysis
         }
-    }
 
-    }
 
 }
