@@ -1,14 +1,22 @@
-.\Get-AKVGapAnalysis.PS5.ps1 -TestMode -Limit 3 -SuppressAzureWarnings -SuppressModuleWarnings -UseParallelProcessing -MaxParallelJobs 9
-[2025-10-30 17:27:58] [INFO]    [DEBUG] Script-level PSBoundParameters: TestMode=True, Limit=3, SuppressAzureWarnings=True, SuppressModuleWarnings=True, UseParallelProcessing=True, MaxParallel
-Jobs=9
-[2025-10-30 17:27:58] [INFO]    Auto-running Invoke-GapAnalysis with script-level parameters (count: 6)
-[2025-10-30 17:27:58] [INFO]    Starting Azure Key Vault Gap Analysis vunreleased
-[2025-10-30 17:27:58] [INFO]    Test Mode: True
-[2025-10-30 17:27:58] [INFO]    Test Limit: 3 vaults
-[2025-10-30 17:27:58] [INFO]    Created run lock at: C:\Users\cregnier\AppData\Local\Temp\akv_gap_analysis_running.lock (PID: 22084)
-[2025-10-30 17:27:59] [INFO]    Effective parameters: TestMode=True Limit=3 UseParallelProcessing=True MaxParallelJobs=9 Resume=False
-[2025-10-30 17:27:59] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
-[2025-10-30 17:27:59] [INFO]    Discovering accessible subscriptions...
-[2025-10-30 17:27:59] [DEBUG]   About to call Get-AzSubscription to discover accessible subscriptions
-[2025-10-30 17:27:59] [INFO]    Found 0 accessible subscription(s)
-[2025-10-30 17:27:59] [ERROR]   No subscriptions found or accessible. Exiting.
+[2025-10-30 17:42:33] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
+[2025-10-30 17:42:33] [INFO]    Discovering accessible subscriptions...
+[2025-10-30 17:42:33] [DEBUG]   About to call Get-AzSubscription to discover accessible subscriptions
+[2025-10-30 17:42:33] [DEBUG]   Current Az context: curtus.regnier@intel.com
+[2025-10-30 17:42:34] [DEBUG]   Initial Get-AzSubscription returned 0 subscriptions
+[2025-10-30 17:42:34] [WARN]    Initial Get-AzSubscription returned 0 subscriptions, attempting recovery strategies...
+[2025-10-30 17:42:34] [DEBUG]   Context status when 0 subscriptions found: curtus.regnier@intel.com
+[2025-10-30 17:42:34] [INFO]    Attempting context recovery for empty subscription list...
+[2025-10-30 17:42:34] [DEBUG]   Context found, trying Set-AzContext...
+[2025-10-30 17:42:35] [INFO]    Attempting re-authentication for empty subscription list...
+[2025-10-30 17:42:35] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
+[2025-10-30 17:42:35] [WARN]    Still no subscriptions found, attempting interactive authentication...
+[2025-10-30 17:42:35] [INFO]    Please complete interactive authentication in the browser window that opens...
+[2025-10-30 17:42:47] [SUCCESS] Interactive authentication successful as: curtus.regnier@intel.com
+[2025-10-30 17:42:48] [INFO]    Interactive authentication successful, found 786 subscriptions
+[2025-10-30 17:42:48] [INFO]    Found 786 accessible subscription(s)
+[2025-10-30 17:42:48] [INFO]    Analyzing subscription:  ()
+[2025-10-30 17:42:48] [INFO]    Discovering Key Vaults in subscription ...
+[2025-10-30 17:42:48] [DEBUG]   Setting Az context to subscription:  (Set-AzContext)
+[2025-10-30 17:42:48] [ERROR]   Failed to discover Key Vaults in subscription : Cannot validate argument on parameter 'Subscription'. The argument is null or empty. Provide an argument that is
+ not null or empty, and then try the command again.
+[2025-10-30 17:42:48] [INFO]    No Key Vaults found in subscription 
