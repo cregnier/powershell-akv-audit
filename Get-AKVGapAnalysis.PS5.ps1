@@ -1428,7 +1428,11 @@ function Get-SubscriptionsToAnalyze {
 
     try {
         Write-Log "About to call Get-AzSubscription to discover accessible subscriptions" -Level 'DEBUG'
+        # First check if we have a valid context
+        $context = Get-AzContext
+        Write-Log "Current Az context: $(if ($context) { $context.Account.Id } else { 'None' })" -Level 'DEBUG'
         $subscriptions = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
+        Write-Log "Initial Get-AzSubscription returned $($subscriptions.Count) subscriptions" -Level 'DEBUG'
     } catch {
         # PS5.1 compatibility: Az modules may lose authentication context between cmdlets
         # Try multiple recovery strategies
@@ -1488,6 +1492,77 @@ function Get-SubscriptionsToAnalyze {
 
         if (-not $recovered) {
             Write-Log "All subscription discovery recovery strategies failed" -Level "ERROR"
+            return @()
+        }
+    }
+
+    # Check if we got subscriptions from the initial call - if not, try recovery even without exception
+    if ($subscriptions.Count -eq 0) {
+        Write-Log "Initial Get-AzSubscription returned 0 subscriptions, attempting recovery strategies..." -Level "WARN"
+        # Check context status when we have 0 subscriptions
+        $context = Get-AzContext
+        Write-Log "Context status when 0 subscriptions found: $(if ($context) { $context.Account.Id } else { 'None' })" -Level 'DEBUG'
+
+        $recovered = $false
+
+        # Strategy 1: Try to re-establish context
+        try {
+            Write-Log "Attempting context recovery for empty subscription list..." -Level "INFO"
+            $context = Get-AzContext -ErrorAction Stop
+            if ($context -and $context.Account) {
+                Write-Log "Context found, trying Set-AzContext..." -Level "DEBUG"
+                Set-AzContext -Context $context | Out-Null
+                $subscriptions = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
+                if ($subscriptions.Count -gt 0) {
+                    $recovered = $true
+                    Write-Log "Context recovery successful, found $($subscriptions.Count) subscriptions" -Level "INFO"
+                }
+            }
+        } catch {
+            Write-Log "Context recovery failed: $($_.Exception.Message)" -Level "DEBUG"
+        }
+
+        # Strategy 2: If context recovery failed, try re-authentication
+        if (-not $recovered) {
+            try {
+                Write-Log "Attempting re-authentication for empty subscription list..." -Level "INFO"
+                $authSuccess = Initialize-AzureAuthentication
+                if ($authSuccess) {
+                    # After re-auth, try to get subscriptions again
+                    $subscriptions = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
+                    if ($subscriptions.Count -gt 0) {
+                        $recovered = $true
+                        Write-Log "Re-authentication successful, found $($subscriptions.Count) subscriptions" -Level "INFO"
+                    }
+                } else {
+                    Write-Log "Re-authentication failed" -Level "ERROR"
+                }
+            } catch {
+                Write-Log "Re-authentication also failed: $($_.Exception.Message)" -Level "ERROR"
+            }
+        }
+
+        # Strategy 3: If still no subscriptions, try interactive authentication
+        if (-not $recovered) {
+            try {
+                Write-Log "Still no subscriptions found, attempting interactive authentication..." -Level "WARN"
+                Write-Log "Please complete interactive authentication in the browser window that opens..." -Level "INFO"
+                Connect-AzAccount -ErrorAction Stop
+                $context = Get-AzContext -ErrorAction Stop
+                Write-Log "Interactive authentication successful as: $($context.Account.Id)" -Level "SUCCESS"
+                $subscriptions = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
+                if ($subscriptions.Count -gt 0) {
+                    $recovered = $true
+                    Write-Log "Interactive authentication successful, found $($subscriptions.Count) subscriptions" -Level "INFO"
+                }
+            } catch {
+                Write-Log "Interactive authentication failed: $($_.Exception.Message)" -Level "ERROR"
+                return @()
+            }
+        }
+
+        if (-not $recovered) {
+            Write-Log "All recovery strategies failed to find subscriptions" -Level "ERROR"
             return @()
         }
     }
