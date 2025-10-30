@@ -1017,6 +1017,19 @@ function Build-MasterCsvRecord {
         RiskFactors = $securityGapsSummary
         CriticalFindings = if ($Analysis.CriticalFindings) { $Analysis.CriticalFindings -join '; ' } else { '' }
         OverPrivilegedDetails = if ($Analysis.OverPrivilegedAssignments) { ($Analysis.OverPrivilegedAssignments | ForEach-Object { "$($_.Role): $($_.Principal)" }) -join ' | ' } else { '' }
+        CertificatePolicyIssuer = if ($Analysis.SecretInventory -and $Analysis.SecretInventory.Certificates) { ($Analysis.SecretInventory.Certificates | Where-Object { $_.CertificatePolicy } | Select-Object -First 1 | ForEach-Object { $_.CertificatePolicy.IssuerName }) -join '; ' } else { '' }
+        CertificatePolicyKeySize = if ($Analysis.SecretInventory -and $Analysis.SecretInventory.Certificates) { ($Analysis.SecretInventory.Certificates | Where-Object { $_.CertificatePolicy } | Select-Object -First 1 | ForEach-Object { $_.CertificatePolicy.KeySize }) -join '; ' } else { '' }
+        CertificatePolicyValidityMonths = if ($Analysis.SecretInventory -and $Analysis.SecretInventory.Certificates) { ($Analysis.SecretInventory.Certificates | Where-Object { $_.CertificatePolicy } | Select-Object -First 1 | ForEach-Object { $_.CertificatePolicy.ValidityInMonths }) -join '; ' } else { '' }
+        KeyRotationPolicyEnabled = if ($Analysis.RotationAnalysis -and $Analysis.RotationAnalysis.AutomaticRotationEnabled -gt 0) { $true } else { $false }
+        AzurePolicyCompliantCount = if ($Analysis.Extra -and $Analysis.Extra.PolicyCompliance) { $Analysis.Extra.PolicyCompliance.CompliantPolicies.Count } else { 0 }
+        AzurePolicyNonCompliantCount = if ($Analysis.Extra -and $Analysis.Extra.PolicyCompliance) { $Analysis.Extra.PolicyCompliance.NonCompliantPolicies.Count } else { 0 }
+        SecurityCenterCriticalAssessments = if ($Analysis.Extra -and $Analysis.Extra.SecurityInsights) { $Analysis.Extra.SecurityInsights.CriticalAssessments.Count } else { 0 }
+        SecurityCenterHighAssessments = if ($Analysis.Extra -and $Analysis.Extra.SecurityInsights) { $Analysis.Extra.SecurityInsights.HighAssessments.Count } else { 0 }
+        SecurityCenterRecommendations = if ($Analysis.Extra -and $Analysis.Extra.SecurityInsights) { ($Analysis.Extra.SecurityInsights.Recommendations -join '; ') } else { '' }
+        ResourceGraphEnabledForDeployment = if ($Analysis.Extra -and $Analysis.Extra.ResourceGraphInsights -and $Analysis.Extra.ResourceGraphInsights.enabledForDeployment) { $Analysis.Extra.ResourceGraphInsights.enabledForDeployment } else { $false }
+        ResourceGraphEnabledForDiskEncryption = if ($Analysis.Extra -and $Analysis.Extra.ResourceGraphInsights -and $Analysis.Extra.ResourceGraphInsights.enabledForDiskEncryption) { $Analysis.Extra.ResourceGraphInsights.enabledForDiskEncryption } else { $false }
+        ResourceGraphSoftDeleteEnabled = if ($Analysis.Extra -and $Analysis.Extra.ResourceGraphInsights -and $Analysis.Extra.ResourceGraphInsights.enableSoftDelete) { $Analysis.Extra.ResourceGraphInsights.enableSoftDelete } else { $false }
+        ResourceGraphPurgeProtectionEnabled = if ($Analysis.Extra -and $Analysis.Extra.ResourceGraphInsights -and $Analysis.Extra.ResourceGraphInsights.enablePurgeProtection) { $Analysis.Extra.ResourceGraphInsights.enablePurgeProtection } else { $false }
     }
 }
 
@@ -1029,7 +1042,7 @@ function Collect-ExtraAzData {
     try {
         $__collect_start = Get-Date
         try { $resIdDbg = $Analysis.Vault.ResourceId } catch { $resIdDbg = '' }
-    Write-Log "[DEBUG] Collect-ExtraAzData start for $resIdDbg" -Level 'INFO'
+        Write-Log "[DEBUG] Collect-ExtraAzData start for $resIdDbg" -Level 'INFO'
         # Initialize script-scoped permission issues collector if not present
         if (-not (Get-Variable -Name PermissionsIssues -Scope Script -ErrorAction SilentlyContinue)) {
             # Use Set-Variable to avoid 'variable has been optimized' warnings in some run contexts
@@ -1377,6 +1390,120 @@ function Collect-ExtraAzData {
         } catch {
             $Analysis.Extra.SecretRotationMostRecent = $Analysis.Extra.SecretRotationMostRecent ?? ''
             $Analysis.Extra.KeyRotationMostRecent = $Analysis.Extra.KeyRotationMostRecent ?? ''
+        }
+
+        # Azure Policy compliance checks for Key Vault
+        try {
+            Write-Log "Collect-ExtraAzData: checking Azure Policy compliance for $resId" -Level 'DEBUG'
+            $policyStates = Get-AzPolicyState -ResourceId $resId -ErrorAction Stop
+            $policyCompliance = @{
+                CompliantPolicies = @()
+                NonCompliantPolicies = @()
+                TotalPolicies = 0
+            }
+            foreach ($state in $policyStates) {
+                $policyCompliance.TotalPolicies++
+                if ($state.ComplianceState -eq 'Compliant') {
+                    $policyCompliance.CompliantPolicies += $state.PolicyDefinitionName
+                } else {
+                    $policyCompliance.NonCompliantPolicies += $state.PolicyDefinitionName
+                }
+            }
+            $Analysis.Extra.PolicyCompliance = $policyCompliance
+        } catch {
+            $Analysis.Extra.PolicyCompliance = @{
+                CompliantPolicies = @()
+                NonCompliantPolicies = @()
+                TotalPolicies = 0
+                Error = $_.Exception.Message
+            }
+            $err = $error[0]
+            $PermissionsIssues += [PSCustomObject]@{
+                Timestamp = (Get-Date).ToString('o')
+                Subscription = $Analysis.SubscriptionId
+                ResourceId = $resId
+                Cmdlet = 'Get-AzPolicyState'
+                ErrorMessage = $err.Exception.Message
+                ErrorCode = ($err.Exception.Response | ConvertTo-Json -Depth 2 -ErrorAction SilentlyContinue) -replace '"','' -replace "[\r\n]+"," "
+            }
+        # Security Center insights and recommendations
+        try {
+            Write-Log "Collect-ExtraAzData: checking Security Center assessments for $resId" -Level 'DEBUG'
+            $securityAssessments = Get-AzSecurityAssessment -ResourceId $resId -ErrorAction Stop
+            $securityInsights = @{
+                CriticalAssessments = @()
+                HighAssessments = @()
+                MediumAssessments = @()
+                LowAssessments = @()
+                TotalAssessments = 0
+                Recommendations = @()
+            }
+            foreach ($assessment in $securityAssessments) {
+                $securityInsights.TotalAssessments++
+                $severity = $assessment.Status.Severity ?? 'Unknown'
+                switch ($severity) {
+                    'Critical' { $securityInsights.CriticalAssessments += $assessment.DisplayName }
+                    'High' { $securityInsights.HighAssessments += $assessment.DisplayName }
+                    'Medium' { $securityInsights.MediumAssessments += $assessment.DisplayName }
+                    'Low' { $securityInsights.LowAssessments += $assessment.DisplayName }
+                }
+                if ($assessment.Status.Code -ne 'Healthy') {
+                    $securityInsights.Recommendations += $assessment.DisplayName
+                }
+            }
+            $Analysis.Extra.SecurityInsights = $securityInsights
+        } catch {
+            $Analysis.Extra.SecurityInsights = @{
+                CriticalAssessments = @()
+                HighAssessments = @()
+                MediumAssessments = @()
+                LowAssessments = @()
+                TotalAssessments = 0
+                Recommendations = @()
+                Error = $_.Exception.Message
+            }
+            $err = $error[0]
+            $PermissionsIssues += [PSCustomObject]@{
+                Timestamp = (Get-Date).ToString('o')
+                Subscription = $Analysis.SubscriptionId
+                ResourceId = $resId
+                Cmdlet = 'Get-AzSecurityAssessment'
+                ErrorMessage = $err.Exception.Message
+                ErrorCode = ($err.Exception.Response | ConvertTo-Json -Depth 2 -ErrorAction SilentlyContinue) -replace '"','' -replace "[\r\n]+"," "
+            }
+        # Azure Resource Graph insights for cross-subscription Key Vault analysis
+        try {
+            Write-Log "Collect-ExtraAzData: querying Azure Resource Graph for Key Vault insights" -Level 'DEBUG'
+            $argQuery = @"
+Resources
+| where type =~ 'Microsoft.KeyVault/vaults'
+| where id =~ '$resId'
+| extend vaultName = name
+| extend resourceGroup = resourceGroup
+| extend location = location
+| extend sku = sku.name
+| extend enabledForDeployment = properties.enabledForDeployment
+| extend enabledForDiskEncryption = properties.enabledForDiskEncryption
+| extend enabledForTemplateDeployment = properties.enabledForTemplateDeployment
+| extend enableSoftDelete = properties.enableSoftDelete
+| extend enablePurgeProtection = properties.enablePurgeProtection
+| extend networkAcls = properties.networkAcls
+| extend accessPolicies = array_length(properties.accessPolicies)
+| project vaultName, resourceGroup, location, sku, enabledForDeployment, enabledForDiskEncryption, enabledForTemplateDeployment, enableSoftDelete, enablePurgeProtection, networkAcls, accessPolicies
+"@
+            $argResult = Search-AzGraph -Query $argQuery -ErrorAction Stop
+            $Analysis.Extra.ResourceGraphInsights = $argResult
+        } catch {
+            $Analysis.Extra.ResourceGraphInsights = $null
+            $err = $error[0]
+            $PermissionsIssues += [PSCustomObject]@{
+                Timestamp = (Get-Date).ToString('o')
+                Subscription = $Analysis.SubscriptionId
+                ResourceId = $resId
+                Cmdlet = 'Search-AzGraph'
+                ErrorMessage = $err.Exception.Message
+                ErrorCode = ($err.Exception.Response | ConvertTo-Json -Depth 2 -ErrorAction SilentlyContinue) -replace '"','' -replace "[\r\n]+"," "
+            }
         }
 
         # Log completion
@@ -1733,6 +1860,25 @@ function Get-RotationAnalysis {
             if ($certDetails) {
                 $lastUpdated = $certDetails.Updated
 
+                # Get certificate policy for additional analysis
+                try {
+                    $certPolicy = Get-AzKeyVaultCertificatePolicy -VaultName $VaultName -Name $cert.Name -ErrorAction SilentlyContinue
+                    if ($certPolicy) {
+                        # Store certificate policy details for analysis
+                        $cert.CertificatePolicy = @{
+                            IssuerName = $certPolicy.IssuerName
+                            SubjectName = $certPolicy.SubjectName
+                            ValidityInMonths = $certPolicy.ValidityInMonths
+                            KeySize = $certPolicy.KeySize
+                            KeyType = $certPolicy.KeyType
+                            ReuseKeyOnRenewal = $certPolicy.ReuseKeyOnRenewal
+                            Exportable = $certPolicy.Exportable
+                        }
+                    }
+                } catch {
+                    # Certificate policy not accessible
+                }
+
                 # Check for auto-renewal (simplified check)
                 $rotationType = "Manual"
 
@@ -1781,6 +1927,17 @@ function Get-RotationAnalysis {
             if ($keyDetails) {
                 $lastUpdated = $keyDetails.Updated
                 $rotationType = "Manual"
+
+                # Check for key rotation policy
+                try {
+                    $rotationPolicy = Get-AzKeyVaultKeyRotationPolicy -VaultName $VaultName -Name $key.Name -ErrorAction SilentlyContinue
+                    if ($rotationPolicy) {
+                        $rotationType = "Automatic"
+                        $rotationAnalysis.AutomaticRotationEnabled++
+                    }
+                } catch {
+                    # Rotation policy not accessible or not set
+                }
 
                 if ($lastUpdated -gt $ninetyDaysAgo) {
                     $rotationAnalysis.RecentlyRotated++
@@ -6682,9 +6839,6 @@ catch { $null }
         }
     } else {
         Write-Log "NoRunLock was set for this run; skipping run-lock cleanup." -Level 'DEBUG'
-    }
-    catch {
-        # non-fatal
     }
     # Clear in-process sentinel
     try {
