@@ -1431,19 +1431,63 @@ function Get-SubscriptionsToAnalyze {
         $subscriptions = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
     } catch {
         # PS5.1 compatibility: Az modules may lose authentication context between cmdlets
-        # Try re-authenticating if subscription discovery fails
-        Write-Log "Get-AzSubscription failed, attempting re-authentication for PS5.1 compatibility: $($_.Exception.Message)" -Level "WARN"
+        # Try multiple recovery strategies
+        Write-Log "Get-AzSubscription failed, attempting PS5.1 compatibility recovery: $($_.Exception.Message)" -Level "WARN"
+
+        $recovered = $false
+
+        # Strategy 1: Try to re-establish context
         try {
-            $authSuccess = Initialize-AzureAuthentication
-            if ($authSuccess) {
-                Write-Log "Re-authentication successful, retrying Get-AzSubscription" -Level "INFO"
+            Write-Log "Attempting context recovery..." -Level "INFO"
+            $context = Get-AzContext -ErrorAction Stop
+            if ($context -and $context.Account) {
+                Write-Log "Context found, trying Set-AzContext..." -Level "DEBUG"
+                Set-AzContext -Context $context | Out-Null
                 $subscriptions = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
-            } else {
-                Write-Log "Re-authentication failed, cannot discover subscriptions" -Level "ERROR"
-                return @()
+                $recovered = $true
+                Write-Log "Context recovery successful, found $($subscriptions.Count) subscriptions" -Level "INFO"
             }
         } catch {
-            Write-Log "Re-authentication also failed: $($_.Exception.Message)" -Level "ERROR"
+            Write-Log "Context recovery failed: $($_.Exception.Message)" -Level "DEBUG"
+        }
+
+        # Strategy 2: If context recovery failed, try re-authentication
+        if (-not $recovered) {
+            try {
+                Write-Log "Attempting re-authentication for PS5.1 compatibility..." -Level "INFO"
+                $authSuccess = Initialize-AzureAuthentication
+                if ($authSuccess) {
+                    # After re-auth, try to get subscriptions again
+                    $subscriptions = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
+                    $recovered = $true
+                    Write-Log "Re-authentication successful, found $($subscriptions.Count) subscriptions" -Level "INFO"
+                } else {
+                    Write-Log "Re-authentication failed" -Level "ERROR"
+                }
+            } catch {
+                Write-Log "Re-authentication also failed: $($_.Exception.Message)" -Level "ERROR"
+            }
+        }
+
+        # Strategy 3: If still no subscriptions, try interactive authentication
+        if (-not $recovered -or $subscriptions.Count -eq 0) {
+            try {
+                Write-Log "No subscriptions found, attempting interactive authentication..." -Level "WARN"
+                Write-Log "Please complete interactive authentication in the browser window that opens..." -Level "INFO"
+                Connect-AzAccount -ErrorAction Stop
+                $context = Get-AzContext -ErrorAction Stop
+                Write-Log "Interactive authentication successful as: $($context.Account.Id)" -Level "SUCCESS"
+                $subscriptions = Get-AzSubscription | Where-Object { $_.State -eq 'Enabled' }
+                $recovered = $true
+                Write-Log "Interactive authentication successful, found $($subscriptions.Count) subscriptions" -Level "INFO"
+            } catch {
+                Write-Log "Interactive authentication failed: $($_.Exception.Message)" -Level "ERROR"
+                return @()
+            }
+        }
+
+        if (-not $recovered) {
+            Write-Log "All subscription discovery recovery strategies failed" -Level "ERROR"
             return @()
         }
     }
