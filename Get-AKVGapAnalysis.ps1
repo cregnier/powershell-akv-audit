@@ -1246,7 +1246,6 @@ function Collect-ExtraAzData {
                         }
                         $Analysis.Extra.LogAnalyticsWorkspaceIds = if ($laWs) { ($laWs | Select-Object -Unique) -join ';' } else { '' }
                     } catch { $Analysis.Extra.LogAnalyticsWorkspaceIds = $Analysis.Extra.LogAnalyticsWorkspaceIds ?? '' }
-                    }
                 } catch {
                 # fallback: no kv details
                 $err = $error[0]
