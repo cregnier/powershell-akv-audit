@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Azure Key Vault Gap Analysis Report</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .summary { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .stat-number { font-size: 2em; font-weight: bold; color: #2b9af3; }
+    .score-value { color: #2b9af3; font-weight: 700; }
+    /* Framework links (CIS/NIST/ISO/MS) - lighter blue for readability */
+    .framework-link { color: #2b9af3; text-decoration: none; font-weight:700; }
+    .framework-link:hover { text-decoration: underline; }
+        .stat-label { color: #666; margin-top: 5px; }
+        .gaps-section { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .gap-item { border-left: 4px solid #dc3545; padding: 10px; margin: 10px 0; background: #fff5f5; }
+        .gap-critical { border-left-color: #dc3545; background: #fff5f5; }
+        .gap-high { border-left-color: #fd7e14; background: #fffbf0; }
+        .gap-medium { border-left-color: #ffc107; background: #fffef0; }
+        .wins-section { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .win-item { border-left: 4px solid #28a745; padding: 10px; margin: 10px 0; background: #f8fff8; }
+        .platform-section { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .vault-details { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 20px 0; }
+        th { background: #343a40; color: white; padding: 12px; text-align: left; font-weight: 600; }
+        td { padding: 12px; border-bottom: 1px solid #dee2e6; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e9ecef; }
+        .risk-low { color: #28a745; font-weight: bold; }
+        .risk-medium { color: #ffc107; font-weight: bold; }
+        .risk-high { color: #fd7e14; font-weight: bold; }
+        .risk-critical { color: #dc3545; font-weight: bold; }
+        .recommendations { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 Azure Key Vault Gap Analysis Report</h1>
+        <p>Generated on 2025-10-29 09:43:39 | Script Version unreleased</p>
+    <p>Analysis Period: 0 days | Total Execution Time: 3.5 minutes</p>
+    </div>
+
+    <div class="summary">
+        <h2>📊 Executive Summary</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Total Key Vaults</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Subscriptions Analyzed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">21</div>
+                <div class="stat-label">Vaults with Diagnostics (2100%)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">21</div>
+                <div class="stat-label">Vaults with RBAC (2100%)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">21</div>
+                <div class="stat-label">Vaults with Private Endpoints (2100%)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">86%</div>
+                <div class="stat-label">Average Compliance Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><span style='color: #dc3545; font-size: 0.8em;'>0<br/>(No secrets found or access denied)</span></div>
+                <div class="stat-label">Total Secrets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><span style='color: #dc3545; font-size: 0.8em;'>0<br/>(No certificates found or access denied)</span></div>
+                <div class="stat-label">Total Certificates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><span style='color: #dc3545; font-size: 0.8em;'>0<br/>(No keys found or access denied)</span></div>
+                <div class="stat-label">Total Keys</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><span style='color: #dc3545; font-size: 0.8em;'>0<br/>(No assets need rotation or data unavailable)</span></div>
+                <div class="stat-label">Assets Needing Rotation</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><span style='color: #dc3545; font-size: 0.8em;'>0<br/>(No recent rotations or data unavailable)</span></div>
+                <div class="stat-label">Recently Rotated (< 90 days)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Total Quick Wins Available</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3</div>
+                <div class="stat-label">Critical Security Gaps</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embedded canonical quickwins JSON for machine parsing -->
+    <script type="application/json" id="canonical-quickwins">
+        "enable soft delete"
+    </script>
+
+
+    <div class="summary">
+        <h2>📋 Risk Assessment Methodology</h2>
+        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3>Compliance Scoring Framework</h3>
+            <p>The compliance score is calculated based on security best practices mapped to multiple compliance frameworks:</p>
+            <ul>
+                <li><strong>Base Score:</strong> 100 points (perfect compliance)</li>
+                <li><strong>Deductions:</strong> Points are subtracted for security gaps based on severity and compliance impact</li>
+                <li><strong>Bonuses:</strong> Points are added for implemented security controls and best practices</li>
+            </ul>
+
+            <h4>Scoring Matrix by Compliance Framework</h4>
+            <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr style="background: #f8f9fa;">
+                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">Security Control</th>
+                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Critical Gap<br>(-25 pts)</th>
+                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">High Gap<br>(-15 pts)</th>
+                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Medium Gap<br>(-10 pts)</th>
+                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Bonus<br>(+pts)</th>
+                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">Compliance Frameworks</th>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;"><strong>Access Control</strong></td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center; color: #dc3545;">No RBAC/ACL</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Legacy ACL only</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">RBAC misconfigured</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center; color: #28a745;">+10 RBAC</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">CIS 3.1, NIST AC-2, ISO 27001 A.9</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                    <td style="border: 1px solid #dee2e6; padding: 8px;"><strong>Network Security</strong></td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Public access</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">No firewall rules</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Weak network rules</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center; color: #28a745;">+10 Private Link</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">CIS 3.2, NIST SC-7, ISO 27001 A.13</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;"><strong>Data Protection</strong></td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">No soft delete</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">No purge protection</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Weak retention</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center; color: #28a745;">+5 each</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">CIS 3.3, NIST SI-12, ISO 27001 A.12</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                    <td style="border: 1px solid #dee2e6; padding: 8px;"><strong>Monitoring & Auditing</strong></td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">No diagnostics</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">No logging</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Incomplete logging</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center; color: #28a745;">+10 Diagnostics</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">CIS 3.4, NIST SI-4, ISO 27001 A.12.4</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;"><strong>Secret Rotation</strong></td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Never rotated</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">>180 days old</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">>90 days old</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">-</td>
+                    <td style="border: 1px solid #dee2e6; padding: 8px;">CIS 3.5, NIST IA-5, ISO 27001 A.9.2.1</td>
+                </tr>
+            </table>
+
+            <h4>Framework-Specific Scoring Examples</h4>
+            <div style="background: #e9ecef; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                <p><strong>CIS Azure Foundations Benchmark:</strong> Focuses on access control (RBAC), network security (private endpoints), and monitoring (diagnostics)</p>
+                <p><strong>NIST Cybersecurity Framework:</strong> Emphasizes identification (access control), protection (encryption/network), detection (monitoring), and recovery (soft delete)</p>
+                <p><strong>ISO 27001:</strong> Covers information security management with focus on access control, cryptography, and audit logging</p>
+                <p><strong>Microsoft Best Practices:</strong> Azure-specific hardening guidelines including RBAC, private networking, and comprehensive monitoring</p>
+            </div>
+
+            <h3>Risk Level Definitions</h3>
+            <ul>
+                <li><strong class="risk-low">Low Risk (90-100%):</strong> Excellent security posture with minimal gaps</li>
+                <li><strong class="risk-medium">Medium Risk (70-89%):</strong> Good security with some areas for improvement</li>
+                <li><strong class="risk-high">High Risk (50-69%):</strong> Significant security gaps requiring immediate attention</li>
+                <li><strong class="risk-critical">Critical Risk (0-49%):</strong> Severe security vulnerabilities requiring urgent remediation</li>
+            </ul>
+
+            <h3>Compliance Standards Measured</h3>
+            <p>This assessment evaluates Key Vault configurations against common frameworks (CIS, NIST, ISO, and Microsoft security baseline) and checks for widely-adopted best practices.</p>
+        </div>
+    </div>
+
+    <div class="summary">
+        <h2>🔐 Identity & Access Management Analysis</h2>
+        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3>📊 Identity Distribution</h3>
+            <p>Analysis of identity types and access patterns across all analyzed Key Vaults:</p>
+            <ul>
+                <li><strong>Managed Identities:</strong> 1 vaults with configured access</li>
+                <li><strong>Service Principals:</strong> Analysis shows mixed usage of service principals and managed identities</li>
+                <li><strong>User Accounts:</strong> Direct user access should be minimized for production workloads</li>
+            </ul>
+
+            <h3>🎯 Access Patterns & Risk Analysis</h3>
+            <h4>High-Privilege Assignments</h4>
+            <p>Vaults with Owner or Contributor access that may need review:</p>
+            <ul>
+                <li><strong>Owner Role Assignments:</strong> 0 vaults with RBAC assignments</li>
+                <li><strong>Cross-Vault Access:</strong> Service principals with access to multiple vaults</li>
+                <li><strong>Orphaned Permissions:</strong> Access policies for deleted or inactive principals</li>
+            </ul>
+
+            <h3>🔄 RBAC vs Access Policy Comparison</h3>
+            <h4>RBAC Model (Recommended)</h4>
+            <h5>Benefits:</h5>
+            <ul>
+                <li>Centralized access management through Azure RBAC</li>
+                <li>Integration with Azure AD PIM for just-in-time access</li>
+                <li>Simplified permission management at scale</li>
+                <li>Better audit trails and compliance reporting</li>
+            </ul>
+
+            <h4>Access Policy Model (Legacy)</h4>
+            <h5>Limitations:</h5>
+            <ul>
+                <li>Key Vault-specific permissions management</li>
+                <li>Limited integration with broader Azure governance</li>
+                <li>More complex to manage at enterprise scale</li>
+            </ul>
+
+            <h4>✅ Excellent: High RBAC Adoption</h4>
+            <p>2100% of analyzed vaults use Azure RBAC, indicating good modernization progress.</p>
+
+            <h3>🛡️ Identity Security Recommendations</h3>
+            <h4>Regular Access Reviews</h4>
+            <p>Implement quarterly access reviews for all Key Vault permissions.</p>
+
+            <h4>Time-Limited Access</h4>
+            <p>Use Azure AD Privileged Identity Management (PIM) for time-bound access elevation.</p>
+
+            <h4>Prefer Managed Identities</h4>
+            <p>Migrate service principals to managed identities where possible for improved security.</p>
+
+            <h4>Monitor Access Patterns</h4>
+            <p>Enable diagnostic logging and set up alerts for unusual access patterns.</p>
+        </div>
+    </div>
+
+    <div class="summary">
+        <h2>🔑 Secrets Management Insights</h2>
+        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3>📈 Secrets Distribution & Health</h3>
+            <p>Analysis of secret types, rotation status, and lifecycle management:</p>
+            <ul>
+                <li><strong>Total Secrets:</strong> 0</li>
+                <li><strong>Total Certificates:</strong> 0</li>
+                <li><strong>Total Keys:</strong> 0</li>
+            </ul>
+
+            <h3>✅ Security Best Practices Assessment</h3>
+            <h4>Secret Rotation</h4>
+            <h5>Recommendations:</h5>
+            <ul>
+                <li>Implement automated rotation for all secrets with expiration dates</li>
+                <li>Set up monitoring alerts for secrets approaching expiration</li>
+                <li>Use Azure Key Vault integration with Azure services for automatic rotation</li>
+            </ul>
+
+            <h4>Expiration Management</h4>
+            <h5>Recommendations:</h5>
+            <ul>
+                <li>All secrets should have defined expiration dates</li>
+                <li>Implement automated cleanup of expired secrets</li>
+                <li>Set up notifications for secrets without expiration dates</li>
+            </ul>
+
+            <h4>Naming & Tagging</h4>
+            <h5>Recommendations:</h5>
+            <ul>
+                <li>Use consistent naming conventions for secrets</li>
+                <li>Implement tagging strategy for secret classification and ownership</li>
+                <li>Document secret purposes and ownership in tags</li>
+            </ul>
+
+            <h4>Access Patterns</h4>
+            <h5>Recommendations:</h5>
+            <ul>
+                <li>Monitor secret access patterns for anomalies</li>
+                <li>Implement least-privilege access principles</li>
+                <li>Regular review of secret access permissions</li>
+            </ul>
+
+            <h3>🔗 Common Integration Patterns</h3>
+            <h4>Application Integration</h4>
+            <h5>Common Scenarios:</h5>
+            <ul>
+                <li>Web applications retrieving connection strings and API keys</li>
+                <li>Microservices accessing shared secrets and certificates</li>
+                <li>DevOps pipelines retrieving deployment secrets</li>
+            </ul>
+
+            <h4>DevOps Integration</h4>
+            <h5>Implementation Strategies:</h5>
+            <ul>
+                <li>Azure DevOps service connections with Key Vault integration</li>
+                <li>GitHub Actions using OIDC for Key Vault access</li>
+                <li>GitLab CI/CD with Azure Key Vault secrets</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="summary">
+        <h2>🛡️ Comprehensive Security Enhancement Recommendations</h2>
+        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3>🚨 High Priority Actions (Immediate Implementation)</h3>
+            <h4>🔐 Enable Purge Protection</h4>
+            <h5>Implementation Steps:</h5>
+            <ol>
+                <li>Identify vaults without purge protection enabled</li>
+                <li>Enable purge protection via Azure Portal, PowerShell, or CLI</li>
+                <li>Test purge protection functionality</li>
+                <li>Update documentation and procedures</li>
+            </ol>
+
+            <h4>🔍 Implement Comprehensive Monitoring</h4>
+            <h5>Complete Monitoring Stack:</h5>
+            <ul>
+                <li>Enable diagnostic logging for all Key Vault operations</li>
+                <li>Configure Log Analytics workspace integration</li>
+                <li>Set up Azure Monitor alerts for security events</li>
+                <li>Implement Azure Sentinel integration for advanced threat detection</li>
+            </ul>
+            <h5>Benefits:</h5>
+            <ul>
+                <li>Complete audit trail of all Key Vault operations</li>
+                <li>Real-time security monitoring and alerting</li>
+                <li>Compliance reporting and forensic analysis capabilities</li>
+            </ul>
+
+            <h4>🌐 Network Security Hardening</h4>
+            <h5>Network Security Implementation:</h5>
+            <ul>
+                <li>Configure private endpoints for all production vaults</li>
+                <li>Implement network security groups and firewall rules</li>
+                <li>Enable Azure DDoS Protection Standard</li>
+                <li>Configure virtual network integration</li>
+            </ul>
+
+            <h3>⚡ Medium Priority Actions (30-60 Days)</h3>
+            <h4>🔄 Migrate to RBAC Authorization</h4>
+            <h5>RBAC vs Access Policy Benefits:</h5>
+            <ul>
+                <li>Unified access management across Azure services</li>
+                <li>Better integration with Azure AD and PIM</li>
+                <li>Simplified governance and compliance reporting</li>
+                <li>Reduced administrative overhead</li>
+            </ul>
+            <h5>Migration Strategy:</h5>
+            <ol>
+                <li>Assess current access policy configurations</li>
+                <li>Plan RBAC role assignments and custom roles if needed</li>
+                <li>Implement migration in development environments first</li>
+                <li>Gradually migrate production vaults with rollback plans</li>
+                <li>Update documentation and training materials</li>
+            </ol>
+
+            <h4>🔐 Implement Secret Rotation Automation</h4>
+            <h5>Automated Rotation Benefits:</h5>
+            <ul>
+                <li>Reduced manual intervention and human error</li>
+                <li>Consistent rotation schedules and policies</li>
+                <li>Improved security posture and compliance</li>
+                <li>Better audit trails and monitoring</li>
+            </ul>
+            <h5>Implementation Approaches:</h5>
+            <h6>🔄 Native Auto-Rotation</h6>
+            <ul>
+                <li>Use Azure Key Vault's built-in rotation for supported secret types</li>
+                <li>Configure rotation policies for certificates and keys</li>
+                <li>Set up automated rotation notifications</li>
+            </ul>
+            <h6>🤖 Custom Automation</h6>
+            <ul>
+                <li>Develop Azure Automation runbooks for custom rotation logic</li>
+                <li>Use Azure Functions for event-driven rotation</li>
+                <li>Implement Logic Apps for complex rotation workflows</li>
+            </ul>
+            <h6>🔗 Third-party Integration</h6>
+            <ul>
+                <li>Integrate with HashiCorp Vault for advanced rotation features</li>
+                <li>Use CyberArk Conjur for enterprise secret management</li>
+                <li>Implement custom rotation solutions for legacy systems</li>
+            </ul>
+
+            <h4>👥 Implement Identity Governance</h4>
+            <h5>Identity Governance Framework:</h5>
+            <h6>🔍 Access Reviews</h6>
+            <ul>
+                <li>Regular review of all Key Vault access permissions</li>
+                <li>Automated access certification campaigns</li>
+                <li>Integration with Azure AD access reviews</li>
+            </ul>
+            <h6>⏰ Privileged Identity Management</h6>
+            <ul>
+                <li>Implement just-in-time access for privileged operations</li>
+                <li>Configure approval workflows for access elevation</li>
+                <li>Set up automatic access revocation after time limits</li>
+            </ul>
+            <h6>🤖 Managed Identity Adoption</h6>
+            <ul>
+                <li>Migrate service principals to managed identities</li>
+                <li>Configure system-assigned and user-assigned identities</li>
+                <li>Update application code to use managed identity authentication</li>
+            </ul>
+            <h6>📊 Continuous Monitoring</h6>
+            <ul>
+                <li>Monitor identity lifecycle events</li>
+                <li>Alert on anomalous access patterns</li>
+                <li>Regular reporting on identity governance metrics</li>
+            </ul>
+
+            <h3>🎯 Strategic Enhancements (90+ Days)</h3>
+            <h4>🏛️ Enterprise Key Management Architecture</h4>
+            <h5>Future-State Architecture:</h5>
+            <h6>🌐 Global Key Management</h6>
+            <ul>
+                <li>Implement Azure Key Vault in multiple regions</li>
+                <li>Configure geo-redundant key storage</li>
+                <li>Plan for cross-region disaster recovery</li>
+            </ul>
+            <h6>🔐 Advanced Cryptographic Services</h6>
+            <ul>
+                <li>Implement Hardware Security Modules (HSMs)</li>
+                <li>Use Azure Dedicated HSM for high-security requirements</li>
+                <li>Configure managed HSM pools for enterprise scenarios</li>
+            </ul>
+            <h6>🤖 Intelligent Automation</h6>
+            <ul>
+                <li>Implement AI-powered threat detection</li>
+                <li>Use machine learning for access pattern analysis</li>
+                <li>Automate compliance remediation workflows</li>
+            </ul>
+            <h5>Implementation Roadmap:</h5>
+            <ol>
+                <li>Assess current cryptographic requirements and compliance needs</li>
+                <li>Design target architecture with security and compliance teams</li>
+                <li>Plan phased migration with minimal business disruption</li>
+                <li>Implement monitoring and alerting for new architecture</li>
+                <li>Establish ongoing governance and maintenance procedures</li>
+            </ol>
+
+            <h3>📊 Security Metrics & Key Performance Indicators</h3>
+            <h4>🔒 Security Baseline Compliance</h4>
+            <ul>
+                <li>Percentage of vaults with purge protection enabled</li>
+                <li>Percentage of vaults with private endpoints configured</li>
+                <li>Percentage of vaults with comprehensive diagnostic logging</li>
+                <li>Average time to rotate secrets and certificates</li>
+            </ul>
+            <h4>🎯 Operational Excellence</h4>
+            <ul>
+                <li>Mean time to detect security incidents</li>
+                <li>Mean time to respond to security alerts</li>
+                <li>Percentage of automated vs manual secret rotations</li>
+                <li>Key Vault availability and performance metrics</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="gaps-section">
+        <h2>🚨 Security Gaps Identified</h2>
+        <p>Critical: 3 | High: 0 | Medium: 3</p>
+                <div class="gap-item gap-critical">
+            <strong>kv-adx-access</strong> (1ci-preprod-metrics)<br>
+            <strong>Data Protection & Recovery - Critical</strong>: Soft delete not enabled<br>
+            <em>Impact:</em> Permanent data loss if secrets/certificates/keys are accidentally deleted - no recovery possible<br>
+            <em>Best Practice:</em> Soft delete must be enabled on all Azure Key Vaults to protect against accidental deletion. This provides a 7-90 day recovery window for deleted secrets.<br>
+            <em>Recommendation:</em> Enable soft delete protection (mandatory for production vaults)<br>
+            <details style="margin-top: 10px;">
+                <summary style="cursor: pointer; font-weight: bold;">🔧 Remediation Steps</summary>
+                <ol style="margin-top: 5px;">
+                    <li>Enable soft delete: Update-AzKeyVault -VaultName <vault> -EnableSoftDelete</li><li>Configure retention period (7-90 days, default is 90)</li><li>Enable purge protection for additional security: -EnablePurgeProtection</li><li>Test recovery by deleting and restoring a test secret</li>
+                </ol>
+                <p style="margin-top: 10px;"><strong>📚 Documentation:</strong> <a href="https://docs.microsoft.com/en-us/azure/key-vault/general/soft-delete-overview" target="_blank">https://docs.microsoft.com/en-us/azure/key-vault/general/soft-delete-overview</a></p>
+            </details>
+        </div>        <div class="gap-item gap-medium">
+            <strong>kv-adx-access</strong> (1ci-preprod-metrics)<br>
+            <strong>Data Protection & Recovery - Medium</strong>: Purge protection not enabled<br>
+            <em>Impact:</em> Deleted secrets can be permanently purged, preventing recovery from ransomware or malicious deletion<br>
+            <em>Best Practice:</em> Purge protection prevents immediate permanent deletion of secrets, providing additional protection against ransomware and malicious actors.<br>
+            <em>Recommendation:</em> Enable purge protection to prevent permanent data loss<br>
+            <details style="margin-top: 10px;">
+                <summary style="cursor: pointer; font-weight: bold;">🔧 Remediation Steps</summary>
+                <ol style="margin-top: 5px;">
+                    <li>Enable purge protection: Update-AzKeyVault -VaultName <vault> -EnablePurgeProtection</li><li>Note: This setting is irreversible once enabled</li><li>Test that purge operations are blocked</li>
+                </ol>
+                <p style="margin-top: 10px;"><strong>📚 Documentation:</strong> <a href="https://docs.microsoft.com/en-us/azure/key-vault/general/soft-delete-overview#purge-protection" target="_blank">https://docs.microsoft.com/en-us/azure/key-vault/general/soft-delete-overview#purge-protection</a></p>
+            </details>
+        </div>
+    </div>
+
+    <div class="wins-section">
+        <h2>🎯 Quick Wins & Opportunities</h2>        <div class="win-item">
+            <strong>Data Protection - Enable Soft Delete</strong><br>
+            <em>Description:</em> Protect against accidental deletion with recovery capability<br>
+            <em>Effort:</em> Low | <em>Impact:</em> High            <details style="margin-top: 10px;">
+                <summary style="cursor: pointer; font-weight: bold;">🔧 Implementation Steps</summary>
+                <ol style="margin-top: 5px;"><li>PowerShell: Update-AzKeyVault -VaultName kv-adx-access -EnableSoftDelete</li><li>Portal: Key Vault → Properties → Soft delete → Enable</li><li>Configure retention period (7-90 days)</li><li>Test by deleting and recovering a test secret</li>                </ol><p style="margin-top: 10px;"><strong>📚 Documentation:</strong> <a href="https://docs.microsoft.com/en-us/azure/key-vault/general/soft-delete-overview" target="_blank">https://docs.microsoft.com/en-us/azure/key-vault/general/soft-delete-overview</a></p>            </details>        </div>        <h3>💡 Additional Recommendations</h3>
+        <div class="win-item">
+            <strong>Security - Implement Azure Policy for Key Vault Governance</strong><br>
+            <em>Description:</em> Deploy Azure Policies to enforce Key Vault security standards across all subscriptions<br>
+            <em>Effort:</em> Medium | <em>Impact:</em> High
+            <details style="margin-top: 10px;">
+                <summary style="cursor: pointer; font-weight: bold;">🔧 Implementation Steps</summary>
+                <ol style="margin-top: 5px;">
+                    <li>Go to Azure Policy → Definitions → Search for 'Key Vault'</li>
+                    <li>Assign built-in policies like 'Key vaults should have soft delete enabled'</li>
+                    <li>Create custom policies for organization-specific requirements</li>
+                    <li>Set policy scope to management group or subscription level</li>
+                    <li>Monitor compliance through Azure Policy compliance dashboard</li>
+                </ol>
+                <p style="margin-top: 10px;"><strong>📚 Documentation:</strong> <a href="https://docs.microsoft.com/en-us/azure/key-vault/general/azure-policy" target="_blank">Azure Policy for Key Vault</a></p>
+            </details>
+        </div>
+        <div class="win-item">
+            <strong>Monitoring - Centralize Logs with Log Analytics</strong><br>
+            <em>Description:</em> Configure all Key Vaults to send diagnostic logs to a central Log Analytics workspace<br>
+            <em>Effort:</em> Medium | <em>Impact:</em> High
+            <details style="margin-top: 10px;">
+                <summary style="cursor: pointer; font-weight: bold;">🔧 Implementation Steps</summary>
+                <ol style="margin-top: 5px;">
+                    <li>Create or identify central Log Analytics workspace</li>
+                    <li>For each Key Vault: Diagnostic settings → Add diagnostic setting</li>
+                    <li>Select logs: AuditEvent, AzurePolicyEvaluationDetails</li>
+                    <li>Select destination: Log Analytics workspace</li>
+                    <li>Create workbooks and alerts for Key Vault monitoring</li>
+                </ol>
+                <p style="margin-top: 10px;"><strong>📚 Documentation:</strong> <a href="https://docs.microsoft.com/en-us/azure/key-vault/general/monitor-key-vault" target="_blank">Monitor Key Vault</a></p>
+            </details>
+        </div>
+        <div class="win-item">
+            <strong>Automation - Create Runbooks for Key Management</strong><br>
+            <em>Description:</em> Develop Azure Automation runbooks for automated certificate renewal and key rotation<br>
+            <em>Effort:</em> High | <em>Impact:</em> High
+            <details style="margin-top: 10px;">
+                <summary style="cursor: pointer; font-weight: bold;">🔧 Implementation Steps</summary>
+                <ol style="margin-top: 5px;">
+                    <li>Create Azure Automation account</li>
+                    <li>Import required PowerShell modules (Az.KeyVault, Az.Automation)</li>
+                    <li>Develop runbooks for certificate renewal and key rotation</li>
+                    <li>Set up schedules for automated execution</li>
+                    <li>Configure notifications for rotation failures</li>
+                    <li>Test runbooks with non-production certificates first</li>
+                </ol>
+                <p style="margin-top: 10px;"><strong>📚 Documentation:</strong> <a href="https://docs.microsoft.com/en-us/azure/automation/automation-runbook-types" target="_blank">Azure Automation Runbooks</a></p>
+            </details>
+        </div>
+        <div class="win-item">
+            <strong>Identity - Use Managed Identities</strong><br>
+            <em>Description:</em> Replace service principals with managed identities for Azure VMs, App Services, Functions, AKS, and other Azure resources that support managed identities<br>
+            <em>Effort:</em> Medium | <em>Impact:</em> Medium
+            <details style="margin-top: 10px;">
+                <summary style="cursor: pointer; font-weight: bold;">🔧 Implementation Steps</summary>
+                <ol style="margin-top: 5px;">
+                    <li>Identify Azure resources (VMs, App Services, Functions, AKS) using service principals for Key Vault access</li>
+                    <li>Enable system-assigned managed identity on supported Azure resources</li>
+                    <li>Grant appropriate Key Vault RBAC roles to managed identities</li>
+                    <li>Update application code to use Azure.Identity or DefaultAzureCredential</li>
+                    <li>Remove service principal client secrets from configuration and Key Vault</li>
+                    <li>Test authentication with managed identities in non-production first</li>
+                </ol>
+
+    

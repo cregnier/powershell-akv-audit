@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Azure Key Vault Enhanced Security & Compliance Audit</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f5f5f5; }
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+.test-mode-banner { background: #dc3545; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.4em; border-radius: 8px; margin: 20px 0; animation: bloom 2s infinite; }
+.partial-results-banner { background: #e67e22; color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 1.1em; border-radius: 6px; margin: 15px 0; border-left: 4px solid #d35400; opacity: 0.95; }
+.summary { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.compliant { color: #28a745; font-weight: bold; }
+.non-compliant { color: #dc3545; font-weight: bold; }
+.partially-compliant { color: #ffc107; font-weight: bold; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
+.stat-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; position: relative; }
+.stat-card:hover { transform: translateY(-2px); transition: transform 0.3s ease; }
+.stat-number { font-size: 2em; font-weight: bold; color: #667eea; }
+.stat-label { color: #666; margin-top: 5px; }
+.stat-percentage { font-size: 0.9em; margin-top: 3px; font-weight: bold; }
+.progress-bar { width: 100%; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+.progress-fill { height: 100%; transition: width 0.8s ease; border-radius: 4px; }
+.dual-framework { display: flex; gap: 10px; margin-top: 10px; }
+.framework-score { flex: 1; padding: 8px; border-radius: 6px; text-align: center; font-size: 0.85em; }
+.microsoft-framework { background: #e7f3ff; border: 1px solid #b8daff; }
+.company-framework { background: #fff3cd; border: 1px solid #ffeaa7; }
+table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 20px 0; font-size: 0.8em; }
+th { background: #343a40; color: white; padding: 6px; text-align: left; font-weight: 600; cursor: pointer; position: sticky; top: 0; z-index: 10; font-size: 0.8em; }
+td { padding: 4px; border-bottom: 1px solid #dee2e6; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8em; }
+tr:nth-child(even) { background-color: #f8f9fa; }
+tr:hover { background-color: #e9ecef; }
+.recommendations { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-top: 20px; }
+.filter-input { width: 90%; padding: 3px; margin-bottom: 3px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.75em; }
+.identity-section { background: #e7f3ff; border: 1px solid #b8daff; padding: 15px; border-radius: 8px; margin: 20px 0; }
+.security-section { background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 8px; margin: 20px 0; }
+.secrets-section { background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 8px; margin: 20px 0; }
+.quick-wins-section { background: #f8f9ff; border: 1px solid #e6e6ff; padding: 15px; border-radius: 8px; margin: 20px 0; }
+.configuration-coverage-section { background: #f0f8ff; border: 1px solid #b8daff; padding: 15px; border-radius: 8px; margin: 20px 0; }
+.compliance-legend-section { background: #f8f0ff; border: 1px solid #e6d7ff; padding: 15px; border-radius: 8px; margin: 20px 0; }
+.action-link { color: #007bff; cursor: pointer; text-decoration: underline; font-size: 0.8em; }
+.action-details { display: none; background: #f8f9fa; border: 1px solid #dee2e6; padding: 8px; margin-top: 3px; border-radius: 4px; font-size: 0.75em; }
+.legend-section { background: #e9ecef; border: 1px solid #dee2e6; padding: 15px; border-radius: 8px; margin: 20px 0; }
+.tooltip { position: relative; display: inline-block; cursor: help; color: #007bff; font-weight: bold; }
+.tooltip .tooltiptext { visibility: hidden; width: 300px; background-color: #333; color: #fff; text-align: left; padding: 8px; border-radius: 6px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -150px; font-size: 0.8em; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+.tooltip:hover .tooltiptext { visibility: visible; }
+.enhancement-badge { display: inline-block; padding: 2px 8px; background: #667eea; color: white; border-radius: 12px; font-size: 0.7em; margin-left: 8px; }
+.collapsible-toggle { cursor: pointer; padding: 5px 10px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-size: 0.8em; margin-left: 10px; transition: all 0.3s ease; }
+.collapsible-toggle:hover { background: #e9ecef; }
+.collapsible-content { margin-top: 10px; }
+@keyframes bloom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+@keyframes progressAnimation { from { width: 0%; } }
+    </style>
+    <script>
+function filterTable(input, col) {
+    var filter = input.value.toUpperCase();
+    var table = document.getElementById("vaultTable");
+    var trs = table.getElementsByTagName("tr");
+    for (var i = 2; i < trs.length; i++) {
+        var tds = trs[i].getElementsByTagName("td");
+        if (tds.length > col) {
+            var txt = tds[col].textContent || tds[col].innerText;
+            trs[i].style.display = txt.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+        }
+    }
+}
+    // Removed stray catch block from JavaScript
+
+function sortTable(n) {
+    var table = document.getElementById("vaultTable");
+    var switching = true;
+    var dir = "asc";
+    var switchcount = 0;
+    while (switching) {
+        switching = false;
+        var rows = table.rows;
+        for (var i = 2; i < (rows.length - 1); i++) {
+            var shouldSwitch = false;
+            var x = rows[i].getElementsByTagName("TD")[n];
+            var y = rows[i + 1].getElementsByTagName("TD")[n];
+            if (dir == "asc") {
+                if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                    shouldSwitch = true;
+                    break;
+                }
+            } else if (dir == "desc") {
+                if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+        }
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount++;
+        } else {
+            if (switchcount == 0 && dir == "asc") {
+                dir = "desc";
+                switching = true;
+            }
+        }
+    }
+}
+
+function toggleActionItems(id) {
+    var element = document.getElementById(id);
+    if (element.style.display === "none" || element.style.display === "") {
+        element.style.display = "block";
+    } else {
+        element.style.display = "none";
+    }
+}
+
+function toggleCollapsible(elementId) {
+    var content = document.getElementById(elementId);
+    var toggle = content.previousElementSibling.querySelector('.collapsible-toggle');
+    
+    if (content.style.display === "none" || content.style.display === "") {
+        content.style.display = "block";
+        toggle.textContent = "Hide Details";
+        toggle.style.backgroundColor = "#007bff";
+        toggle.style.color = "white";
+    } else {
+        content.style.display = "none";
+        toggle.textContent = "Show Details";
+        toggle.style.backgroundColor = "#f8f9fa";
+        toggle.style.color = "#333";
+    }
+}
+    </script>
+</head>
+<body>
+    <div class="header">
+        <h1>🔐 Azure Key Vault Enhanced Security & Compliance Audit</h1>
+        <p><strong>Generated:</strong> 2025-10-13 17:12:35 UTC by curtus.regnier@intel.com</p>
+        
+        <p><strong>Script Version:</strong> 2.1 - Production Enterprise Edition</p>                
+            </ul>
+        </div>
+        
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-top: 15px;">
+            <h4>🔄 Audit Resume Instructions:</h4>
+            <p><strong>To complete the full organizational audit:</strong></p>
+            <ol>
+                <li><strong>Check for checkpoint files:</strong> Look for files matching <code>akv_audit_checkpoint_unknown_*.json</code> in your output directory</li>
+                <li><strong>Resume from checkpoint:</strong> Run <code>Get-AKV_Roles-SecAuditCompliance.ps1 -Resume</code> and select the appropriate checkpoint</li>
+                <li><strong>Alternative approach:</strong> Start a new complete audit with <code>Get-AKV_Roles-SecAuditCompliance.ps1</code> (full scan)</li>
+                <li><strong>Test mode first:</strong> Use <code>Get-AKV_Roles-SecAuditCompliance.ps1 -TestMode</code> to validate setup before full scan</li>
+            </ol>
+            <p><strong>📝 Note:</strong> Resume functionality requires the original checkpoint files from the incomplete audit. If checkpoints are not available, a new full audit will be required.</p>
+        </div>
+        
+        <div style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 8px; margin-top: 15px;">
+            <h4>⚠️ Data Completeness Disclaimer:</h4>
+            <p>This partial results report contains analysis for <strong>2 Key Vaults (100% of discovered infrastructure)</strong>. Statistics, percentages, and compliance metrics reflect only the processed subset and should not be extrapolated to represent complete organizational security posture.</p>
+            <ul>
+                <li><strong>Risk Assessment:</strong> Additional security risks may exist in unprocessed Key Vaults</li>
+                <li><strong>Compliance Scoring:</strong> Organization-wide compliance rates may differ significantly</li>
+                <li><strong>Resource Planning:</strong> Complete audit required for accurate capacity and resource planning</li>
+                <li><strong>Executive Reporting:</strong> Full audit recommended for comprehensive executive dashboards</li>
+            </ul>
+        </div>
+        
+        <p><strong>📊 Analysis Summary:</strong> This report contains analysis results for 2 out of 2 discovered Key Vaults. The audit was generated from checkpoint data and represents a subset of the complete organizational analysis.</p>
+    </div>    <div class="summary">
+        <h2>📊 Partial Results Information</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">2</div>
+                <div class="stat-label">Processed Vaults</div>
+                <div class="stat-percentage">From Data Source</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">N/A</div>
+                <div class="stat-label">Total Discovery</div>
+                <div class="stat-percentage">Unknown</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">20251013...</div>
+                <div class="stat-label">Report ID</div>
+                <div class="stat-percentage">Current Generation</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">10-13</div>
+                <div class="stat-label">Generated</div>
+                <div class="stat-percentage">17:12 UTC</div>
+            </div>
+        </div>
+        
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-top: 20px;">
+            <h4>📋 Data Source Information:</h4>
+            <ul>
+                <li><strong>Data Source:</strong> External data source</li>
+                <li><strong>Records Processed:</strong> 2 Key Vaults</li>
+                <li><strong>Report Generated:</strong> 2025-10-13 17:12:36 UTC by System</li>
+                <li><strong>Completeness:</strong> Unknown - CSV data source does not provide total discovery scope</li>
+            </ul>
+        </div>
+        
+        <div style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 8px; margin-top: 15px;">
+            <h4>⚠️ Important Limitations:</h4>
+            <p>This report was generated from imported CSV data. The scope and completeness of the original data collection is unknown.</p>
+            <ul>
+                <li><strong>Statistical Accuracy:</strong> Percentages reflect only the provided dataset, not organizational totals</li>
+                <li><strong>Discovery Scope:</strong> Unknown if all organizational Key Vaults are represented</li>
+                <li><strong>Data Currency:</strong> CSV data age and accuracy cannot be verified</li>
+                <li><strong>Compliance Assessment:</strong> Organizational compliance status requires complete audit</li>
+            </ul>
+        </div>
+        
+        <p><strong>📊 Analysis Summary:</strong> This report contains analysis results for 2 Key Vaults imported from external source. For complete organizational assessment, conduct a full live audit using the main script parameters.</p>
+    </div></div>    
+    <div class="test-mode-banner">
+        🧪 TEST MODE ACTIVE - Limited subset for validation
+    </div>    
+    <div class="summary">
+        <h2>🎯 Executive Summary</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Key Vaults Discovered</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%; background: #667eea; animation: progressAnimation 1.5s ease-out;"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Fully Compliant</div>
+                <div class="stat-percentage non-compliant">0%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%; background: #dc3545; animation: progressAnimation 2s ease-out;"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Average Score</div>
+                <div class="stat-percentage">Microsoft Framework</div>
+                <div class="dual-framework">
+                    <div class="framework-score microsoft-framework">
+                        <strong>MS:</strong> 0%
+                    </div>
+                    <div class="framework-score company-framework">
+                        <strong>Company:</strong> 0%
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">High Risk Vaults</div>
+                <div class="stat-percentage compliant">Require Attention</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%; background: #dc3545; animation: progressAnimation 2.5s ease-out;"></div>
+                </div>
+            </div>
+        </div>        </div>
+    </div>
+    
+    <div class="summary">
+        <h2>📋 Detailed Vault Analysis</h2>
+        <p>Comprehensive analysis of all  Key Vaults with compliance scoring, security configurations, and actionable recommendations.</p>
+        
+        <table id="vaultTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Subscription</th>
+                    <th onclick="sortTable(1)">Key Vault Name</th>
+                    <th onclick="sortTable(2)">Location</th>
+                    <th onclick="sortTable(3)">Resource Group</th>
+                    <th onclick="sortTable(4)">Compliance Status</th>
+                    <th onclick="sortTable(5)">MS Score</th>
+                    <th onclick="sortTable(6)">Company Score</th>
+                    <th onclick="sortTable(7)">Diagnostics</th>
+                    <th onclick="sortTable(8)">Log Categories</th>
+                    <th onclick="sortTable(9)">Log Analytics</th>
+                    <th onclick="sortTable(10)">Event Hub</th>
+                    <th onclick="sortTable(11)">Storage Account</th>
+                    <th onclick="sortTable(12)">Access Policies</th>
+                    <th onclick="sortTable(13)">RBAC Assignments</th>
+                    <th onclick="sortTable(14)">Service Principals</th>
+                    <th onclick="sortTable(15)">Managed Identities</th>
+                    <th onclick="sortTable(16)">System Identity</th>
+                    <th onclick="sortTable(17)">User Identities</th>
+                    <th onclick="sortTable(18)">Soft Delete</th>
+                    <th onclick="sortTable(19)">Purge Protection</th>
+                    <th onclick="sortTable(20)">Public Access</th>
+                    <th onclick="sortTable(21)">Private Endpoints</th>
+                    <th onclick="sortTable(22)">Secrets</th>
+                    <th onclick="sortTable(23)">Keys</th>
+                    <th onclick="sortTable(24)">Certificates</th>
+                    <th onclick="sortTable(25)">Environment</th>
+                    <th onclick="sortTable(26)">Workload</th>
+                    <th onclick="sortTable(27)">Action Items</th>
+                </tr>
+                <tr><th><input type='text' class='filter-input' onkeyup='filterTable(this, 0)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 1)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 2)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 3)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 4)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 5)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 6)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 7)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 8)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 9)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 10)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 11)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 12)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 13)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 14)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 15)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 16)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 17)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 18)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 19)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 20)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 21)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 22)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 23)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 24)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 25)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 26)' placeholder='Filter...'></th><th><input type='text' class='filter-input' onkeyup='filterTable(this, 27)' placeholder='Filter...'></th>                </tr>
+            </thead>
+            <tbody><tr><td title='dc8b9d9c-0cf9-446c-9177-12921182f54a'>1ci-preprod-metrics</td><td><strong>kv-adx-access</strong></td><td>westus</td><td>rg-1ci-metrics-data-analytics</td><td><span class='non-compliant'>Unknown</span></td><td><span style='color: #dc3545; font-weight: bold;'>0%</span></td><td><span style='color: #dc3545; font-weight: bold;' title='Company Framework Score'>0%</span></td><td>True</td><td title='AuditEvent,AzurePolicyEvaluationDetails'>AuditEvent, AzurePolicyEvaluationDetails</td><td title='Workspace: N/A'>False</td><td title='Namespace: InfoSecEventHubwestus, Hub: N/A'>True</td><td title='Storage: N/A'>False</td><td title='N/A'>0</td><td title='aad_bbaang: Owner | aad_bbaang: User Access Administrator | aad_rmcarden: User Access Administrator | aad_rmcarden: Owner | aad_sbiton2: User Access Administrator | CSM Azure Admin Diego Sverdloff: User Access Administrator | CSM Azure Admin Shmuel Ber: User Access Administrator | cbroker_testsp: Owner | Admin Access to dc8b9d9c-0cf9-446c-9177-12921182f54a AZADCORP: Owner | Custom Access to dc8b9d9c-0cf9-446c-9177-12921182f54a AZADCORP: Contributor | Reader Access dc8b9d9c-0cf9-446c-9177-12921182f54a AZADCORP: Reader | Containers/securityOperators/DefenderForContainersSecurityOperator: Defender Kubernetes API Access | Microsoft Defender for Cloud Servers Scanner Resource Provider: VM Scanner Operator | Unknown Principal: Contributor | 1CICD Certification: Reader | 1CICD Image builder PRE: Contributor | Unknown Principal: Monitoring Reader | fa-github-webhook-router: EventGrid Data Sender | fa-workflow-event-consumer: Azure Event Hubs Data Owner | Unknown Principal: EventGrid EventSubscription Contributor | ui-fa-oso-notifier: Azure Event Hubs Data Receiver | ui-fa-oso-notifier: Azure Event Hubs Data Receiver | fa-sinker-proxy: EventGrid Data Receiver | fa-sinker-proxy: EventGrid Data Contributor | Github: EventGrid Contributor | Github: EventGrid Data Sender | fa-sinker-proxy: EventGrid EventSubscription Reader | Unknown Principal: EventGrid Data Contributor | Unknown Principal: EventGrid Data Receiver | oss-github: Azure Event Hubs Data Owner | oss-github: EventGrid Data Receiver | Metrics: EventGrid Data Contributor | metrics-ingest: EventGrid Data Contributor | Metrics: EventGrid Data Sender | metrics-ingest: EventGrid Data Receiver | Metrics: Azure Event Hubs Data Sender | Unknown Principal: EventGrid Data Receiver | github-org-events: EventGrid Data Receiver | Github: Azure Event Hubs Data Sender | metrics-nonprod-westus: Azure Event Hubs Data Sender | ci-metrics-pilot: Azure Event Hubs Data Receiver | Cloud Infrastructure Entitlement Management: Reader | CloudPosture/securityOperators/DefenderCSPMSecurityOperator: Defender CSPM Storage Scanner Operator | CloudPosture/securityOperators/DefenderCSPMSecurityOperator: Defender Kubernetes API Access | SqlVmAndArcSqlServersProtection: Virtual Machine Contributor | storageDataScanner: Storage Blob Data Reader | SqlVmAndArcSqlServersProtection: Managed Identity Operator | storageDataScanner: Storage File Data Privileged Reader | SqlVmAndArcSqlServersProtection: Log Analytics Contributor | 8e808fd726b24678aa6cebaf: SQL Security Manager | Azure_Admin: Owner | SIRT_IaaS_Security_Audit: Contributor | d84517051f3a436288bff9f7: Contributor | InfoSecAutomation_grBxdcGCKejpB2kI71OHzCPbPPhrWCK/TfeKLQbsNig=: Contributor | AAD Role - Security Reader: Security Reader | Cloud Brokers: Owner | Microsoft Azure Log Integration Service (azlog) - 9709e9ec-2cb5-4580-8ea8-157e522740ff: Reader | Azure Security Manager: Security Admin | Azure Security Manager: Reader | IT Billing Read Only for Azure: Billing Reader | Wiz for Azure: Management Group Reader | Wiz for Azure: WizCustomRole-2021-01-28-Intel-Devtest-IC-Hybrid | Wiz for Azure: Reader | Wiz for Azure: Azure Kubernetes Service RBAC Reader | Cloud Brokers Reader: Reader | Azure DNS Engineering: Reader | cbroker_testsp: Owner | Eco cost specialist in azure: Cost Management Reader | InfoSecAutomation: Contributor | Azure SEER automatic enforcement: SEER enforcement | Unknown Principal: Reader | Unknown Principal: Virtual Machine Contributor | Unknown Principal: Reader | Unknown Principal: Contributor | 56acafe94e754a5db6eda4ba: Contributor | InfoSecAutomation: Azure Kubernetes Service Cluster Admin Role | InfoSecAutomation: Azure Kubernetes Service RBAC Admin | ac6c4e43cba143689bb93343: Contributor | InfoSecAutomation: Azure Kubernetes Service RBAC Cluster Admin | WizKeyVaultFirewall: Key Vault Contributor | WizKeyVaultAccess: Key Vault Contributor | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9: Key Vault Reader | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9: Key Vault Crypto Service Encryption User | 0db888b68baf42419da39dbd: Security Admin | e8ffd98c1d294021b0416ddd: Security Admin | Azure Public Cloud Hosting - Platform Reader: Reader | Azure Public Cloud Hosting - Platform Administrator: Owner | Azure Public Cloud Hosting - Platform Contributor: Contributor | Azure_Admin: Owner | IT Billing Read Only for Azure: Billing Reader | CBIC_Tenable_Reader: Reader | ECO_SPOT_IAP_16553: Cost Management Reader | Unknown Principal: Reader | CloudHealth_PR_IAP_34144: Reader | Unknown Principal: Reader | Men_and_Mice_PR_IAP_8445: Men and Mice Operator | Azure Security Read Only: Reader | Azure Security Admin: Owner | SDI Cloud Operations Azure: Owner | Densify-POC: Reader | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9: WizCustomRole1 | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9: Reader | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9: Azure Kubernetes Service RBAC Reader | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9: Azure Kubernetes Service Cluster User Role | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9: Storage Blob Data Reader | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9: Cognitive Services OpenAI User | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9: WizDataScanningRole | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9: WizServerlessScanningRole | Cyber Defense Perimeter Pentesting: Reader | CrowdStrike TEST CID - Cloud Security Integration: Reader | CrowdStrike TEST CID - Cloud Security Integration: Security Reader | CrowdStrike TEST CID - Cloud Security Integration: Key Vault Reader | CrowdStrike TEST CID - Cloud Security Integration: Azure Kubernetes Service RBAC Reader | WizKeyVaultAccess: Key Vault Contributor | WizKeyVaultFirewall: Key Vault Contributor | Unknown Principal: WizRemediationCustomRole | rubrik_scan: Reader and Data Access | rubrik_scan: Reader | wizazurerr-fa: WizRemediationCustomRole | Azure-Infosecurity-Keyvault-Auditor: Key Vault Reader | Azure-Infosecurity-Keyvault-Auditor: Monitoring Reader | Praetorian Chariot: Security Reader | Praetorian Chariot: Reader | CloudHelper_IAP13321: Subscription Rename | Unknown Principal: WizRemediationCustomRole | RockSteady Cloud Azure: RockSteadyRole | RockSteady Cloud Azure: Azure Kubernetes Service RBAC Reader | RockSteady Cloud Azure: Reader | wiz-jfjcexu4-func: wiz-jfJceXu4-function-role | Azure Public Cloud Hosting - Platform Contributor: Owner | Azure Public Cloud Hosting - Platform Contributor: Contributor | enterprise-hosting-cloud-helper/slots/test: Subscription Rename | enterprise-hosting-cloud-helper: Subscription Rename | enterprise-hosting-cloud-helper/slots/staging: Subscription Rename | Unknown Principal: Reader'>135</td><td title='cbroker_testsp (115bc50e-f248-4244-a146-ade2a6348f07) - Owner [RBAC] | Containers/securityOperators/DefenderForContainersSecurityOperator (d813d1f5-f596-456c-b9ec-cdccaee8cb45) - Defender Kubernetes API Access [RBAC] | Microsoft Defender for Cloud Servers Scanner Resource Provider (f094a5f3-4396-4ed6-86c5-181c709d2c02) - VM Scanner Operator [RBAC] | 1CICD Certification (95f6b320-21ef-4a06-80b0-633ee345d790) - Reader [RBAC] | 1CICD Image builder PRE (24ae01ee-d5f4-4abc-82ed-6b9f4412fa6b) - Contributor [RBAC] | fa-github-webhook-router (d013372d-f839-49ed-a816-b21b61c552ca) - EventGrid Data Sender [RBAC] | fa-workflow-event-consumer (721ed319-62e1-48c0-9d13-2747364bd02c) - Azure Event Hubs Data Owner [RBAC] | ui-fa-oso-notifier (ac2e0d66-cf57-4e29-a09e-84722bc3d783) - Azure Event Hubs Data Receiver [RBAC] | ui-fa-oso-notifier (ac2e0d66-cf57-4e29-a09e-84722bc3d783) - Azure Event Hubs Data Receiver [RBAC] | fa-sinker-proxy (90014ad7-7e2a-48b0-941e-70d9b3914c0d) - EventGrid Data Receiver [RBAC] | fa-sinker-proxy (90014ad7-7e2a-48b0-941e-70d9b3914c0d) - EventGrid Data Contributor [RBAC] | Github (645046c3-f1f8-4c6f-8caf-92f3e2999692) - EventGrid Contributor [RBAC] | Github (645046c3-f1f8-4c6f-8caf-92f3e2999692) - EventGrid Data Sender [RBAC] | fa-sinker-proxy (90014ad7-7e2a-48b0-941e-70d9b3914c0d) - EventGrid EventSubscription Reader [RBAC] | oss-github (113bc23e-04a8-46dc-8de1-7d7aad7f3a8e) - Azure Event Hubs Data Owner [RBAC] | oss-github (113bc23e-04a8-46dc-8de1-7d7aad7f3a8e) - EventGrid Data Receiver [RBAC] | Metrics (c2867564-0616-4001-bd0f-c808cbf95454) - EventGrid Data Contributor [RBAC] | metrics-ingest (1a1f500e-b384-47db-8602-a3e29b6393bf) - EventGrid Data Contributor [RBAC] | Metrics (c2867564-0616-4001-bd0f-c808cbf95454) - EventGrid Data Sender [RBAC] | metrics-ingest (1a1f500e-b384-47db-8602-a3e29b6393bf) - EventGrid Data Receiver [RBAC] | Metrics (c2867564-0616-4001-bd0f-c808cbf95454) - Azure Event Hubs Data Sender [RBAC] | github-org-events (62be8d44-10a6-4ce5-9f35-5517776ad22a) - EventGrid Data Receiver [RBAC] | Github (645046c3-f1f8-4c6f-8caf-92f3e2999692) - Azure Event Hubs Data Sender [RBAC] | metrics-nonprod-westus (dd204f92-4501-4f67-b6cd-4b41501d3060) - Azure Event Hubs Data Sender [RBAC] | ci-metrics-pilot (37f6ba5d-2132-4d7b-bf32-231abfb56d43) - Azure Event Hubs Data Receiver [RBAC] | Cloud Infrastructure Entitlement Management (a2334596-f24d-4d12-be6e-2fee7b045547) - Reader [RBAC] | CloudPosture/securityOperators/DefenderCSPMSecurityOperator (3bf6d0f0-430a-456d-bd4b-c83a31482ae9) - Defender CSPM Storage Scanner Operator [RBAC] | CloudPosture/securityOperators/DefenderCSPMSecurityOperator (3bf6d0f0-430a-456d-bd4b-c83a31482ae9) - Defender Kubernetes API Access [RBAC] | SqlVmAndArcSqlServersProtection (40928c77-cfa0-441d-9116-f1b870371de1) - Virtual Machine Contributor [RBAC] | storageDataScanner (10c17777-2ecc-40ce-ab1c-aae96f3a212c) - Storage Blob Data Reader [RBAC] | SqlVmAndArcSqlServersProtection (40928c77-cfa0-441d-9116-f1b870371de1) - Managed Identity Operator [RBAC] | storageDataScanner (10c17777-2ecc-40ce-ab1c-aae96f3a212c) - Storage File Data Privileged Reader [RBAC] | SqlVmAndArcSqlServersProtection (40928c77-cfa0-441d-9116-f1b870371de1) - Log Analytics Contributor [RBAC] | 8e808fd726b24678aa6cebaf (55c82409-6b0b-445c-9510-84d081c95661) - SQL Security Manager [RBAC] | d84517051f3a436288bff9f7 (c7205b9b-0b19-48f8-abce-210f1b2369ee) - Contributor [RBAC] | InfoSecAutomation_grBxdcGCKejpB2kI71OHzCPbPPhrWCK/TfeKLQbsNig= (7c51ef53-655e-40aa-b15a-3a21cc304b53) - Contributor [RBAC] | Microsoft Azure Log Integration Service (azlog) - 9709e9ec-2cb5-4580-8ea8-157e522740ff (33476dc5-2e32-404a-8718-b5b2d5da0a01) - Reader [RBAC] | Wiz for Azure (65e77292-7652-4fc3-97b3-eaa0bad308ff) - Management Group Reader [RBAC] | Wiz for Azure (65e77292-7652-4fc3-97b3-eaa0bad308ff) - WizCustomRole-2021-01-28-Intel-Devtest-IC-Hybrid [RBAC] | Wiz for Azure (65e77292-7652-4fc3-97b3-eaa0bad308ff) - Reader [RBAC] | Wiz for Azure (65e77292-7652-4fc3-97b3-eaa0bad308ff) - Azure Kubernetes Service RBAC Reader [RBAC] | cbroker_testsp (115bc50e-f248-4244-a146-ade2a6348f07) - Owner [RBAC] | InfoSecAutomation (ff1fc891-cbf9-4b4e-9840-176fcf617fdd) - Contributor [RBAC] | Azure SEER automatic enforcement (cad9f67b-2be1-4059-949b-12fad0f0a151) - SEER enforcement [RBAC] | 56acafe94e754a5db6eda4ba (2b534f55-8944-4206-b358-2af006783ba7) - Contributor [RBAC] | InfoSecAutomation (ff1fc891-cbf9-4b4e-9840-176fcf617fdd) - Azure Kubernetes Service Cluster Admin Role [RBAC] | InfoSecAutomation (ff1fc891-cbf9-4b4e-9840-176fcf617fdd) - Azure Kubernetes Service RBAC Admin [RBAC] | ac6c4e43cba143689bb93343 (38493c83-c734-44e5-b2b5-fda0e2a8731f) - Contributor [RBAC] | InfoSecAutomation (ff1fc891-cbf9-4b4e-9840-176fcf617fdd) - Azure Kubernetes Service RBAC Cluster Admin [RBAC] | WizKeyVaultFirewall (e1e91feb-f49c-43d2-b225-6f59e8050192) - Key Vault Contributor [RBAC] | WizKeyVaultAccess (19fae7fa-1512-4546-bb9f-aa943bd9ba48) - Key Vault Contributor [RBAC] | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9 (5f4c4416-0080-4c13-bd99-5ee412ca49da) - Key Vault Reader [RBAC] | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9 (5f4c4416-0080-4c13-bd99-5ee412ca49da) - Key Vault Crypto Service Encryption User [RBAC] | 0db888b68baf42419da39dbd (2a060361-e374-40d1-807d-b04bb5e8547f) - Security Admin [RBAC] | e8ffd98c1d294021b0416ddd (14fd31d8-7149-4371-b41a-292e18197327) - Security Admin [RBAC] | CBIC_Tenable_Reader (29b8b746-dc08-4c19-a0a1-3f653c40ecd3) - Reader [RBAC] | ECO_SPOT_IAP_16553 (bd123435-87ec-4fd1-b9d7-14dc67113604) - Cost Management Reader [RBAC] | CloudHealth_PR_IAP_34144 (5b8fb4af-0ad7-47e9-a6d6-27d3dba5aa2d) - Reader [RBAC] | Men_and_Mice_PR_IAP_8445 (1675703c-b517-4f03-a796-9668a390dcf7) - Men and Mice Operator [RBAC] | Densify-POC (e6a9b18f-b1bd-44c0-be64-ed3dc0aeb1df) - Reader [RBAC] | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9 (5f4c4416-0080-4c13-bd99-5ee412ca49da) - WizCustomRole1 [RBAC] | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9 (5f4c4416-0080-4c13-bd99-5ee412ca49da) - Reader [RBAC] | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9 (5f4c4416-0080-4c13-bd99-5ee412ca49da) - Azure Kubernetes Service RBAC Reader [RBAC] | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9 (5f4c4416-0080-4c13-bd99-5ee412ca49da) - Azure Kubernetes Service Cluster User Role [RBAC] | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9 (5f4c4416-0080-4c13-bd99-5ee412ca49da) - Storage Blob Data Reader [RBAC] | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9 (5f4c4416-0080-4c13-bd99-5ee412ca49da) - Cognitive Services OpenAI User [RBAC] | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9 (5f4c4416-0080-4c13-bd99-5ee412ca49da) - WizDataScanningRole [RBAC] | wiz-536a61ca-78c5-439a-9537-13b3ebbaa0e9 (5f4c4416-0080-4c13-bd99-5ee412ca49da) - WizServerlessScanningRole [RBAC] | Cyber Defense Perimeter Pentesting (1bf7fd2d-3100-438a-8341-e679afd5f9ae) - Reader [RBAC] | CrowdStrike TEST CID - Cloud Security Integration (508e7ffa-3c4b-4213-ada2-939d4ca91083) - Reader [RBAC] | CrowdStrike TEST CID - Cloud Security Integration (508e7ffa-3c4b-4213-ada2-939d4ca91083) - Security Reader [RBAC] | CrowdStrike TEST CID - Cloud Security Integration (508e7ffa-3c4b-4213-ada2-939d4ca91083) - Key Vault Reader [RBAC] | CrowdStrike TEST CID - Cloud Security Integration (508e7ffa-3c4b-4213-ada2-939d4ca91083) - Azure Kubernetes Service RBAC Reader [RBAC] | WizKeyVaultAccess (ccaf9819-a25d-4040-a403-c3f71b92bab4) - Key Vault Contributor [RBAC] | WizKeyVaultFirewall (46e69860-91e0-44d3-a2b5-1fe8777cfba1) - Key Vault Contributor [RBAC] | rubrik_scan (677a6233-f344-4f2c-960a-3df08bb36ef3) - Reader and Data Access [RBAC] | rubrik_scan (677a6233-f344-4f2c-960a-3df08bb36ef3) - Reader [RBAC] | wizazurerr-fa (c5a05c6b-3618-4b09-9664-03bef4ea7b67) - WizRemediationCustomRole [RBAC] | Praetorian Chariot (8115ad4c-1930-4f9f-8bc3-1befd822bf04) - Security Reader [RBAC] | Praetorian Chariot (8115ad4c-1930-4f9f-8bc3-1befd822bf04) - Reader [RBAC] | CloudHelper_IAP13321 (4875e471-1ab4-4656-b162-20b9c0bcc6de) - Subscription Rename [RBAC] | RockSteady Cloud Azure (005288a3-f653-4e8c-bcdf-ec797ae662f1) - RockSteadyRole [RBAC] | RockSteady Cloud Azure (005288a3-f653-4e8c-bcdf-ec797ae662f1) - Azure Kubernetes Service RBAC Reader [RBAC] | RockSteady Cloud Azure (005288a3-f653-4e8c-bcdf-ec797ae662f1) - Reader [RBAC] | wiz-jfjcexu4-func (cb7142af-92fe-43c4-a1d7-b7f9baa7d2b3) - wiz-jfJceXu4-function-role [RBAC] | enterprise-hosting-cloud-helper/slots/test (aa41a440-20bc-4a6d-8d03-338825dc12fb) - Subscription Rename [RBAC] | enterprise-hosting-cloud-helper (6c3796e5-908e-497a-b1ad-ff17813bad15) - Subscription Rename [RBAC] | enterprise-hosting-cloud-helper/slots/staging (1463e043-3f16-454d-93a7-e72fa5e108bd) - Subscription Rename [RBAC]'>88</td><td title='N/A'>0</td><td title='Principal ID: N/A'>False</td><td title='User Assigned IDs: N/A'>0</td><td>Unknown</td><td>Unknown</td><td title='Network ACLs: False'>Disabled</td><td>0</td><td style='text-align: center;'>0</td><td style='text-align: center;'>0</td><td style='text-align: center;'>0</td><td>Unknown</td><td title='N/A'>Not Determined</td><td><span class='action-link' onclick='toggleActionItems("actions_1")'>View Actions</span><div id='actions_1' class='action-details'><h5>Priority Actions for kv-adx-access:</h5><ul><li>N/A</li></ul><p><strong>Impact:</strong> Implementing these recommendations will improve security posture and compliance score.</p></div></td></tr>
+<tr><td title='dc8b9d9c-0cf9-446c-9177-12921182f54a'>1ci-preprod-metrics</td><td><strong>kv-adx-access</strong></td><td>westus</td><td>rg-1ci-metrics-data-analytics</td><td><span class='non-compliant'>Analysis Failed</span></td><td><span style='color: #dc3545; font-weight: bold;'>0%</span></td><td><span style='color: #dc3545; font-weight: bold;' title='Company Framework Score'>0%</span></td><td>False</td><td title='N/A'>N/A</td><td title='Workspace: N/A'>False</td><td title='Namespace: N/A, Hub: N/A'>False</td><td title='Storage: N/A'>False</td><td title='N/A'>N/A</td><td title='N/A'>0</td><td title='N/A'>N/A</td><td title='N/A'>N/A</td><td title='Principal ID: N/A'>N/A</td><td title='User Assigned IDs: N/A'>N/A</td><td>N/A</td><td>N/A</td><td title='Network ACLs: N/A'>N/A</td><td>0</td><td style='text-align: center;'>N/A</td><td style='text-align: center;'>N/A</td><td style='text-align: center;'>N/A</td><td>N/A</td><td title='N/A'>N/A</td><td><span class='action-link' onclick='toggleActionItems("actions_2")'>View Actions</span><div id='actions_2' class='action-details'><h5>Priority Actions for kv-adx-access:</h5><ul><li>N/A</li></ul><p><strong>Impact:</strong> Implementing these recommendations will improve security posture and compliance score.</p></div></td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="quick-wins-section">
+        <h3>🚀 Quick Wins Recommendations<span class="enhancement-badge">Enhanced</span></h3>
+        <p>Prioritized action items for immediate security improvements:</p>
+        <ul><li>[HIGH] Enable RBAC authorization model for all Key Vaults to leverage Azure AD for fine-grained access control<br><em>Example:</em> az keyvault update --name mykeyvault --enable-rbac-authorization true</li><li>[HIGH] Implement proper network access restrictions using virtual network service endpoints or private endpoints<br><em>Example:</em> Restrict DefaultAction to Deny, configure IP rules for authorized networks only</li><li>[MEDIUM] Enable diagnostic logging for all Key Vaults to capture access patterns and security events<br><em>Example:</em> Configure Log Analytics workspace integration, monitor AuditEvent and AllMetrics categories</li><li>[MEDIUM] Review and minimize access permissions - remove unused service principals and overprivileged assignments<br><em>Example:</em> Audit access policies quarterly, implement principle of least privilege with specific secret/key/certificate permissions</li><li>[MEDIUM] Replace hardcoded secrets with Key Vault references in application configurations<br><em>Example:</em> App Settings: @Microsoft.KeyVault(SecretUri=https://vault.vault.azure.net/secrets/connection-string/), ARM templates with KeyVault references</li><li>🟡 MEDIUM: Set up secret expiration monitoring and automated alerts for approaching expirations<br><em>Example:</em> Logic App triggered by Key Vault events, query for secrets expiring in 30 days, send Teams/email notifications with renewal instructions</li><li>🟢 LOW: Enable Key Vault notifications for secret access patterns and unauthorized changes<br><em>Example:</em> Configure Event Grid subscriptions for 'Microsoft.KeyVault.SecretNewVersion' and 'Microsoft.KeyVault.VaultAccessPolicyChanged' events, integrate with monitoring dashboards</li>        </ul>
+    </div>
+    
+    <div class="identity-section">
+        <h3>🔐 Identity & Access Management Insights</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">88</div>
+                <div class="stat-label">Total Service Principals</div>
+                
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Total Managed Identities</div>
+                
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">System-Assigned Identities</div>
+                <div class="stat-percentage" style="color: #dc3545">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">User-Assigned Identities</div>
+                
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Using RBAC</div>
+                <div class="stat-percentage" style="color: #dc3545">50%</div>
+            </div>
+        </div>
+        
+        <h4>Key Identity Recommendations:</h4>
+        <ul>
+            <li><strong>Migrate to Managed Identities:</strong> Replace service principals with managed identities where possible for enhanced security</li>
+            <li><strong>Implement RBAC:</strong> Move from legacy access policies to Azure RBAC for fine-grained access control (50% currently using RBAC)</li>
+            <li><strong>Apply Least Privilege:</strong> Review and reduce over-privileged role assignments</li>
+            <li><strong>Enable System-Assigned Identities:</strong> Configure system-assigned managed identities on Key Vault resources (0 of 2 vaults have system-assigned identities)</li>
+        </ul>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 4px;">
+            <h5>📝 Note on Service Principals vs System Identity:</h5>
+            <p><strong>Total Service Principals</strong> refers to external service principals assigned RBAC roles to access Key Vaults.</p>
+            <p><strong>System Identity</strong> refers to system-assigned managed identities directly on the Key Vault resource itself. These are separate concepts - a Key Vault can have external service principals accessing it while not having its own system-assigned identity enabled.</p>
+            
+        </div>
+    </div>
+
+    <div class="secrets-section">
+        <h3>🔑 Secrets Management Insights</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Vaults Storing Secrets</div>
+                <div class="stat-percentage" style="color: #667eea;">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Secret Access Monitoring</div>
+                <div class="stat-percentage" style="color: #28a745">50%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Granular Secret Access</div>
+                <div class="stat-percentage" style="color: #dc3545">50%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Secret Recovery Protection</div>
+                <div class="stat-percentage" style="color: #dc3545">0%</div>
+            </div>
+        </div>
+        
+        <h4>🔐 Secrets Management Terms & Best Practices:</h4>
+        <ul>
+            <li><strong>Secret Access Monitoring:</strong> Comprehensive logging and auditing of all secret access attempts, including who accessed what secrets, when, and from where. This enables detection of unauthorized access patterns and compliance reporting.</li>
+            <li><strong>Granular Secret Access:</strong> Fine-grained permissions using Azure RBAC instead of broad access policies. This allows specific roles like 'Key Vault Secrets User' for read access only, rather than full vault permissions.</li>
+            <li><strong>Secret Recovery Protection:</strong> Soft delete functionality that allows recovery of accidentally deleted secrets within the retention period (7-90 days), preventing permanent data loss.</li>
+            <li><strong>Secret Rotation:</strong> Microsoft recommends automated rotation every 90 days for high-value secrets. Consider implementing Azure Functions or Logic Apps for automated rotation workflows.</li>
+            <li><strong>Secret Versioning:</strong> Key Vault automatically versions secrets. Leverage this for rollback capabilities and audit trails.</li>
+            <li><strong>Application Integration:</strong> Use Key Vault references in Azure App Service and Azure Functions instead of hardcoding secrets in application configurations.</li>
+        </ul>
+        
+        <h4>📊 Compliance & Security Insights:</h4>
+        <ul>
+            <li><strong>Audit Trail:</strong> 50% of vaults have diagnostic logging enabled, providing visibility into secret access patterns and potential security incidents.</li>
+            <li><strong>Network Isolation:</strong> 0% of vaults use private endpoints, protecting secrets from unauthorized network access.</li>
+            <li><strong>Identity-Based Access:</strong> 50% of vaults use RBAC for granular secret permissions instead of legacy access policies.</li>
+            <li><strong>Secret Recovery:</strong> Soft delete is enabled on 0% of vaults, enabling secret recovery in case of accidental deletion.</li>
+        </ul>
+        
+        <h4>⚠️ Common Secrets Management Risks:</h4>
+        <ul>
+            <li><strong>Hardcoded Secrets:</strong> Avoid storing secrets directly in application code, configuration files, or environment variables.</li>
+            <li><strong>Over-Privileged Access:</strong> Applications with broad Key Vault permissions increase attack surface.</li>
+            <li><strong>Stale Secrets:</strong> Unused or forgotten secrets should be regularly audited and removed.</li>
+            <li><strong>Weak Secret Generation:</strong> Use cryptographically secure random generators for password and key generation.</li>
+            <li><strong>Cross-Environment Leakage:</strong> Ensure proper isolation between development, staging, and production secrets.</li>
+        </ul>
+        
+        
+    </div>
+
+    <div class="security-section">
+        <h3>🛡️ Security Enhancement Recommendations</h3>
+        
+        <h4>Network Security:</h4>
+        <ul>
+            <li><strong>Private Endpoints:</strong> 0 of 2 vaults  (0%) have private endpoints configured</li>
+            <li><strong>Network ACLs:</strong> Implement network access control lists to restrict access</li>
+            <li><strong>Firewall Rules:</strong> Configure IP-based firewall rules for additional protection</li>
+        </ul>
+        
+        <h4>Monitoring & Compliance:</h4>
+        <ul>
+            <li><strong>Event Hub Integration:</strong> 1 of 2 vaults (50%) have Event Hub enabled for real-time monitoring</li>
+            <li><strong>Log Analytics Integration:</strong> 0 of 2 vaults (0%) have Log Analytics enabled for centralized query and alerting</li>
+            <li><strong>Storage Account Logging:</strong> 0 of 2 vaults (0%) have storage account logging configured</li>
+            <li><strong>Azure Sentinel Integration:</strong> Connect Key Vault logs to Azure Sentinel for advanced threat detection</li>
+            <li><strong>Azure Policy:</strong> Implement automated compliance enforcement</li>
+        </ul>
+        
+        
+    </div>
+
+    <div class="legend-section">
+        <h3>📊 Compliance Score Calculation Legend</h3>
+        <p>The compliance score is calculated based on Microsoft Security Baseline requirements:</p>
+        
+        <h4>🔒 Core Security Features (50 points total):</h4>
+        <ul>
+            <li><strong>Soft Delete Enabled:</strong> 10 points - Protects against accidental deletion</li>
+            <li><strong>Purge Protection Enabled:</strong> 15 points - Critical security baseline requirement</li>
+            <li><strong>Diagnostics Enabled:</strong> 15 points - Essential for monitoring and compliance</li>
+            <li><strong>Event Hub Integration:</strong> 10 points - Real-time security monitoring capability</li>
+        </ul>
+        
+        <h4>🔐 Access Control (30 points total):</h4>
+        <ul>
+            <li><strong>RBAC Enabled:</strong> 15 points - Modern role-based access control vs legacy policies</li>
+            <li><strong>Private Endpoints:</strong> 15 points - Network security and zero-trust architecture</li>
+        </ul>
+        
+        <h4>📊 Monitoring & Compliance (20 points total):</h4>
+        <ul>
+            <li><strong>Log Analytics Integration:</strong> 10 points - Advanced querying and alerting</li>
+            <li><strong>Audit Event Logging:</strong> 5 points - Security event tracking</li>
+            <li><strong>Policy Evaluation Logging:</strong> 5 points - Azure Policy compliance tracking</li>
+        </ul>
+        
+        <h4>🎯 Compliance Thresholds:</h4>
+        <ul>
+            <li><strong class="compliant">Fully Compliant:</strong> 90-100 points - Meets Microsoft security baselines</li>
+            <li><strong class="partially-compliant">Partially Compliant:</strong> 60-89 points - Some improvements needed</li>
+            <li><strong class="non-compliant">Non-Compliant:</strong> 0-59 points - Immediate action required</li>
+        </ul>
+    </div>
+    
+    <div style="margin-top: 30px; padding: 15px; background: #e9ecef; border-radius: 8px; font-size: 0.9em;">
+        <h3>📋 Enhanced Compliance Framework</h3>
+        <p>This comprehensive audit evaluates Key Vault configurations against current Microsoft security standards:</p>
+        <ul>
+            <li><strong>Azure Security Benchmark v3.0</strong> - Latest Microsoft cloud security recommendations <a href="https://learn.microsoft.com/security/benchmark/azure/" target="_blank">[Learn More]</a></li>
+            <li><strong>Key Vault Security Baseline 2024</strong> - Specific security controls and requirements <a href="https://learn.microsoft.com/azure/key-vault/general/security-baseline" target="_blank">[Learn More]</a></li>
+            <li><strong>Microsoft Cloud Security Best Practices</strong> - Identity and access management standards <a href="https://learn.microsoft.com/azure/security/fundamentals/best-practices-and-patterns" target="_blank">[Learn More]</a></li>
+            <li><strong>Zero Trust Architecture</strong> - Never trust, always verify principles <a href="https://learn.microsoft.com/security/zero-trust/" target="_blank">[Learn More]</a></li>
+            <li><strong>NIST Cybersecurity Framework</strong> - Industry-standard security practices <a href="https://www.nist.gov/cyberframework" target="_blank">[Learn More]</a></li>
+            <li><strong>Azure Well-Architected Framework</strong> - Security pillar recommendations <a href="https://learn.microsoft.com/azure/well-architected/security/" target="_blank">[Learn More]</a></li>
+        </ul>
+        
+        <h4>📊 Audit Statistics:</h4>
+        <ul>
+            <li>Subscriptions analyzed: N/A</li>
+            <li>Key Vaults discovered: 2</li>
+            <li>Compliance rate: 0% (0 fully compliant)</li>
+            <li>RBAC adoption: 50% (1 vaults using RBAC)</li>
+            <li>Event Hub integration: 50% (1 vaults configured)</li>
+            <li>Log Analytics integration: 0% (0 vaults configured)</li>
+            <li>Storage Account logging: 0% (0 vaults configured)</li>
+            <li>Private endpoint adoption: 0% (0 vaults secured)</li>
+            <li>Total execution time: N/A</li>
+            <li>Authentication refreshes: 0</li>
+            
+        </ul>
+        
+        <h4>📁 Generated Files:</h4>
+        <ul>
+            <li><strong>HTML Report:</strong> C:\Users\cregnier\Documents\KeyVaultAudit\KeyVaultComprehensiveAudit_2025-10-13_17-10-45.html</li>
+            <li><strong>CSV Data:</strong> C:\Users\cregnier\Documents\KeyVaultAudit\KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv</li> <li><strong>Error Log:</strong> C:\Users\cregnier\Documents\KeyVaultAudit\KeyVaultAudit_errors_20251013_171236.log</li> <li><strong>Permissions Log:</strong> C:\Users\cregnier\Documents\KeyVaultAudit\KeyVaultAudit_permissions_20251013_171236.log</li> <li><strong>Data Issues Log:</strong> C:\Users\cregnier\Documents\KeyVaultAudit\KeyVaultAudit_dataissues_20251013_171236.log</li>
+        </ul>
+        
+        <h4>🔍 Enhanced Features Implemented:</h4>
+        <ul>
+            <li>✅ Comprehensive managed identity detection and analysis (System: 0, User: 0)</li>
+            <li>✅ Advanced service principal analysis with over-privilege detection</li>
+            <li>✅ RBAC least-privilege recommendations based on current assignments</li>
+            <li>✅ Real-time compliance scoring with Microsoft baseline alignment</li>
+            <li>✅ Enhanced progress tracking with intelligent ETA calculations</li>
+            <li>✅ Automatic token refresh and seamless re-authentication (Refreshes: N/A)</li>
+            <li>✅ Comprehensive error handling and permissions logging</li>
+            <li>✅ Network security assessment including private endpoint analysis</li>
+            <li>✅ Complete diagnostic configuration analysis (Event Hub, Log Analytics, Storage)</li>
+            <li>✅ Executive-level reporting with actionable insights and percentages</li>
+            <li>✅ Secrets management insights with Microsoft best practices alignment</li>
+            <li>✅ Color-coded sliding scale percentages for visual impact assessment</li>
+            <li>✅ Reverse color logic for Non-Compliant metrics (0% = good, 100% = bad)</li>
+            <li>✅ Dynamic user authentication tracking from Azure login context</li>
+            
+        </ul>
+    </div>
+    
+    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeaa7;">
+        <h3>⚠️ Important Notes</h3>
+        <ul>
+            
+            <li><strong>Permissions:</strong> Some data may be incomplete due to insufficient permissions. Check the permissions log for details.</li>
+            <li><strong>Best Practices:</strong> This audit reflects current Microsoft recommendations as of October 2025.</li>
+            <li><strong>Continuous Improvement:</strong> Regular audits are recommended to maintain security posture.</li>
+            <li><strong>Authentication:</strong> Script performed 0 token refresh(es) to maintain connectivity.</li>
+            
+        </ul>
+    </div>
+    
+    <footer style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center; color: #6c757d; border-top: 3px solid #667eea;">
+        <p><strong>Azure Key Vault Enhanced Security & Compliance Audit Report</strong></p>
+        <p>Generated by Script v2.1 on 2025-10-13 17:12:36 UTC by curtus.regnier@intel.com</p>
+        <p><strong>Execution ID:</strong> 20251013-171009</p>
+        <p>For questions or support, contact your Azure security team.</p>
+        
+    </footer>
+</body>
+</html>

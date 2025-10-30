@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Azure Key Vault Gap Analysis Report</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .test-mode-banner { background: #dc3545; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.4em; border-radius: 8px; margin: 20px 0; }
+        .summary { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .compliant { color: #28a745; font-weight: bold; }
+        .non-compliant { color: #dc3545; font-weight: bold; }
+        .partially-compliant { color: #ffc107; font-weight: bold; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .stat-number { font-size: 2em; font-weight: bold; color: #667eea; }
+        .stat-label { color: #666; margin-top: 5px; }
+        .stat-percentage { font-size: 0.9em; margin-top: 3px; font-weight: bold; }
+        .identity-section { background: #e7f3ff; border: 1px solid #b8daff; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .security-section { background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .secrets-section { background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .quick-wins-section { background: #f8f9ff; border: 1px solid #e6e6ff; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .workload-section { background: #f0f8ff; border: 1px solid #b0c4de; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .integration-section { background: #fdf5e6; border: 1px solid #f4a460; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .metrics-section { background: #f5f5f5; border: 1px solid #d3d3d3; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .recommendations { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .legend-section { background: #e9ecef; border: 1px solid #dee2e6; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .enhancement-badge { background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-left: 10px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 20px 0; font-size: 0.8em; }
+        th { background: #343a40; color: white; padding: 6px; text-align: left; font-weight: 600; cursor: pointer; position: sticky; top: 0; z-index: 10; font-size: 0.8em; }
+        td { padding: 4px; border-bottom: 1px solid #dee2e6; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8em; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e9ecef; }
+        .filter-input { width: 90%; padding: 3px; margin-bottom: 3px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.75em; }
+        .action-link { color: #007bff; cursor: pointer; text-decoration: underline; font-size: 0.8em; }
+        .action-details { display: none; background: #f8f9fa; border: 1px solid #dee2e6; padding: 8px; margin-top: 3px; border-radius: 4px; font-size: 0.75em; }
+        .priority-high { background: #f8d7da; border-left: 4px solid #dc3545; }
+        .priority-medium { background: #fff3cd; border-left: 4px solid #ffc107; }
+        .priority-strategic { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+        @keyframes bloom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    </style>
+    <script>
+        function filterTable(input, col) {
+            var filter = input.value.toUpperCase();
+            var table = document.getElementById("vaultTable");
+            var trs = table.getElementsByTagName("tr");
+            for (var i = 2; i < trs.length; i++) {
+                var tds = trs[i].getElementsByTagName("td");
+                if (tds.length > col) {
+                    var txt = tds[col].textContent || tds[col].innerText;
+                    trs[i].style.display = txt.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+                }
+            }
+        }
+
+        function sortTable(n) {
+            var table = document.getElementById("vaultTable");
+            var switching = true;
+            var dir = "asc";
+            var switchcount = 0;
+            while (switching) {
+                switching = false;
+                var rows = table.rows;
+                for (var i = 2; i < (rows.length - 1); i++) {
+                    var shouldSwitch = false;
+                    var x = rows[i].getElementsByTagName("TD")[n];
+                    var y = rows[i + 1].getElementsByTagName("TD")[n];
+                    if (dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+
+        function toggleActionItems(id) {
+            var element = document.getElementById(id);
+            if (element.style.display === 'none' || element.style.display === '') {
+                element.style.display = 'block';
+            } else {
+                element.style.display = 'none';
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 Azure Key Vault Gap Analysis Report</h1>
+        <p>Generated on 2025-10-29 16:37:58 | Script Version unreleased</p>
+        <p>Analysis Period: 0 days | Total Execution Time: 8.4 minutes</p>
+    </div>
+
+    <div class="summary">
+        <h2>📊 Executive Summary</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">25</div>
+                <div class="stat-label">Total Key Vaults</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Subscriptions Analyzed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">25</div>
+                <div class="stat-label">Vaults with Diagnostics</div>
+                <div class="stat-percentage">100%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Vaults with RBAC</div>
+                <div class="stat-percentage">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Vaults with Private Endpoints</div>
+                <div class="stat-percentage">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">89%</div>
+                <div class="stat-label">Average Compliance Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"></div>
+                <div class="stat-label">Total Secrets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"></div>
+                <div class="stat-label">Total Certificates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"></div>
+                <div class="stat-label">Total Keys</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"></div>
+                <div class="stat-label">Assets Needing Rotation</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"></div>
+                <div class="stat-label">Recently Rotated</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Quick Wins Available</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Total Security Gaps</div>
+            </div>
+        </div>
+    </div>
+    <div class="summary">
+        <h2>📋 Common Notice</h2>
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h3>⚠️ Data Completeness Disclaimer</h3>
+            <p><strong>Analysis Scope:</strong> This report provides insights based on the Azure resources accessible to the authenticated account. Results may be incomplete if:</p>
+            <ul>
+                <li>Azure permissions are insufficient for full resource access</li>
+                <li>Key Vault firewalls block the analysis account</li>
+                <li>Private endpoints restrict external access</li>
+                <li>Custom RBAC roles limit resource enumeration</li>
+            </ul>
+            <p><em>For comprehensive analysis, ensure the service principal or user account has appropriate Azure permissions.</em></p>
+        </div>
+
+        <div style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 8px;">
+            <h3>🔄 Audit Resume Instructions</h3>
+            <p><strong>Test Mode:</strong> When running with <code>-TestMode</code>, only a limited number of Key Vaults are analyzed for validation purposes.</p>
+            <p><strong>Production Run:</strong> Execute without <code>-TestMode</code> for complete organizational analysis.</p>
+            <p><strong>Resume Capability:</strong> The script supports resuming interrupted analyses using checkpoint files.</p>
+        </div>
+    </div>
+    <div class="workload-section">
+        <h2>🏢 Workload Analysis</h2>
+        <h3>Security Configuration Overview</h3>
+        <p>This section provides an overview of the security configuration across all analyzed Key Vaults, highlighting patterns and potential areas for improvement.</p>
+
+        <h4>🔐 Access Control Patterns</h4>
+        <ul>
+            <li><strong>RBAC vs Access Policies:</strong> 0 vaults use RBAC, while 25 use access policies</li>
+            <li><strong>Private Endpoints:</strong> 0 vaults have private endpoints configured</li>
+            <li><strong>Network Security:</strong> 25 vaults rely on public network access</li>
+        </ul>
+
+        <h4>📊 Asset Distribution</h4>
+        <ul>
+            <li><strong>Secrets:</strong>  total secrets across all vaults</li>
+            <li><strong>Certificates:</strong>  total certificates across all vaults</li>
+            <li><strong>Keys:</strong>  total keys across all vaults</li>
+        </ul>
+
+        <h4>🔄 Rotation Status</h4>
+        <ul>
+            <li><strong>Assets Needing Rotation:</strong>  assets require manual rotation</li>
+            <li><strong>Recently Rotated:</strong>  assets have been rotated recently</li>
+        </ul>
+
+        <h4>📈 Compliance Overview</h4>
+        <ul>
+            <li><strong>Average Compliance Score:</strong> 89%</li>
+            <li><strong>Quick Wins Available:</strong> 0 immediate improvements identified</li>
+            <li><strong>Security Gaps:</strong> 0 total gaps requiring attention</li>
+        </ul>
+    </div>
+    <div class="identity-section">
+        <h2>👥 Identity & Access Management</h2>
+        <h3>Access Control Analysis</h3>
+        <p>This section analyzes identity distribution, access patterns, and provides recommendations for improving access management.</p>
+
+        <h4>🔍 Identity Distribution</h4>
+        <p>Analysis of different identity types accessing Key Vaults:</p>
+        <ul>
+            <li><strong>Service Principals:</strong> Automated identities used by applications and services</li>
+            <li><strong>Managed Identities:</strong> Azure-managed identities for secure authentication</li>
+            <li><strong>User Accounts:</strong> Individual user access (should be minimized in production)</li>
+            <li><strong>Groups:</strong> Group-based access control for better management</li>
+        </ul>
+
+        <h4>⚖️ RBAC vs Access Policies</h4>
+        <p>Comparison of access control models:</p>
+        <ul>
+            <li><strong>RBAC Enabled:</strong> 0 vaults (0%)</li>
+            <li><strong>Access Policies:</strong> 25 vaults (100%)</li>
+        </ul>
+
+        <h4>🎯 Access Risk Assessment</h4>
+        <p>Evaluation of access patterns and potential security risks:</p>
+        <ul>
+            <li><strong>Over-privileged Access:</strong> Identities with excessive permissions</li>
+            <li><strong>Stale Permissions:</strong> Access not regularly reviewed or rotated</li>
+            <li><strong>Emergency Access:</strong> Break-glass accounts properly configured</li>
+        </ul>
+
+        <h4>💡 Recommendations</h4>
+        <div class="recommendations">
+            <h5>Immediate Actions</h5>
+            <ul>
+                <li>Implement managed identities for application authentication</li>
+                <li>Regular review and rotation of access permissions</li>
+                <li>Migrate from access policies to RBAC where appropriate</li>
+                <li>Implement conditional access policies for user accounts</li>
+            </ul>
+        </div>
+    </div>
+    <div class="secrets-section">
+        <h2>🔑 Secrets Management</h2>
+        <h3>Asset Health & Distribution Analysis</h3>
+        <p>This section provides insights into secrets, certificates, and keys management across your Key Vaults.</p>
+
+        <h4>📊 Asset Distribution</h4>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number"></div>
+                <div class="stat-label">Total Secrets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"></div>
+                <div class="stat-label">Total Certificates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"></div>
+                <div class="stat-label">Total Keys</div>
+            </div>
+        </div>
+
+        <h4>🔄 Rotation Analysis</h4>
+        <ul>
+            <li><strong>Assets Needing Rotation:</strong>  secrets/certificates require attention</li>
+            <li><strong>Recently Rotated:</strong>  assets have been updated recently</li>
+            <li><strong>Rotation Coverage:</strong> 0% of assets have recent rotation activity</li>
+        </ul>
+
+        <h4>🛡️ Security Best Practices</h4>
+        <div class="recommendations">
+            <h5>Secrets Management Guidelines</h5>
+            <ul>
+                <li>Implement automatic rotation for certificates and keys</li>
+                <li>Use short-lived secrets with frequent rotation</li>
+                <li>Enable soft-delete and purge protection</li>
+                <li>Monitor secret access patterns for anomalies</li>
+                <li>Implement proper tagging for secret lifecycle management</li>
+            </ul>
+        </div>
+    </div>
+    <div class="quick-wins-section">
+        <h2>⚡ Quick Wins</h2>
+        <h3>Immediate Security Improvements</h3>
+        <p>These are low-effort, high-impact security improvements that can be implemented quickly.</p>
+
+        <div class="wins-section">
+            <h4>Available Quick Wins: 0</h4>
+            <div class="win-item">
+                <strong>🔧 Enable Diagnostic Logging</strong>
+                <p>Configure diagnostic settings for all Key Vaults to enable monitoring and alerting.</p>
+                <p><em>Impact:</em> Improved visibility and compliance | <em>Effort:</em> Low</p>
+            </div>
+            <div class="win-item">
+                <strong>🔒 Enable Soft Delete</strong>
+                <p>Ensure soft-delete is enabled on all Key Vaults for recovery capabilities.</p>
+                <p><em>Impact:</em> Data protection | <em>Effort:</em> Low</p>
+            </div>
+            <div class="win-item">
+                <strong>🛡️ Enable Purge Protection</strong>
+                <p>Configure purge protection to prevent accidental or malicious deletion.</p>
+                <p><em>Impact:</em> Enhanced security | <em>Effort:</em> Low</p>
+            </div>
+            <div class="win-item">
+                <strong>🔄 Configure Rotation Policies</strong>
+                <p>Set up automatic rotation for certificates and keys.</p>
+                <p><em>Impact:</em> Reduced risk | <em>Effort:</em> Medium</p>
+            </div>
+        </div>
+    </div>
+    <div class="integration-section">
+        <h2>🔗 Integration Patterns</h2>
+        <h3>Application & DevOps Integration</h3>
+        <p>Best practices for integrating Key Vault with applications and DevOps pipelines.</p>
+
+        <h4>🖥️ Application Integration</h4>
+        <ul>
+            <li><strong>Managed Identities:</strong> Use system-assigned or user-assigned managed identities</li>
+            <li><strong>Key Vault SDKs:</strong> Leverage language-specific SDKs for secure access</li>
+            <li><strong>Configuration:</strong> Store connection strings and sensitive configuration in Key Vault</li>
+            <li><strong>Secrets:</strong> Use Key Vault for API keys, database passwords, and certificates</li>
+        </ul>
+
+        <h4>🚀 DevOps Integration</h4>
+        <ul>
+            <li><strong>CI/CD Pipelines:</strong> Integrate Key Vault with Azure DevOps, GitHub Actions</li>
+            <li><strong>Infrastructure as Code:</strong> Use Bicep/ARM templates with Key Vault references</li>
+            <li><strong>Service Connections:</strong> Configure secure service connections for deployments</li>
+            <li><strong>Environment Management:</strong> Separate secrets per environment (dev/staging/prod)</li>
+        </ul>
+
+        <h4>🔧 Common Patterns</h4>
+        <div class="recommendations">
+            <ul>
+                <li>Implement the principle of least privilege for all access</li>
+                <li>Use Key Vault references in App Service and Functions</li>
+                <li>Enable Key Vault firewall for production environments</li>
+                <li>Implement proper logging and monitoring of access patterns</li>
+                <li>Use Azure Policy to enforce Key Vault security standards</li>
+            </ul>
+        </div>
+    </div>
+    <div class="security-section">
+        <h2>🛡️ Security Recommendations</h2>
+        <h3>Comprehensive Security Enhancement Actions</h3>
+        <p>Prioritized recommendations for improving Key Vault security posture.</p>
+
+        <h4>🔴 High Priority Actions</h4>
+        <div class="priority-high">
+            <ul>
+                <li><strong>Enable Diagnostic Logging:</strong> Configure comprehensive logging for all Key Vault operations</li>
+                <li><strong>Implement Network Security:</strong> Use private endpoints or firewall rules to restrict access</li>
+                <li><strong>Enable Purge Protection:</strong> Prevent accidental deletion of critical secrets</li>
+                <li><strong>Review Access Permissions:</strong> Audit and minimize overly permissive access policies</li>
+            </ul>
+        </div>
+
+        <h4>🟡 Medium Priority Actions</h4>
+        <div class="priority-medium">
+            <ul>
+                <li><strong>Implement Rotation Policies:</strong> Set up automatic rotation for certificates and keys</li>
+                <li><strong>Migrate to RBAC:</strong> Consider migrating from access policies to role-based access control</li>
+                <li><strong>Enable Managed Identities:</strong> Use managed identities instead of service principal secrets</li>
+                <li><strong>Configure Backup:</strong> Set up regular backups for disaster recovery</li>
+            </ul>
+        </div>
+
+        <h4>🔵 Strategic Priority Actions</h4>
+        <div class="priority-strategic">
+            <ul>
+                <li><strong>Implement Monitoring:</strong> Set up comprehensive monitoring and alerting</li>
+                <li><strong>Security Assessment:</strong> Regular security assessments and penetration testing</li>
+                <li><strong>Compliance Automation:</strong> Use Azure Policy for continuous compliance</li>
+                <li><strong>Documentation:</strong> Maintain up-to-date security documentation and procedures</li>
+            </ul>
+        </div>
+    </div>
+    <div class="metrics-section">
+        <h2>📈 Security Metrics & KPIs</h2>
+        <h3>Key Performance Indicators</h3>
+        <p>Track these metrics to monitor Key Vault security posture over time.</p>
+
+        <h4>🔍 Compliance Metrics</h4>
+        <ul>
+            <li><strong>Compliance Score:</strong> 89% average across all vaults</li>
+            <li><strong>Security Gaps:</strong> 0 total gaps identified</li>
+            <li><strong>Quick Wins Completed:</strong> Track progress on immediate improvements</li>
+        </ul>
+
+        <h4>🔐 Access Control Metrics</h4>
+        <ul>
+            <li><strong>RBAC Adoption:</strong> 0% of vaults using RBAC</li>
+            <li><strong>Private Endpoint Coverage:</strong> 0% of vaults secured with private endpoints</li>
+            <li><strong>Diagnostic Coverage:</strong> 100% of vaults with logging enabled</li>
+        </ul>
+
+        <h4>🔄 Operational Metrics</h4>
+        <ul>
+            <li><strong>Rotation Coverage:</strong> 0% of assets recently rotated</li>
+            <li><strong>Assets Requiring Attention:</strong>  assets need rotation</li>
+            <li><strong>Asset Distribution:</strong>  secrets,  certificates,  keys</li>
+        </ul>
+
+        <h4>📊 Trend Analysis</h4>
+        <p>Monitor these KPIs over time to track security improvements:</p>
+        <ul>
+            <li>Compliance score trends (target: >90%)</li>
+            <li>Reduction in security gaps over time</li>
+            <li>Increase in RBAC and private endpoint adoption</li>
+            <li>Improvement in rotation coverage</li>
+        </ul>
+    </div>
+    <div class="security-section">
+        <h2>🎯 Real-World Improvement Guidance</h2>
+        <h3>Practical Implementation Based on Compliance Frameworks</h3>
+        <p>Actionable guidance derived from real Azure Key Vault analysis and compliance requirements.</p>
+
+        <h4>🏢 Enterprise Implementation Patterns</h4>
+        <div class="recommendations">
+            <h5>Identity & Access Management</h5>
+            <ul>
+                <li><strong>Zero Trust Implementation:</strong> Implement least-privilege access with regular permission reviews</li>
+                <li><strong>Managed Identity Adoption:</strong> Replace service principal secrets with managed identities</li>
+                <li><strong>Conditional Access:</strong> Apply conditional access policies for all user-based access</li>
+                <li><strong>Access Review Cycles:</strong> Establish quarterly access review processes</li>
+            </ul>
+
+            <h5>🔐 Secrets Management Excellence</h5>
+            <ul>
+                <li><strong>Automated Rotation:</strong> Implement automatic rotation for all certificates and keys</li>
+                <li><strong>Secret Lifecycle:</strong> Define clear lifecycle policies for secret creation, usage, and retirement</li>
+                <li><strong>Monitoring & Alerting:</strong> Set up alerts for unusual access patterns or failed operations</li>
+                <li><strong>Backup & Recovery:</strong> Implement comprehensive backup strategies for disaster recovery</li>
+            </ul>
+
+            <h5>🛡️ Security Operations</h5>
+            <ul>
+                <li><strong>Network Security:</strong> Use private endpoints for production Key Vaults</li>
+                <li><strong>Logging & Monitoring:</strong> Enable comprehensive diagnostic logging with retention policies</li>
+                <li><strong>Incident Response:</strong> Develop Key Vault-specific incident response procedures</li>
+                <li><strong>Compliance Automation:</strong> Use Azure Policy and Azure Security Center for continuous compliance</li>
+            </ul>
+        </div>
+
+        <h4>📋 Implementation Roadmap</h4>
+        <ol>
+            <li><strong>Phase 1 (Weeks 1-2):</strong> Enable diagnostic logging and basic monitoring</li>
+            <li><strong>Phase 2 (Weeks 3-4):</strong> Implement managed identities and RBAC migration</li>
+            <li><strong>Phase 3 (Weeks 5-8):</strong> Configure rotation policies and network security</li>
+            <li><strong>Phase 4 (Weeks 9-12):</strong> Implement advanced monitoring and compliance automation</li>
+        </ol>
+
+        <h4>🔍 Common Pitfalls to Avoid</h4>
+        <div class="recommendations">
+            <ul>
+                <li><strong>Over-permissive Access:</strong> Avoid granting excessive permissions to applications</li>
+                <li><strong>Shared Secrets:</strong> Don't share secrets across multiple applications unnecessarily</li>
+                <li><strong>Manual Processes:</strong> Avoid manual secret rotation and access management</li>
+                <li><strong>Inadequate Monitoring:</strong> Ensure comprehensive logging and alerting are configured</li>
+            </ul>
+        </div>
+    </div>
+    <div class="vault-details">
+        <h2>📋 Detailed Analysis</h2>
+        <h3>Key Vault Inventory & Security Assessment</h3>
+        <p>Comprehensive analysis of all discovered Key Vaults with security posture details.</p>
+
+        <table id="vaultTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Vault Name</th>
+                    <th onclick="sortTable(1)">Resource Group</th>
+                    <th onclick="sortTable(2)">Location</th>
+                    <th onclick="sortTable(3)">Compliance Score</th>
+                    <th onclick="sortTable(4)">Security Gaps</th>
+                    <th onclick="sortTable(5)">RBAC Enabled</th>
+                    <th onclick="sortTable(6)">Diagnostics</th>
+                    <th onclick="sortTable(7)">Private Endpoints</th>
+                    <th onclick="sortTable(8)">Secrets Count</th>
+                    <th onclick="sortTable(9)">Certificates Count</th>
+                    <th onclick="sortTable(10)">Keys Count</th>
+                    <th onclick="sortTable(11)">Access Policies</th>
+                </tr>
+                <tr>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 0)" placeholder="Filter vaults..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 1)" placeholder="Filter RG..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 2)" placeholder="Filter location..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 3)" placeholder="Filter score..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 4)" placeholder="Filter gaps..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 5)" placeholder="Filter RBAC..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 6)" placeholder="Filter diagnostics..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 7)" placeholder="Filter endpoints..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 8)" placeholder="Filter secrets..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 9)" placeholder="Filter certs..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 10)" placeholder="Filter keys..."></th>
+                    <th><input type="text" class="filter-input" onkeyup="filterTable(this, 11)" placeholder="Filter policies..."></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>kv-adx-access</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>kv-pre-ghacts-clctr</td>
+                    <td></td>
+                    <td>westus2</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>kv-azure2cyberark</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>kvdevdiskencryptuswest</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="compliant partially-compliant">100%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>2</td>
+                </tr>
+                <tr>
+                    <td>SCM-SgKvprewestus</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="compliant partially-compliant">100%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>2</td>
+                </tr>
+                <tr>
+                    <td>SCM-VMKv-prewestus</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="compliant partially-compliant">100%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>3</td>
+                </tr>
+                <tr>
+                    <td>kvdiskencryptuswest</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="compliant partially-compliant">100%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>1</td>
+                </tr>
+                <tr>
+                    <td>onesrcprvault</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="compliant partially-compliant">100%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>3</td>
+                </tr>
+                <tr>
+                    <td>SCM-InvKv-prewestus</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="compliant partially-compliant">100%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>5</td>
+                </tr>
+                <tr>
+                    <td>test-key-vault-fgalind1</td>
+                    <td></td>
+                    <td>eastus</td>
+                    <td class="compliant partially-compliant">100%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>4</td>
+                </tr>
+                <tr>
+                    <td>SCM-VMKv-prodwestus</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>SCM-VMKv-prodwestus2</td>
+                    <td></td>
+                    <td>westus2</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>SCM-SpKvprewestus</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>SCM-InvKv-prodwestus</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>SCM-InvKv-prodwestus2</td>
+                    <td></td>
+                    <td>westus2</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>SCM-SpKvprodwestus</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>jenkinsconnect</td>
+                    <td></td>
+                    <td>westus</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>test-platci-keyvault</td>
+                    <td></td>
+                    <td>eastus</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>infraworkspace7462435983</td>
+                    <td></td>
+                    <td>eastus</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>vault-3musk</td>
+                    <td></td>
+                    <td>eastus</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>kv-svcs-powerbi-dev-001</td>
+                    <td></td>
+                    <td>westus2</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>kv-adb-migration</td>
+                    <td></td>
+                    <td>westus2</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>kv-a1s-api-dev-westus2</td>
+                    <td></td>
+                    <td>westus2</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>kv-a1s-api-dev2-westus2</td>
+                    <td></td>
+                    <td>westus2</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td>demo-vaults-2024</td>
+                    <td></td>
+                    <td>westus2</td>
+                    <td class="partially-compliant">85%</td>
+                    <td>0</td>
+                    <td>❌ No</td>
+                    <td>✅ Yes</td>
+                    <td>❌ 0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>None</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="legend-section">
+        <h2>📖 Compliance Legend</h2>
+        <h3>Understanding Compliance Scores & Security Assessments</h3>
+
+        <h4>🎯 Compliance Score Ranges</h4>
+        <ul>
+            <li><span class="compliant">90-100%:</span> Excellent security posture, meets or exceeds best practices</li>
+            <li><span class="partially-compliant">70-89%:</span> Good security posture with some areas for improvement</li>
+            <li><span class="non-compliant">0-69%:</span> Significant security gaps requiring immediate attention</li>
+        </ul>
+
+        <h4>🔍 Security Gap Categories</h4>
+        <ul>
+            <li><strong>Critical:</strong> Immediate security risks that could lead to data breaches</li>
+            <li><strong>High:</strong> Important security issues that should be addressed promptly</li>
+            <li><strong>Medium:</strong> Security improvements that enhance overall posture</li>
+            <li><strong>Low:</strong> Minor improvements for optimal security configuration</li>
+        </ul>
+
+        <h4>📊 Key Metrics Explained</h4>
+        <ul>
+            <li><strong>RBAC Enabled:</strong> Uses Azure Role-Based Access Control instead of access policies</li>
+            <li><strong>Diagnostics:</strong> Has diagnostic logging configured for monitoring</li>
+            <li><strong>Private Endpoints:</strong> Uses private network connectivity instead of public access</li>
+            <li><strong>Access Policies:</strong> Number of configured access policies (should be minimized)</li>
+        </ul>
+    </div>
+    <div class="security-section">
+        <h2>🏛️ Enhanced Compliance Framework</h2>
+        <h3>Comprehensive Security Standards & Best Practices</h3>
+
+        <h4>🔒 CIS Azure Foundations Benchmark</h4>
+        <ul>
+            <li><strong>Key Vault Configuration:</strong> Ensure proper Key Vault setup and access controls</li>
+            <li><strong>Access Management:</strong> Implement least-privilege access principles</li>
+            <li><strong>Monitoring & Logging:</strong> Enable comprehensive audit logging</li>
+            <li><strong>Network Security:</strong> Restrict network access appropriately</li>
+        </ul>
+
+        <h4>🛡️ NIST Cybersecurity Framework</h4>
+        <ul>
+            <li><strong>Identify:</strong> Asset management and risk assessment</li>
+            <li><strong>Protect:</strong> Access control and data security</li>
+            <li><strong>Detect:</strong> Continuous monitoring and anomaly detection</li>
+            <li><strong>Respond:</strong> Incident response and recovery procedures</li>
+            <li><strong>Recover:</strong> Backup and disaster recovery capabilities</li>
+        </ul>
+
+        <h4>📋 ISO 27001 Information Security</h4>
+        <ul>
+            <li><strong>Access Control:</strong> Information access restriction</li>
+            <li><strong>Cryptography:</strong> Cryptographic controls for confidentiality</li>
+            <li><strong>Operations Security:</strong> Protection from malware and secure operations</li>
+            <li><strong>Compliance:</strong> Regulatory and legal requirements</li>
+        </ul>
+    </div>
+    <div class="security-section">
+        <h2>⚠️ Important Notes</h2>
+        <h3>Critical Considerations & Limitations</h3>
+
+        <div class="recommendations">
+            <h4>🔍 Analysis Scope & Limitations</h4>
+            <ul>
+                <li><strong>Permission Dependencies:</strong> Analysis results depend on the authenticated account's permissions</li>
+                <li><strong>Network Restrictions:</strong> Private endpoints and firewalls may limit access to some vaults</li>
+                <li><strong>Dynamic Environment:</strong> Key Vault configurations may change after analysis</li>
+                <li><strong>Service Limitations:</strong> Some Azure regions or services may have different capabilities</li>
+            </ul>
+
+            <h4>🚨 Security Considerations</h4>
+            <ul>
+                <li><strong>Credential Management:</strong> Never store credentials in code or configuration files</li>
+                <li><strong>Access Reviews:</strong> Regularly review and rotate access permissions</li>
+                <li><strong>Monitoring:</strong> Implement continuous monitoring of Key Vault access patterns</li>
+                <li><strong>Incident Response:</strong> Have procedures in place for security incidents</li>
+            </ul>
+
+            <h4>📈 Continuous Improvement</h4>
+            <ul>
+                <li><strong>Regular Assessments:</strong> Perform security assessments quarterly or after major changes</li>
+                <li><strong>Automation:</strong> Use Azure Policy and automation for continuous compliance</li>
+                <li><strong>Training:</strong> Ensure team members understand Key Vault security best practices</li>
+                <li><strong>Documentation:</strong> Maintain up-to-date security procedures and configurations</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

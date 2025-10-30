@@ -1,0 +1,4 @@
+"SubscriptionId","VaultName","ComplianceScore"
+"sub1","vaultA","90"
+"sub2","vaultB","80"
+"sub3","vaultC","70"

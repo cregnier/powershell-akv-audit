@@ -1,0 +1,18 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run append+merge CI test and timeout tests
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/test_append_merge.ps1
+          pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/invoke_withtimeout_deterministic.ps1

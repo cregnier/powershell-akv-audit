@@ -1,0 +1,498 @@
+**********************
+PowerShell transcript start
+Start time: 20251028134549
+Username: AMR\cregnier
+RunAs User: AMR\cregnier
+Configuration Name: 
+Machine: CREGNIER-MOBL (Microsoft Windows NT 10.0.22631.0)
+Host Application: C:\Program Files\PowerShell\7\pwsh.dll -NoProfile -File .\scripts\run_testmode_wrapper.ps1
+Process ID: 44752
+PSVersion: 7.5.3
+PSEdition: Core
+GitCommitId: 7.5.3
+OS: Microsoft Windows 10.0.22631
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+Transcript started, output file is C:\Source\Github\powershell-akv-audit\output\testmode_transcript_2025-10-28_13-45-49.txt
+BEGIN_TESTMODE_TRANSCRIPT -> C:\Source\Github\powershell-akv-audit\output\testmode_transcript_2025-10-28_13-45-49.txt
+[2025-10-28 13:45:50] [INFO]    [DEBUG] Script-level PSBoundParameters: TestMode=True, Limit=1, Verbose=True, SuppressAzureWarnings=True
+[2025-10-28 13:45:50] [INFO]    Auto-running Invoke-GapAnalysis with script-level parameters (count: 4)
+[2025-10-28 13:45:51] [INFO]    Starting Azure Key Vault Gap Analysis vunreleased
+[2025-10-28 13:45:51] [INFO]    Test Mode: True
+[2025-10-28 13:45:51] [INFO]    Test Limit: 1 vaults
+[2025-10-28 13:45:51] [INFO]    Created run lock at: C:\Users\cregnier\AppData\Local\Temp\akv_gap_analysis_running.lock (PID: 44752)
+[2025-10-28 13:45:51] [INFO]    Effective parameters: TestMode=True Limit=1 UseParallelProcessing=False MaxParallelJobs=4 Resume=False
+[2025-10-28 13:45:54] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
+[2025-10-28 13:45:55] [INFO]    Discovering accessible subscriptions...
+[2025-10-28 13:45:55] [DEBUG]   About to call Get-AzSubscription to discover accessible subscriptions
+[2025-10-28 13:45:58] [INFO]    Found 783 accessible subscription(s)
+[2025-10-28 13:45:58] [INFO]    Analyzing subscription: 1ci-preprod-metrics (dc8b9d9c-0cf9-446c-9177-12921182f54a)
+[2025-10-28 13:45:58] [INFO]    Discovering Key Vaults in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a...
+[2025-10-28 13:45:58] [DEBUG]   Setting Az context to subscription: dc8b9d9c-0cf9-446c-9177-12921182f54a (Set-AzContext)
+[2025-10-28 13:46:03] [DEBUG]   Listing Key Vaults in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a via Get-AzKeyVault (with timeout)
+[2025-10-28 13:46:03] [INFO]    [DEBUG] Starting background job for Get-AzKeyVault with timeout 60s
+[2025-10-28 13:46:04] [INFO]    [DEBUG] Started job Id=1 for Get-AzKeyVault
+[2025-10-28 13:46:12] [INFO]    Found 2 Key Vaults in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a
+[2025-10-28 13:46:12] [INFO]    Test mode: Limited to 1 vaults in this subscription
+[2025-10-28 13:46:12] [INFO]    Assessing Azure platform integration for subscription dc8b9d9c-0cf9-446c-9177-12921182f54a...
+[2025-10-28 13:46:50] [INFO]    Found 80 Key Vault related policies in subscription 1ci-preprod-metrics
+PS>TerminatingError(): "The pipeline has been stopped."
+[2025-10-28 13:48:15] [DEBUG]   Function App discovery skipped for subscription dc8b9d9c-0cf9-446c-9177-12921182f54a (use -IncludeFunctionApps to enable)
+[2025-10-28 13:48:15] [INFO]    Analyzing Key Vault: kv-adx-access
+[2025-10-28 13:48:16] [INFO]    [DEBUG] Starting background job for Get-AzDiagnosticSetting with timeout 30s
+[2025-10-28 13:48:16] [INFO]    [DEBUG] Started job Id=3 for Get-AzDiagnosticSetting
+[2025-10-28 13:49:03] [INFO]    [DEBUG] Finished Analyze-KeyVault for kv-adx-access in 47.12s
+[2025-10-28 13:49:03] [INFO]    Finished analysis of kv-adx-access - persisting marker and checkpoint
+PS>TerminatingError(Mark-Vault-Processed): "Cannot bind argument to parameter 'JsonFilePath' because it is an empty string."
+[2025-10-28 13:49:03] [INFO]    Completed analysis of kv-adx-access - Score: 71%, Risk: Medium
+[2025-10-28 13:49:03] [INFO]    Test mode limit (1) reached, stopping analysis
+[2025-10-28 13:49:03] [INFO]    Exporting CSV results...
+[2025-10-28 13:49:03] [INFO]    Analysis results count: 1
+[2025-10-28 13:49:03] [INFO]    Canonical QuickWins unique titles: 2
+[2025-10-28 13:49:03] [INFO]    Starting enrichment of 1 results with Collect-ExtraAzData
+[2025-10-28 13:49:03] [INFO]    Enriching vault: kv-adx-access (/subscriptions/dc8b9d9c-0cf9-446c-9177-12921182f54a/resourceGroups/rg-1ci-metrics-data-analytics/providers/Microsoft.KeyVault/vaults/kv-adx-access)
+[2025-10-28 13:49:03] [INFO]    [DEBUG] Collect-ExtraAzData start for /subscriptions/dc8b9d9c-0cf9-446c-9177-12921182f54a/resourceGroups/rg-1ci-metrics-data-analytics/providers/Microsoft.KeyVault/vaults/kv-adx-access
+[2025-10-28 13:49:03] [DEBUG]   Collect-ExtraAzData: calling Get-AzResource for /subscriptions/dc8b9d9c-0cf9-446c-9177-12921182f54a/resourceGroups/rg-1ci-metrics-data-analytics/providers/Microsoft.KeyVault/vaults/kv-adx-access
+[2025-10-28 13:49:05] [DEBUG]   Collect-ExtraAzData: calling Get-AzResourceLock for /subscriptions/dc8b9d9c-0cf9-446c-9177-12921182f54a/resourceGroups/rg-1ci-metrics-data-analytics/providers/Microsoft.KeyVault/vaults/kv-adx-access
+PS>TerminatingError(Get-AzResourceLock): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop: The Id '/subscriptions/dc8b9d9c-0cf9-446c-9177-12921182f54a/resourceGroups/rg-1ci-metrics-data-analytics/providers/Microsoft.KeyVault/vaults/kv-adx-access' does not belong to a lock."
+[2025-10-28 13:49:05] [INFO]    [DEBUG] Starting background job for Get-AzDiagnosticSetting with timeout 30s
+[2025-10-28 13:49:06] [INFO]    [DEBUG] Started job Id=5 for Get-AzDiagnosticSetting
+[2025-10-28 13:49:22] [DEBUG]   Attempting Get-AzKeyVault (timeout 30s) for kv-adx-access in RG rg-1ci-metrics-data-analytics
+[2025-10-28 13:49:22] [INFO]    [DEBUG] Starting background job for Get-AzKeyVault with timeout 30s
+[2025-10-28 13:49:22] [INFO]    [DEBUG] Started job Id=7 for Get-AzKeyVault
+PS>TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADUser): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+>> TerminatingError(Get-AzADServicePrincipal): "Cannot bind argument to parameter 'ObjectId' because it is an empty string."
+[2025-10-28 13:49:32] [DEBUG]   Listing secrets for vault kv-adx-access via Get-AzKeyVaultSecret (timeout 30s)
+[2025-10-28 13:49:32] [INFO]    [DEBUG] Starting background job for Get-AzKeyVaultSecret with timeout 30s
+[2025-10-28 13:49:33] [INFO]    [DEBUG] Started job Id=9 for Get-AzKeyVaultSecret
+PS>TerminatingError(): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop: Operation returned an invalid status code 'Forbidden'
+Code: Forbidden
+Message: Public network access is disabled and request is not from a trusted service nor via an approved private link.
+Caller: appid=1950a258-227b-4e31-a9cf-717495945fc2;oid=0ec2ca67-dcd8-480a-93ac-98ab3a9505c6;iss=https://sts.windows.net/46c98d88-e344-4ed4-8496-4ed7712e255d/
+Vault: kv-adx-access;location=westus"
+[2025-10-28 13:49:38] [DEBUG]   Listing keys for vault kv-adx-access via Get-AzKeyVaultKey (timeout 30s)
+[2025-10-28 13:49:38] [INFO]    [DEBUG] Starting background job for Get-AzKeyVaultKey with timeout 30s
+[2025-10-28 13:49:38] [INFO]    [DEBUG] Started job Id=11 for Get-AzKeyVaultKey
+PS>TerminatingError(): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop: Public network access is disabled and request is not from a trusted service nor via an approved private link.
+Caller: appid=1950a258-227b-4e31-a9cf-717495945fc2;oid=0ec2ca67-dcd8-480a-93ac-98ab3a9505c6;iss=https://sts.windows.net/46c98d88-e344-4ed4-8496-4ed7712e255d/
+Vault: kv-adx-access;location=westus
+Status: 403 (Forbidden)
+ErrorCode: Forbidden
+
+Content:
+{"error":{"code":"Forbidden","message":"Public network access is disabled and request is not from a trusted service nor via an approved private link.\r\nCaller: appid=1950a258-227b-4e31-a9cf-717495945fc2;oid=0ec2ca67-dcd8-480a-93ac-98ab3a9505c6;iss=https://sts.windows.net/46c98d88-e344-4ed4-8496-4ed7712e255d/\r\nVault: kv-adx-access;location=westus","innererror":{"code":"ForbiddenByConnection"}}}
+
+Headers:
+Cache-Control: no-cache
+Pragma: no-cache
+x-ms-keyvault-region: westus
+x-ms-client-request-id: e49dbcb0-f182-4fa5-8259-89d3d53f4e53
+x-ms-request-id: 1c2b922e-1d2c-4331-81a3-1a47e914a9c5
+x-ms-keyvault-service-version: 1.9.2791.2
+x-ms-keyvault-network-info: conn_type=Ipv4;addr=174.254.51.155;act_addr_fam=InterNetwork;
+x-ms-keyvault-rbac-assignment-id: REDACTED
+X-Content-Type-Options: REDACTED
+Strict-Transport-Security: REDACTED
+Date: Tue, 28 Oct 2025 17:49:43 GMT
+Content-Type: application/json; charset=utf-8
+Expires: -1
+Content-Length: 399
+"
+[2025-10-28 13:49:44] [INFO]    [DEBUG] Collect-ExtraAzData completed for /subscriptions/dc8b9d9c-0cf9-446c-9177-12921182f54a/resourceGroups/rg-1ci-metrics-data-analytics/providers/Microsoft.KeyVault/vaults/kv-adx-access in 40.9s
+[2025-10-28 13:49:44] [INFO]    Enriched vault: kv-adx-access - done
+[2025-10-28 13:49:44] [INFO]    Enrichment completed for 1 vault(s) in 40.97s
+[2025-10-28 13:49:44] [INFO]    Starting Build-MasterCsvRecord for 1 enriched results
+[2025-10-28 13:49:44] [INFO]    Building CSV record for: kv-adx-access
+[2025-10-28 13:49:44] [INFO]    Built CSV record for: kv-adx-access
+[2025-10-28 13:49:44] [INFO]    Build-MasterCsvRecord completed for 2 records in 0.29s
+[2025-10-28 13:49:44] [DEBUG]   Final coercion timeout set to 60s (heartbeat 5s)
+[2025-10-28 13:49:44] [DEBUG]   Final coercion: filtered flattenedResults 2 -> 1 (dropped non-object/empty rows)
+[2025-10-28 13:49:44] [WARN]    Running final coercion synchronously in-process (shouldForceInProcess=True)
+[2025-10-28 13:49:44] [DEBUG]   Disabling per-vault JSON writes for in-process final coercion
+[2025-10-28 13:49:44] [DEBUG]   [COERCION] Row #1 type=System.Management.Automation.PSCustomObject propCount=1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 VaultName='kv-adx-access'
+[2025-10-28 13:49:44] [DEBUG]   [COERCION] Processed props for kv-adx-access: 
+Name                           Value
+----                           -----
+Timestamp                      10/28/2025 13:49:44
+SubscriptionId                 dc8b9d9c-0cf9-446c-9177-12921182f54a
+SubscriptionName               1ci-preprod-metrics
+TenantId                       
+VaultName                      kv-adx-access
+VaultResourceId                /subscriptions/dc8b9d9c-0cf9-446c-9177-12921182f54a/resourceGroups/rg-1ci-metrics-data-ana…
+ResourceGroupName              rg-1ci-metrics-data-analytics
+Location                       westus
+VaultSku                       
+EnableSoftDelete               False
+EnablePurgeProtection          False
+SoftDeleteRetentionDays        
+AccessModel                    RBAC
+RbacEnabled                    True
+AccessPoliciesCount            0
+RoleAssignmentsCount           136
+RoleAssignmentsResolved        Owner:;User Access Administrator:;User Access Administrator:;Owner:;User Access Administra…
+HasPrivateEndpoints            True
+PrivateEndpointIds             
+PrivateEndpointCount           0
+FirewallEnabled                False
+AllowedIps                     
+HasDiagnostics                 False
+DiagnosticSettings             
+DiagnosticDestinations         
+SecretsCount                   0
+CertificatesCount              0
+KeysCount                      0
+TotalAssets                    0
+RecentlyRotatedCount           0
+ManualRotationNeeded           0
+NeverRotated                   0
+SecurityGapsCount              3
+SecurityGapsSummary            High: No diagnostic settings configured; Critical: Soft delete not enabled; Medium: Purge …
+QuickWinsCount                 2
+QuickWinsSummary               Enable Diagnostic Logging; Enable Soft Delete
+ComplianceScore                71
+VaultScore                     71
+CISComplianceScore             85
+NISTComplianceScore            65
+ISOComplianceScore             70
+MSComplianceScore              65
+RiskLevel                      Medium
+PolicyCount                    0
+PolicyNames                    
+ManagedIdentityType            
+ManagedIdentityIds             
+ManagedIdentityResolved        NotReadable
+ResourceLockTypes              
+NetworkIpRules                 
+NetworkVNetRuleIds             
+NetworkDefaultAction           False
+NetworkBypass                  False
+PublicNetworkAccess            Disabled
+PrivateEndpointIdsNormalized   
+DiagnosticDestinationNames     Microsoft.EventHub/Namespaces/AuthorizationRules:RootManageSharedAccessKey
+DiagnosticDestinationsRaw      /subscriptions/038632dc-f883-45de-9a7a-bd0285faa099/resourceGroups/InfoSecCentralRG/provid…
+SkuName                        NotReadable
+SecretRotationMostRecent       NotReadable
+KeyRotationMostRecent          NotReadable
+PermissionIssuesCount          0
+Tags                           {}
+JsonFilePath                   C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\VaultJson\dc8…
+AccessPoliciesDetails          
+AccessPolicies_Permissions_Ke… 
+AccessPolicies_Permissions_Se… 
+AccessPolicies_Permissions_Ce… 
+ProvisioningState              Succeeded
+LogAnalyticsWorkspaceIds
+[2025-10-28 13:49:44] [ERROR]   [COERCION] Skipped non-hashtable props for kv-adx-access
+[2025-10-28 13:49:44] [DEBUG]   Processed vault: kv-adx-access
+[2025-10-28 13:49:44] [WARN]    Pre-export parity check failed: canonical unique quick wins (2) != parsed quick wins from CSV data (0)
+[2025-10-28 13:49:44] [INFO]    Wrote quick-wins reconciliation to: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\quickwins_reconciliation_2025-10-28_13-49-44.csv
+[2025-10-28 13:49:44] [INFO]    Starting final CSV export to: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\KeyVaultGapAnalysis_2025-10-28_13-45-50.csv
+[2025-10-28 13:49:44] [SUCCESS] CSV export finished (file: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\KeyVaultGapAnalysis_2025-10-28_13-45-50.csv)
+[2025-10-28 13:49:44] [INFO]    HTML Report: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\KeyVaultGapAnalysis_2025-10-28_13-45-50.html
+[2025-10-28 13:49:44] [INFO]    CSV Data: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\KeyVaultGapAnalysis_2025-10-28_13-45-50.csv
+[2025-10-28 13:49:44] [INFO]    Generating HTML report in child process (timeout 120s)...
+[2025-10-28 13:49:44] [INFO]    Serializing analysis results for child HTML generation...
+[2025-10-28 13:49:45] [WARN]    System.Text.Json serialize failed after 0.09s, falling back to ConvertTo-Json: Exception calling "Serialize" with "2" argument(s): "A possible object cycle was detected. This can either be due to a cycle or if the object depth is larger than the maximum allowed depth of 64. Consider using ReferenceHandler.Preserve on JsonSerializerOptions to support cycles. Path: $.Members.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.Value.OverloadDefinitions."
+[2025-10-28 13:49:45] [INFO]    Serialized analysis results using ConvertTo-Json -> C:\Users\cregnier\AppData\Local\Temp\akv_gap_html_data_f0696878-cf0d-4a8c-b664-48926ebc7564.json
+[2025-10-28 13:49:45] [DEBUG]   Spawning child HTML generator via wrapper: C:\Users\cregnier\AppData\Local\Temp\akv_html_launcher_491f61c9-689f-4875-9aa4-1793a0aa899c.ps1
+[2025-10-28 13:49:49] [INFO]    Child HTML generator exited (exitCode 1) in 3.07s
+[2025-10-28 13:49:49] [DEBUG]   Child HTML STDOUT saved to: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\child_html_stdout_491f61c9-689f-4875-9aa4-1793a0aa899c.log
+[2025-10-28 13:49:49] [DEBUG]   Child HTML STDERR saved to: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\child_html_stderr_491f61c9-689f-4875-9aa4-1793a0aa899c.log
+[2025-10-28 13:49:49] [INFO]    Copying CSV to workspace: C:\Source\Github\powershell-akv-audit\output\KeyVaultGapAnalysis_2025-10-28_13-45-50.csv
+[2025-10-28 13:49:49] [INFO]    Copied CSV to workspace: C:\Source\Github\powershell-akv-audit\output\KeyVaultGapAnalysis_2025-10-28_13-45-50.csv
+[2025-10-28 13:49:49] [INFO]    HTML path not found, skipping workspace copy: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\KeyVaultGapAnalysis_2025-10-28_13-45-50.html
+[2025-10-28 13:49:49] [INFO]    Workspace copy attempts completed (best-effort) to: C:\Source\Github\powershell-akv-audit\output
+[2025-10-28 13:49:49] [SUCCESS] Gap analysis completed successfully!
+[2025-10-28 13:49:49] [INFO]    Total vaults analyzed: 1
+[2025-10-28 13:49:49] [INFO]    Execution time: 4 minutes
+[2025-10-28 13:49:49] [INFO]    Results saved to: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis
+[2025-10-28 13:49:49] [INFO]    HTML Report: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\KeyVaultGapAnalysis_2025-10-28_13-45-50.html
+[2025-10-28 13:49:49] [INFO]    CSV Data: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\KeyVaultGapAnalysis_2025-10-28_13-45-50.csv
+[2025-10-28 13:49:49] [INFO]    Log File: C:\Users\cregnier\OneDrive - Intel Corporation\Documents\KeyVaultGapAnalysis\KeyVaultGapAnalysis_2025-10-28_13-45-50.log
+[2025-10-28 13:49:49] [INFO]    Removed run lock: C:\Users\cregnier\AppData\Local\Temp\akv_gap_analysis_running.lock
+PS>TerminatingError(Invoke-GapAnalysis): "The term 'catch' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again."
+[2025-10-28 13:49:49] [WARN]    Invoke-GapAnalysis called while another run is active in this process (PID: 44752) - skipping nested invocation. CallStack: 
+Command                  Arguments                                                          Location
+-------                  ---------                                                          --------
+Invoke-GapAnalysis       {}                                                                 Get-AKVGapAnalysis.ps1: line …
+Get-AKVGapAnalysis.ps1   {TestMode=True, Limit=1, Verbose=True, SuppressAzureWarnings=True} Get-AKVGapAnalysis.ps1: line …
+run_testmode_wrapper.ps1 {}                                                                 run_testmode_wrapper.ps1: lin…
+**********************
+PowerShell transcript end
+End time: 20251028134949
+**********************
