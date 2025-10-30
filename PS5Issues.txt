@@ -1,16 +1,14 @@
-C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1
-[2025-10-30 17:08:34] [INFO]    [DEBUG] Script-level PSBoundParameters: 
-[2025-10-30 17:08:35] [INFO]    Auto-running Invoke-GapAnalysis with no script-level parameters
-[2025-10-30 17:08:35] [INFO]    Starting Azure Key Vault Gap Analysis vunreleased
-[2025-10-30 17:08:35] [INFO]    Test Mode: False
-[2025-10-30 17:08:35] [INFO]    Created run lock at: C:\Users\cregnier\AppData\Local\Temp\akv_gap_analysis_running.lock (PID: 22084)
-[2025-10-30 17:08:35] [INFO]    Effective parameters: TestMode=False Limit=10 UseParallelProcessing=False MaxParallelJobs=4 Resume=False
-[2025-10-30 17:08:40] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
-[2025-10-30 17:08:40] [INFO]    Discovering accessible subscriptions...
-[2025-10-30 17:08:40] [DEBUG]   About to call Get-AzSubscription to discover accessible subscriptions
-WARNING: Unable to acquire token for tenant '46c98d88-e344-4ed4-8496-4ed7712e255d' with error 'SharedTokenCacheCredential authentication unavailable. No account matching the specified username
-: curtus.regnier@intel.com tenantId: 46c98d88-e344-4ed4-8496-4ed7712e255d was found in the cache.'
-WARNING: Unable to acquire token for tenant '46c98d88-e344-4ed4-8496-4ed7712e255d' with error 'SharedTokenCacheCredential authentication unavailable. No account matching the specified username
-: curtus.regnier@intel.com tenantId: 46c98d88-e344-4ed4-8496-4ed7712e255d was found in the cache.'
-[2025-10-30 17:08:42] [INFO]    Found 0 accessible subscription(s)
-[2025-10-30 17:08:42] [ERROR]   No subscriptions found or accessible. Exiting.
+.\Get-AKVGapAnalysis.PS5.ps1 -TestMode -Limit 3 -SuppressAzureWarnings -SuppressModuleWarnings -UseParallelProcessing -MaxParallelJobs 9
+[2025-10-30 17:27:58] [INFO]    [DEBUG] Script-level PSBoundParameters: TestMode=True, Limit=3, SuppressAzureWarnings=True, SuppressModuleWarnings=True, UseParallelProcessing=True, MaxParallel
+Jobs=9
+[2025-10-30 17:27:58] [INFO]    Auto-running Invoke-GapAnalysis with script-level parameters (count: 6)
+[2025-10-30 17:27:58] [INFO]    Starting Azure Key Vault Gap Analysis vunreleased
+[2025-10-30 17:27:58] [INFO]    Test Mode: True
+[2025-10-30 17:27:58] [INFO]    Test Limit: 3 vaults
+[2025-10-30 17:27:58] [INFO]    Created run lock at: C:\Users\cregnier\AppData\Local\Temp\akv_gap_analysis_running.lock (PID: 22084)
+[2025-10-30 17:27:59] [INFO]    Effective parameters: TestMode=True Limit=3 UseParallelProcessing=True MaxParallelJobs=9 Resume=False
+[2025-10-30 17:27:59] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
+[2025-10-30 17:27:59] [INFO]    Discovering accessible subscriptions...
+[2025-10-30 17:27:59] [DEBUG]   About to call Get-AzSubscription to discover accessible subscriptions
+[2025-10-30 17:27:59] [INFO]    Found 0 accessible subscription(s)
+[2025-10-30 17:27:59] [ERROR]   No subscriptions found or accessible. Exiting.
