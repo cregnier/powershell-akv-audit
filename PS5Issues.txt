@@ -1,44 +1,15 @@
 C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1
-At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:268 char:30
-+         [Parameter(Mandatory=True)][object],
-+                              ~
-Missing statement after '=' in named argument.
-At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:268 char:30
-+         [Parameter(Mandatory=True)][object],
-+                              ~
-Missing closing ')' in expression.
-At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:268 char:44
-+         [Parameter(Mandatory=True)][object],
-+                                            ~
-Parameter declarations are a comma-separated list of variable names with optional initializer expressions.
-At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:268 char:44
-+         [Parameter(Mandatory=True)][object],
-+                                            ~
-Missing ')' in function parameter list.
-At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:276 char:30
-+         [Parameter(Mandatory=True)][object],
-+                              ~
-Missing statement after '=' in named argument.
-At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:276 char:30
-+         [Parameter(Mandatory=True)][object],
-+                              ~
-Missing closing ')' in expression.
-At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:276 char:44
-+         [Parameter(owershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:276 char:44
-+         [Parameter(Mandatory=True)][object],
-+                                            ~
-Missing ')' in function parameter list.
-At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:286 char:13
-+         if () { retMandatory=True)][object],
-+                                            ~
-Parameter declarations are a comma-separated list of variable names with optional initializer expressions.
-At C:\Source\Github\purn ( -replace "(\r?\n)\s*", '') } else { return ' ...
-+             ~
-Missing condition in if statement after 'if ('.
-At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:681 char:73
-+ ... iptionIdVar = ($safe.Invoke($Analysis.SubscriptionId, '') -as NullCoa ...
-+                                                                  ~
-You must provide a value expression following the '-as' operator.
-Not all parse errors were reported.  Correct the reported errors and try again.
+At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:4025 char:57
++                 <td>$($vault.Diagnostics.HasDiagnostics ? "✅" : "❌")< ...
++                                                         ~
+Unexpected token '?' in expression or statement.
+At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:4026 char:56
++                 <td>$($vault.AccessControl.RbacEnabled ? "✅" : "❌")</ ...
++                                                        ~
+Unexpected token '?' in expression or statement.
+At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:4027 char:66
++ ...            <td>$($vault.NetworkSecurity.HasPrivateEndpoints ? "✅" : " ...
++                                                                 ~
+Unexpected token '?' in expression or statement.
     + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
-    + FullyQualifiedErrorId : MissingExpressionInNamedArgument
+    + FullyQualifiedErrorId : UnexpectedToken

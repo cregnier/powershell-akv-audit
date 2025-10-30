@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Azure Key Vault Gap Analysis Script - Enterprise Security & Compliance Assessment
 
