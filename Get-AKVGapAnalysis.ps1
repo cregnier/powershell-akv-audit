@@ -6929,3 +6929,7 @@ if ($env:AKV_RUN_HTML_ONLY -eq '1') {
             Invoke-GapAnalysis
         }
     }
+
+    }
+
+}
