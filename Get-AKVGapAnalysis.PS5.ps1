@@ -1606,12 +1606,27 @@ function Get-KeyVaultsInSubscription {
 
     try {
         Write-Log "Setting Az context to subscription: $SubscriptionId (Set-AzContext)" -Level 'DEBUG'
-        Set-AzContext -SubscriptionId $SubscriptionId | Out-Null
+        $contextResult = Set-AzContext -SubscriptionId $SubscriptionId
+        Write-Log "Set-AzContext result: $($contextResult.Subscription.Name) ($($contextResult.Subscription.Id))" -Level 'DEBUG'
 
-    # Use timeout wrapper for listing key vaults in case the Az call stalls
-    try { Write-Log "Listing Key Vaults in subscription $SubscriptionId via Get-AzKeyVault (with timeout)" -Level 'DEBUG'; $keyVaults = Invoke-WithTimeout -ScriptBlock { Get-AzKeyVault } -TimeoutSeconds 60 -CmdletName 'Get-AzKeyVault' } catch { throw }
+        # Verify we're in the right context
+        $currentContext = Get-AzContext
+        Write-Log "Current context after Set-AzContext: $($currentContext.Subscription.Name) ($($currentContext.Subscription.Id))" -Level 'DEBUG'
 
-        Write-Log "Found $($keyVaults.Count) Key Vaults in subscription $SubscriptionId" -Level "INFO"
+        # Use timeout wrapper for listing key vaults in case the Az call stalls
+        Write-Log "Listing Key Vaults in subscription $SubscriptionId via Get-AzKeyVault (with timeout)" -Level 'DEBUG'
+        try {
+            $keyVaults = Invoke-WithTimeout -ScriptBlock { Get-AzKeyVault } -TimeoutSeconds 60 -CmdletName 'Get-AzKeyVault'
+        } catch {
+            Write-Log "Get-AzKeyVault failed in subscription $SubscriptionId (may be due to permissions): $($_.Exception.Message)" -Level "WARN"
+            $keyVaults = @()
+        }
+
+        Write-Log "Get-AzKeyVault returned $($keyVaults.Count) Key Vaults in subscription $SubscriptionId" -Level "INFO"
+        if ($keyVaults.Count -eq 0) {
+            Write-Log "No Key Vaults found in subscription $SubscriptionId - this could be due to permissions or no vaults existing" -Level "DEBUG"
+        }
+
         return $keyVaults
 
     } catch {
