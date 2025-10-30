@@ -1,28 +1,29 @@
-[2025-10-30 17:53:17] [INFO]    Effective parameters: TestMode=True Limit=3 UseParallelProcessing=True MaxParallelJobs=9 Resume=False
-[2025-10-30 17:53:17] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
-[2025-10-30 17:53:18] [INFO]    Discovering accessible subscriptions...
-[2025-10-30 17:53:18] [DEBUG]   About to call Get-AzSubscription to discover accessible subscriptions
-[2025-10-30 17:53:18] [DEBUG]   Current Az context: curtus.regnier@intel.com
-[2025-10-30 17:53:19] [DEBUG]   Initial Get-AzSubscription returned 786 subscriptions
-[2025-10-30 17:53:19] [INFO]    Found 786 accessible subscription(s)
-[2025-10-30 17:53:19] [INFO]    Analyzing subscription: cloudbroker-infosec (3559f006-51ca-4672-a115-77bb9e6133ec)
-[2025-10-30 17:53:19] [INFO]    Discovering Key Vaults in subscription 3559f006-51ca-4672-a115-77bb9e6133ec...
-[2025-10-30 17:53:19] [DEBUG]   Setting Az context to subscription: 3559f006-51ca-4672-a115-77bb9e6133ec (Set-AzContext)
-[2025-10-30 17:53:21] [DEBUG]   Set-AzContext result: cloudbroker-infosec (3559f006-51ca-4672-a115-77bb9e6133ec)
-[2025-10-30 17:53:21] [DEBUG]   Current context after Set-AzContext: cloudbroker-infosec (3559f006-51ca-4672-a115-77bb9e6133ec)
-[2025-10-30 17:53:21] [DEBUG]   Listing Key Vaults in subscription 3559f006-51ca-4672-a115-77bb9e6133ec via Get-AzKeyVault (with timeout)
-[2025-10-30 17:53:21] [INFO]    [DEBUG] Starting background job for Get-AzKeyVault with timeout 60s
-[2025-10-30 17:53:22] [INFO]    [DEBUG] Started job Id=45 for Get-AzKeyVault
-[2025-10-30 17:53:22] [INFO]    Get-AzKeyVault returned 0 Key Vaults in subscription 3559f006-51ca-4672-a115-77bb9e6133ec
-[2025-10-30 17:53:22] [DEBUG]   No Key Vaults found in subscription 3559f006-51ca-4672-a115-77bb9e6133ec - this could be due to permissions or no vaults existing
-[2025-10-30 17:53:22] [INFO]    No Key Vaults found in subscription cloudbroker-infosec
-[2025-10-30 17:53:22] [INFO]    Analyzing subscription: IT Infomation Secuirty - Cloud Security POC (955b7080-d19b-4193-b818-4aa8dafdac77)
-[2025-10-30 17:53:22] [INFO]    Discovering Key Vaults in subscription 955b7080-d19b-4193-b818-4aa8dafdac77...
-[2025-10-30 17:53:22] [DEBUG]   Setting Az context to subscription: 955b7080-d19b-4193-b818-4aa8dafdac77 (Set-AzContext)
-[2025-10-30 17:53:24] [DEBUG]   Set-AzContext result: IT Infomation Secuirty - Cloud Security POC (955b7080-d19b-4193-b818-4aa8dafdac77)
-[2025-10-30 17:53:24] [DEBUG]   Current context after Set-AzContext: IT Infomation Secuirty - Cloud Security POC (955b7080-d19b-4193-b818-4aa8dafdac77)
-[2025-10-30 17:53:24] [DEBUG]   Listing Key Vaults in subscription 955b7080-d19b-4193-b818-4aa8dafdac77 via Get-AzKeyVault (with timeout)
-[2025-10-30 17:53:24] [INFO]    [DEBUG] Starting background job for Get-AzKeyVault with timeout 60s
-[2025-10-30 17:53:24] [INFO]    [DEBUG] Started job Id=47 for Get-AzKeyVault
-[2025-10-30 17:53:25] [INFO]    Get-AzKeyVault returned 0 Key Vaults in subscription 955b7080-d19b-4193-b818-4aa8dafdac77
-[2025-10-30 17:53:25] [DEBUG]   No Key Vaults found in subscription 955b7080-d19b-4193-b818-4aa8dafdac77 - this could be due to permissions or no vaults existing
+.\Get-AKVGapAnalysis.PS5.ps1 -TestMode -Limit 3 -SuppressAzureWarnings -SuppressModuleWarnings -UseParallelProcessing -MaxParallelJobs 9 -TargetSubscriptionId dc8b9d9c-0cf9-446c-9177-12921182f54a
+[2025-10-30 18:19:35] [INFO]    [DEBUG] Script-level PSBoundParameters: TestMode=True, Limit=3, SuppressAzureWarnings=True, SuppressModuleWarnings=True, UseParallelProcessing=True, MaxParallel
+Jobs=9, TargetSubscriptionId=dc8b9d9c-0cf9-446c-9177-12921182f54a
+[2025-10-30 18:19:35] [INFO]    Auto-running Invoke-GapAnalysis with script-level parameters (count: 7)
+[2025-10-30 18:19:35] [INFO]    Starting Azure Key Vault Gap Analysis vunreleased
+[2025-10-30 18:19:35] [INFO]    Test Mode: True
+[2025-10-30 18:19:35] [INFO]    Test Limit: 3 vaults
+[2025-10-30 18:19:35] [INFO]    Created run lock at: C:\Users\cregnier\AppData\Local\Temp\akv_gap_analysis_running.lock (PID: 22084)
+[2025-10-30 18:19:35] [INFO]    Effective parameters: TestMode=True Limit=3 UseParallelProcessing=False MaxParallelJobs=4 Resume=False
+[2025-10-30 18:19:35] [SUCCESS] Successfully authenticated as: curtus.regnier@intel.com
+[2025-10-30 18:19:35] [INFO]    Discovering accessible subscriptions...
+[2025-10-30 18:19:35] [DEBUG]   About to call Get-AzSubscription to discover accessible subscriptions
+[2025-10-30 18:19:35] [DEBUG]   Current Az context: curtus.regnier@intel.com
+[2025-10-30 18:19:36] [DEBUG]   Initial Get-AzSubscription returned 786 subscriptions
+[2025-10-30 18:19:36] [INFO]    Found 786 accessible subscription(s)
+[2025-10-30 18:19:36] [INFO]    Prioritized target subscription dc8b9d9c-0cf9-446c-9177-12921182f54a to the front of the analysis queue
+[2025-10-30 18:19:36] [INFO]    Analyzing subscription: 1ci-preprod-metrics (dc8b9d9c-0cf9-446c-9177-12921182f54a)
+[2025-10-30 18:19:36] [INFO]    Discovering Key Vaults in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a...
+[2025-10-30 18:19:36] [DEBUG]   Setting Az context to subscription: dc8b9d9c-0cf9-446c-9177-12921182f54a (Set-AzContext)
+[2025-10-30 18:19:38] [DEBUG]   Set-AzContext result: 1ci-preprod-metrics (dc8b9d9c-0cf9-446c-9177-12921182f54a)
+[2025-10-30 18:19:38] [DEBUG]   Current context after Set-AzContext: 1ci-preprod-metrics (dc8b9d9c-0cf9-446c-9177-12921182f54a)
+[2025-10-30 18:19:38] [DEBUG]   Checking for Key Vault Reader permissions in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a
+[2025-10-30 18:19:43] [DEBUG]   Found 63 Key Vault related role assignments in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a
+[2025-10-30 18:19:43] [DEBUG]   Listing Key Vaults in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a via Get-AzKeyVault (with timeout)
+[2025-10-30 18:19:43] [INFO]    [DEBUG] Starting background job for Get-AzKeyVault with timeout 60s
+[2025-10-30 18:19:43] [INFO]    [DEBUG] Started job Id=615 for Get-AzKeyVault
+[2025-10-30 18:19:44] [INFO]    Get-AzKeyVault returned 0 Key Vaults in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a
+[2025-10-30 18:19:44] [DEBUG]   No Key Vaults found in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a - this could be due to permissions or no vaults existing
+[2025-10-30 18:19:44] [INFO]    No Key Vaults found in subscription 1ci-preprod-metrics
