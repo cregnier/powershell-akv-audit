@@ -13,3 +13,12 @@ At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.PS5.ps1:4027 char:66
 Unexpected token '?' in expression or statement.
     + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
     + FullyQualifiedErrorId : UnexpectedToken
+
+    # 1. Syntax check (should return no errors)
+powershell.exe -Command "& { try { [System.Management.Automation.Language.Parser]::ParseFile('.\Get-AKVGapAnalysis.PS5.ps1', [ref]$null, [ref]$null); Write-Host 'Syntax OK' } catch { Write-Host 'Syntax error:' \$_.Exception.Message } }"
+
+# 2. Module availability check
+powershell.exe -Command "& { \$modules = @('Az.Accounts', 'Az.KeyVault', 'Az.Resources', 'Az.Monitor', 'Az.Security'); foreach (\$module in \$modules) { if (Get-Module -ListAvailable -Name \$module) { Write-Host \"✅ \$module available\" } else { Write-Host \"❌ \$module missing\" } } }"
+
+# 3. Test mode run (replace with your actual path)
+powershell.exe -Command "& 'C:\Path\To\Get-AKVGapAnalysis.PS5.ps1' -TestMode -Limit 1"

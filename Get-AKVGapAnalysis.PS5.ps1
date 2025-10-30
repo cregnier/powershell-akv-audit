@@ -4022,9 +4022,9 @@ function New-GapAnalysisHtmlReport {
                 <td><span class="score-value">$($vault.MSComplianceScore)%</span></td>
                 <td><span class="score-value">$($vault.ComplianceScore)%</span></td>
                 <td class="$riskClass">$($vault.RiskLevel)</td>
-                <td>$($vault.Diagnostics.HasDiagnostics ? "✅" : "❌")</td>
-                <td>$($vault.AccessControl.RbacEnabled ? "✅" : "❌")</td>
-                <td>$($vault.NetworkSecurity.HasPrivateEndpoints ? "✅" : "❌")</td>
+                <td>$($(if ($vault.Diagnostics.HasDiagnostics) { "✅" } else { "❌" }))</td>
+                <td>$($(if ($vault.AccessControl.RbacEnabled) { "✅" } else { "❌" }))</td>
+                <td>$($(if ($vault.NetworkSecurity.HasPrivateEndpoints) { "✅" } else { "❌" }))</td>
                 <td>
 "@
 
