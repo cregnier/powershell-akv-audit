@@ -1575,6 +1575,25 @@ function Get-SubscriptionsToAnalyze {
         }
     }
 
+    # Filter out subscriptions with null/empty Id or Name (defensive programming for PS5.1)
+    $validSubscriptions = $subscriptions | Where-Object {
+        $_.Id -and $_.Id.ToString().Trim() -ne '' -and
+        $_.Name -and $_.Name.ToString().Trim() -ne ''
+    }
+
+    if ($validSubscriptions.Count -ne $subscriptions.Count) {
+        $filteredCount = $subscriptions.Count - $validSubscriptions.Count
+        Write-Log "Filtered out $filteredCount malformed subscription(s) with empty Id/Name" -Level "WARN"
+        # Debug: show what was filtered out
+        $malformedSubs = $subscriptions | Where-Object {
+            -not ($_.Id -and $_.Id.ToString().Trim() -ne '' -and $_.Name -and $_.Name.ToString().Trim() -ne '')
+        }
+        foreach ($malformed in $malformedSubs) {
+            Write-Log "Filtered malformed subscription: Id='$($malformed.Id)', Name='$($malformed.Name)'" -Level "DEBUG"
+        }
+        $subscriptions = $validSubscriptions
+    }
+
     Write-Log "Found $($subscriptions.Count) accessible subscription(s)" -Level "INFO"
     return $subscriptions
 }
