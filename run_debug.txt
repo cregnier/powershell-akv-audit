@@ -1,0 +1,6 @@
+[2025-10-27 22:24:44] [INFO]    [DEBUG] Script-level PSBoundParameters: TestMode=True, Limit=1, Resume=True, OutputDirectory=C:\Source\Github\powershell-akv-audit\TestOutput, Verbose=True
+[2025-10-27 22:24:44] [INFO]    Auto-running Invoke-GapAnalysis with script-level parameters (count: 5)
+[2025-10-27 22:24:44] [INFO]    Starting Azure Key Vault Gap Analysis vunreleased
+[2025-10-27 22:24:44] [INFO]    Test Mode: True
+[2025-10-27 22:24:44] [INFO]    Test Limit: 1 vaults
+[2025-10-27 22:24:44] [INFO]    Created run lock at: C:\Users\cregnier\AppData\Local\Temp\akv_gap_analysis_running.lock (PID: 41844)

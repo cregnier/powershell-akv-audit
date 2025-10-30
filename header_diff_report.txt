@@ -1,0 +1,117 @@
+Header diff report generated: 2025-10-15 19:19:19Z
+CSV: KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv - Columns: 56
+SubscriptionId, SubscriptionName, KeyVaultName, ResourceId, Location, ResourceGroupName, DiagnosticsEnabled, EnabledLogCategories, EnabledMetricCategories, LogAnalyticsEnabled, LogAnalyticsWorkspaceName, EventHubEnabled, EventHubNamespace, EventHubName, StorageAccountEnabled, StorageAccountName, AccessPolicyCount, AccessPolicyDetails, RBACRoleAssignments, RBACAssignmentCount, TotalIdentitiesWithAccess, ServicePrincipalCount, UserCount, GroupCount, ManagedIdentityCount, ServicePrincipalDetails, ManagedIdentityDetails, SoftDeleteEnabled, PurgeProtectionEnabled, PublicNetworkAccess, NetworkAclsConfigured, PrivateEndpointCount, SystemAssignedIdentity, SystemAssignedPrincipalId, UserAssignedIdentityCount, UserAssignedIdentityIds, ConnectedManagedIdentityCount, ComplianceStatus, ComplianceScore, CompanyComplianceScore, CompanyComplianceStatus, ComplianceIssues, ComplianceRecommendations, VaultRecommendations, SecurityEnhancements, RBACRecommendations, OverPrivilegedAssignments, SecretCount, KeyCount, CertificateCount, WorkloadCategories, EnvironmentType, PrimaryWorkload, SecurityInsights, OptimizationRecommendations, TotalItems
+----
+CSV: KeyVaultComprehensiveAudit_2025-10-08_16-53-16.csv - Columns: 57
+SubscriptionId, SubscriptionName, KeyVaultName, ResourceId, Location, ResourceGroupName, SecretCount, KeyCount, CertificateCount, PrimaryWorkload, EnvironmentType, WorkloadCategories, SoftDeleteEnabled, PurgeProtectionEnabled, PublicNetworkAccess, NetworkAclsConfigured, PrivateEndpointCount, SystemAssignedIdentity, SystemAssignedPrincipalId, UserAssignedIdentityCount, UserAssignedIdentityIds, AccessPolicyCount, AccessPolicyDetails, RBACAssignmentCount, RBACRoleAssignments, TotalIdentitiesWithAccess, ServicePrincipalCount, UserCount, GroupCount, ManagedIdentityCount, ServicePrincipalDetails, ManagedIdentityDetails, ConnectedManagedIdentityCount, OverPrivilegedAssignments, OverPrivilegedDetails, DiagnosticsEnabled, EnabledLogCategories, EnabledMetricCategories, LogAnalyticsEnabled, LogAnalyticsWorkspaceName, EventHubEnabled, EventHubNamespace, EventHubName, StorageAccountEnabled, StorageAccountName, SecurityInsights, OptimizationRecommendations, ComplianceStatus, MicrosoftComplianceScore, CompanyComplianceScore, ComplianceFrameworkReasons, RiskLevel, RiskFactors, CriticalFindings, ErrorsEncountered, LastAuditDate, AuditDurationSeconds
+----
+CSV: KeyVaultSingleVault_prod-skr-cloud-key-vault_20250915_123742.csv - Columns: 62
+SubscriptionId, SubscriptionName, KeyVaultName, ResourceId, Location, ResourceGroupName, DiagnosticsEnabled, EnabledLogCategories, EnabledMetricCategories, LogAnalyticsEnabled, LogAnalyticsWorkspaceName, EventHubEnabled, EventHubNamespace, EventHubName, StorageAccountEnabled, StorageAccountName, AccessPolicyCount, AccessPolicyDetails, RBACRoleAssignments, RBACAssignmentCount, TotalIdentitiesWithAccess, ServicePrincipalCount, UserCount, GroupCount, ManagedIdentityCount, ServicePrincipalDetails, ManagedIdentityDetails, SoftDeleteEnabled, PurgeProtectionEnabled, PublicNetworkAccess, NetworkAclsConfigured, PrivateEndpointCount, SystemAssignedIdentity, SystemAssignedPrincipalId, UserAssignedIdentityCount, UserAssignedIdentityIds, ConnectedManagedIdentityCount, ComplianceStatus, ComplianceScore, CompanyComplianceScore, CompanyComplianceStatus, ComplianceIssues, ComplianceRecommendations, VaultRecommendations, SecurityEnhancements, RBACRecommendations, OverPrivilegedAssignments, SecretCount, KeyCount, CertificateCount, WorkloadCategories, EnvironmentType, PrimaryWorkload, SecurityInsights, OptimizationRecommendations, TotalItems, SecretVersioning, ExpirationAnalysis, RotationAnalysis, AppServiceIntegration, LastAuditDate, ErrorsEncountered
+----
+HTML: KeyVaultComprehensiveAudit_2025-10-13_17-10-45.html - Headers: 56
+<tr>
+                    <th onclick="sortTable(0)">Subscription, Key Vault Name, Location, Resource Group, Compliance Status, MS Score, Company Score, Diagnostics, Log Categories, Log Analytics, Event Hub, Storage Account, Access Policies, RBAC Assignments, Service Principals, Managed Identities, System Identity, User Identities, Soft Delete, Purge Protection, Public Access, Private Endpoints, Secrets, Keys, Certificates, Environment, Workload, Action Items, <input type='text' class='filter-input' onkeyup='filterTable(this, 0)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 1)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 2)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 3)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 4)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 5)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 6)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 7)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 8)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 9)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 10)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 11)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 12)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 13)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 14)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 15)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 16)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 17)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 18)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 19)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 20)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 21)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 22)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 23)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 24)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 25)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 26)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 27)' placeholder='Filter...'>
+----
+HTML: KeyVaultComprehensiveAudit_2025-10-08_16-53-16.html - Headers: 60
+<tr>
+                    <th onclick="sortTable(0)">Subscription, Key Vault Name, Location, Resource Group, Environment, Primary Workload, Secrets, Keys, Certificates, MS Score, Company Score, Risk Level, Compliance Status, Diagnostics, Log Analytics, Event Hub, Storage Account, Access Policies, RBAC Assignments, Total Identities, Managed Identities, Over-Privileged, Soft Delete, Purge Protection, Public Access, Private Endpoints, Network ACLs, System Identity, Security Insights, Recommendations, <input type='text' class='filter-input' onkeyup='filterTable(this, 0)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 1)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 2)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 3)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 4)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 5)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 6)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 7)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 8)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 9)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 10)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 11)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 12)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 13)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 14)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 15)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 16)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 17)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 18)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 19)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 20)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 21)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 22)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 23)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 24)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 25)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 26)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 27)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 28)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 29)' placeholder='Filter...'>
+----
+HTML: KeyVaultSingleVault_prod-skr-cloud-key-vault_20250915_123742.html - Headers: 56
+<tr>
+                    <th onclick="sortTable(0)">Subscription, Key Vault Name, Location, Resource Group, Compliance Status, MS Score, Company Score, Diagnostics, Log Categories, Log Analytics, Event Hub, Storage Account, Access Policies, RBAC Assignments, Service Principals, Managed Identities, System Identity, User Identities, Soft Delete, Purge Protection, Public Access, Private Endpoints, Secrets, Keys, Certificates, Environment, Workload, Action Items, <input type='text' class='filter-input' onkeyup='filterTable(this, 0)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 1)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 2)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 3)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 4)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 5)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 6)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 7)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 8)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 9)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 10)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 11)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 12)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 13)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 14)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 15)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 16)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 17)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 18)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 19)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 20)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 21)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 22)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 23)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 24)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 25)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 26)' placeholder='Filter...'>, <input type='text' class='filter-input' onkeyup='filterTable(this, 27)' placeholder='Filter...'>
+----
+Comparison: KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv vs KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv
+ - Missing in latestCsv (present in KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv but not in KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv):
+
+ - Extra in latestCsv (present in KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv but not in KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv):
+
+----
+Comparison: KeyVaultComprehensiveAudit_2025-10-08_16-53-16.csv vs KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv
+ - Missing in latestCsv (present in KeyVaultComprehensiveAudit_2025-10-08_16-53-16.csv but not in KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv):
+OverPrivilegedDetails, 
+MicrosoftComplianceScore, 
+ComplianceFrameworkReasons, 
+RiskLevel, 
+RiskFactors, 
+CriticalFindings, 
+ErrorsEncountered, 
+LastAuditDate, 
+AuditDurationSeconds
+ - Extra in latestCsv (present in KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv but not in KeyVaultComprehensiveAudit_2025-10-08_16-53-16.csv):
+ComplianceScore, 
+CompanyComplianceStatus, 
+ComplianceIssues, 
+ComplianceRecommendations, 
+VaultRecommendations, 
+SecurityEnhancements, 
+RBACRecommendations, 
+TotalItems
+----
+Comparison: KeyVaultSingleVault_prod-skr-cloud-key-vault_20250915_123742.csv vs KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv
+ - Missing in latestCsv (present in KeyVaultSingleVault_prod-skr-cloud-key-vault_20250915_123742.csv but not in KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv):
+SecretVersioning, 
+ExpirationAnalysis, 
+RotationAnalysis, 
+AppServiceIntegration, 
+LastAuditDate, 
+ErrorsEncountered
+ - Extra in latestCsv (present in KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv but not in KeyVaultSingleVault_prod-skr-cloud-key-vault_20250915_123742.csv):
+
+----
+Columns present in KeyVaultComprehensiveAudit_2025-10-13_17-10-45.csv but missing from KeyVaultComprehensiveAudit_2025-10-13_17-10-45.html:
+SubscriptionId, 
+SubscriptionName, 
+KeyVaultName, 
+ResourceId, 
+ResourceGroupName, 
+DiagnosticsEnabled, 
+EnabledLogCategories, 
+EnabledMetricCategories, 
+LogAnalyticsEnabled, 
+LogAnalyticsWorkspaceName, 
+EventHubEnabled, 
+EventHubNamespace, 
+EventHubName, 
+StorageAccountEnabled, 
+StorageAccountName, 
+AccessPolicyCount, 
+AccessPolicyDetails, 
+RBACRoleAssignments, 
+RBACAssignmentCount, 
+TotalIdentitiesWithAccess, 
+ServicePrincipalCount, 
+UserCount, 
+GroupCount, 
+ManagedIdentityCount, 
+ServicePrincipalDetails, 
+ManagedIdentityDetails, 
+SoftDeleteEnabled, 
+PurgeProtectionEnabled, 
+PublicNetworkAccess, 
+NetworkAclsConfigured, 
+PrivateEndpointCount, 
+SystemAssignedIdentity, 
+SystemAssignedPrincipalId, 
+UserAssignedIdentityCount, 
+UserAssignedIdentityIds, 
+ConnectedManagedIdentityCount, 
+ComplianceStatus, 
+ComplianceScore, 
+CompanyComplianceScore, 
+CompanyComplianceStatus, 
+ComplianceIssues, 
+ComplianceRecommendations, 
+VaultRecommendations, 
+SecurityEnhancements, 
+RBACRecommendations, 
+OverPrivilegedAssignments, 
+SecretCount, 
+KeyCount, 
+CertificateCount, 
+WorkloadCategories, 
+EnvironmentType, 
+PrimaryWorkload, 
+SecurityInsights, 
+OptimizationRecommendations, 
+TotalItems
+

@@ -1,0 +1,29 @@
+**********************
+PowerShell transcript start
+Start time: 20251028133308
+Username: AMR\cregnier
+RunAs User: AMR\cregnier
+Configuration Name: 
+Machine: CREGNIER-MOBL (Microsoft Windows NT 10.0.22631.0)
+Host Application: C:\Program Files\PowerShell\7\pwsh.dll -NoProfile -File .\scripts\run_testmode_wrapper.ps1
+Process ID: 32824
+PSVersion: 7.5.3
+PSEdition: Core
+GitCommitId: 7.5.3
+OS: Microsoft Windows 10.0.22631
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+Transcript started, output file is C:\Source\Github\powershell-akv-audit\output\testmode_transcript_2025-10-28_13-33-08.txt
+BEGIN_TESTMODE_TRANSCRIPT -> C:\Source\Github\powershell-akv-audit\output\testmode_transcript_2025-10-28_13-33-08.txt
+Get-AKVGapAnalysis.ps1 failed: At C:\Source\Github\powershell-akv-audit\Get-AKVGapAnalysis.ps1:722 char:137
++ … tch { Write-Log ("Write-AtomicJson failed for $vaultJsonPath: {0}" -f …
++                                                 ~~~~~~~~~~~~~~~
+Variable reference is not valid. ':' was not followed by a valid variable name character. Consider using ${} to delimit the name.
+**********************
+PowerShell transcript end
+End time: 20251028133308
+**********************
