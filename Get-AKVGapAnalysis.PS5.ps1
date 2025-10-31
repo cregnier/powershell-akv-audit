@@ -4886,6 +4886,7 @@ function Invoke-GapAnalysis {
         [Parameter(Mandatory=$false)][switch]$TestMode,
         [Parameter(Mandatory=$false)][int]$Limit = 10,
         [Parameter(Mandatory=$false)][string]$SubscriptionId,
+        [Parameter(Mandatory=$false)][string]$TargetSubscriptionId,
         [Parameter(Mandatory=$false)][string]$OutputDirectory,
         [Parameter(Mandatory=$false)][switch]$SuppressAzureWarnings,
         [Parameter(Mandatory=$false)][switch]$SingleVault,
@@ -4914,6 +4915,7 @@ function Invoke-GapAnalysis {
         if ($PSBoundParameters.ContainsKey('TestMode')) { $script:TestMode = $TestMode }
         if ($PSBoundParameters.ContainsKey('Limit')) { $script:Limit = $Limit }
         if ($PSBoundParameters.ContainsKey('SubscriptionId')) { $script:SubscriptionId = $SubscriptionId }
+        if ($PSBoundParameters.ContainsKey('TargetSubscriptionId')) { $script:TargetSubscriptionId = $TargetSubscriptionId }
         if ($PSBoundParameters.ContainsKey('OutputDirectory')) { $script:OutputDirectory = $OutputDirectory; if ($OutputDirectory) { $script:outputDir = $OutputDirectory } }
         if ($PSBoundParameters.ContainsKey('SuppressAzureWarnings')) { $script:SuppressAzureWarnings = $SuppressAzureWarnings }
         if ($PSBoundParameters.ContainsKey('SingleVault')) { $script:SingleVault = $SingleVault }
