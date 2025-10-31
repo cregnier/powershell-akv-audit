@@ -1267,10 +1267,8 @@ function Collect-ExtraAzData {
                     ErrorMessage = $msg
                     ErrorCode = ($err.Exception.Response | ConvertTo-Json -Depth 2 -ErrorAction SilentlyContinue) -replace '"','' -replace "[\r\n]+"," "
                 }
-            }
-            }
-
-        catch {
+                }
+        } catch {
             # ignore errors
         }
 
@@ -1427,6 +1425,7 @@ function Collect-ExtraAzData {
                 ErrorMessage = $err.Exception.Message
                 ErrorCode = ($err.Exception.Response | ConvertTo-Json -Depth 2 -ErrorAction SilentlyContinue) -replace '"','' -replace "[\r\n]+"," "
             }
+        }
         # Security Center insights and recommendations
         try {
             Write-Log "Collect-ExtraAzData: checking Security Center assessments for $resId" -Level 'DEBUG'

@@ -1,23 +1,18 @@
-[2025-10-31 10:30:57] [INFO]    Found 786 accessible subscription(s)
-[2025-10-31 10:30:57] [INFO]    Analyzing subscription: 1ci-preprod-metrics (dc8b9d9c-0cf9-446c-9177-12921182f54a)
-[2025-10-31 10:30:57] [INFO]    Discovering Key Vaults in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a...
-[2025-10-31 10:30:57] [DEBUG]   Setting Az context to subscription: dc8b9d9c-0cf9-446c-9177-12921182f54a (Set-AzContext)
-[2025-10-31 10:30:58] [DEBUG]   Set-AzContext result: 1ci-preprod-metrics (dc8b9d9c-0cf9-446c-9177-12921182f54a)
-[2025-10-31 10:30:59] [DEBUG]   Current context after Set-AzContext: 1ci-preprod-metrics (dc8b9d9c-0cf9-446c-9177-12921182f54a)
-[2025-10-31 10:30:59] [DEBUG]   Checking for Key Vault Reader permissions in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a
-[2025-10-31 10:31:02] [DEBUG]   Found 63 Key Vault related role assignments in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a
-[2025-10-31 10:31:02] [DEBUG]   Listing Key Vaults in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a via Get-AzKeyVault
-[2025-10-31 10:31:02] [DEBUG]   Attempting direct Get-AzKeyVault call (no background job)
-[2025-10-31 10:31:04] [DEBUG]   Direct Get-AzKeyVault succeeded: found 2 vaults
-[2025-10-31 10:31:04] [INFO]    Get-AzKeyVault returned 2 Key Vaults in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a
-[2025-10-31 10:31:04] [INFO]    Successfully discovered 2 Key Vaults using Get-AzKeyVault
-[2025-10-31 10:31:04] [INFO]    Assessing Azure platform integration for subscription dc8b9d9c-0cf9-446c-9177-12921182f54a...
-[2025-10-31 10:31:29] [INFO]    Found 80 Key Vault related policies in subscription 1ci-preprod-metrics
-[2025-10-31 10:32:10] [DEBUG]   Function App discovery skipped for subscription dc8b9d9c-0cf9-446c-9177-12921182f54a (use -IncludeFunctionApps to enable)
-[2025-10-31 10:32:10] [INFO]    Using parallel processing with max 9 concurrent jobs
-[2025-10-31 10:32:10] [WARN]    Invoke-GapAnalysis called while another run is active in this process (PID: 37096) - skipping nested invocation. CallStack: 
-Command                    Arguments                                                                                           Location                             
--------                    ---------                                                                                           --------                             
-Invoke-GapAnalysis         {}                                                                                                  Get-AKVGapAnalysis.PS5.ps1: line 4983
-Get-AKVGapAnalysis.PS5.ps1 {TestMode=True, Limit=3, SuppressAzureWarnings=True, UseParallelProcessing=True, MaxParallelJobs=9} Get-AKVGapAnalysis.PS5.ps1: line 7101
-<ScriptBlock>              {}                                                                                                  <No file>     
+[2025-10-31 10:38:19] [DEBUG]   Direct Get-AzKeyVault succeeded: found 2 vaults
+[2025-10-31 10:38:19] [INFO]    Get-AzKeyVault returned 2 Key Vaults in subscription dc8b9d9c-0cf9-446c-9177-12921182f54a
+[2025-10-31 10:38:19] [INFO]    Successfully discovered 2 Key Vaults using Get-AzKeyVault
+[2025-10-31 10:38:19] [INFO]    Assessing Azure platform integration for subscription dc8b9d9c-0cf9-446c-9177-12921182f54a...
+[2025-10-31 10:39:15] [INFO]    Found 80 Key Vault related policies in subscription 1ci-preprod-metrics
+[2025-10-31 10:39:15] [INFO]    Installing Az.EventHub module for Event Hub assessment...
+WARNING: The version '5.3.0' of module 'Az.Accounts' is currently in use. Retry the operation after closing the applications.
+[2025-10-31 10:39:53] [SUCCESS] Az.EventHub module installed successfully
+[2025-10-31 10:40:56] [INFO]    Installing Az.Automation module for Runbooks assessment...
+WARNING: The version '5.3.0' of module 'Az.Accounts' is currently in use. Retry the operation after closing the applications.
+[2025-10-31 10:41:48] [SUCCESS] Az.Automation module installed successfully
+[2025-10-31 10:41:49] [DEBUG]   Function App discovery skipped for subscription dc8b9d9c-0cf9-446c-9177-12921182f54a (use -IncludeFunctionApps to enable)
+[2025-10-31 10:41:49] [WARN]    Invoke-GapAnalysis called while another run is active in this process (PID: 37096) - skipping nested invocation. CallStack: 
+Command                    Arguments                                                                                                                    Location                             
+-------                    ---------                                                                                                                    --------                             
+Invoke-GapAnalysis         {}                                                                                                                           Get-AKVGapAnalysis.PS5.ps1: line 4983
+Get-AKVGapAnalysis.PS5.ps1 {TestMode=True, Limit=3, SuppressAzureWarnings=True, UseParallelProcessing=True, MaxParallelJobs=9, AutoInstallModules=True} Get-AKVGapAnalysis.PS5.ps1: line 7105
+<ScriptBlock>              {}                                                                                                                           <No file>  
