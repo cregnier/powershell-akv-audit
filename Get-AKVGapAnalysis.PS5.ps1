@@ -4899,7 +4899,10 @@ function Invoke-GapAnalysis {
         [Parameter(Mandatory=$false)][switch]$AutoInstallModules,
         [Parameter(Mandatory=$false)][switch]$DeepCrossReference,
         [Parameter(Mandatory=$false)][switch]$Force,
-    [Parameter(Mandatory=$false)][int]$SimulateInterruptAfter = 0
+        [Parameter(Mandatory=$false)][switch]$NoRunLock,
+    [Parameter(Mandatory=$false)][int]$SimulateInterruptAfter = 0,
+    [Parameter(Mandatory=$false)][int]$FinalCoercionTimeoutSeconds = 0,
+    [Parameter(Mandatory=$false)][int]$FinalCoercionHeartbeatSeconds = 30
     ,
     [Parameter(Mandatory=$false)][switch]$IncludeFunctionApps
         ,
@@ -4927,6 +4930,8 @@ function Invoke-GapAnalysis {
         if ($PSBoundParameters.ContainsKey('SuppressModuleWarnings')) { $script:SuppressModuleWarnings = $SuppressModuleWarnings }
         if ($PSBoundParameters.ContainsKey('AutoInstallModules')) { $script:AutoInstallModules = $AutoInstallModules }
         if ($PSBoundParameters.ContainsKey('DeepCrossReference')) { $script:DeepCrossReference = $DeepCrossReference }
+        if ($PSBoundParameters.ContainsKey('Force')) { $script:Force = $Force }
+        if ($PSBoundParameters.ContainsKey('NoRunLock')) { $script:NoRunLock = $NoRunLock }
     if ($PSBoundParameters.ContainsKey('SimulateInterruptAfter')) { $script:SimulateInterruptAfter = $SimulateInterruptAfter }
     if ($PSBoundParameters.ContainsKey('IncludeFunctionApps')) { $script:IncludeFunctionApps = $IncludeFunctionApps }
         if ($PSBoundParameters.ContainsKey('AKV_HTML_ONLY')) { $script:AKV_HTML_ONLY = $AKV_HTML_ONLY }
