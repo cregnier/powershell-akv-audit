@@ -1268,7 +1268,9 @@ function Collect-ExtraAzData {
                     ErrorCode = ($err.Exception.Response | ConvertTo-Json -Depth 2 -ErrorAction SilentlyContinue) -replace '"','' -replace "[\r\n]+"," "
                 }
             }
-        } catch {
+            }
+
+        catch {
             # ignore errors
         }
 
