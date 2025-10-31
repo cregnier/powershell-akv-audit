@@ -5399,6 +5399,10 @@ catch { $null }
         $platformAssessments += $platformAssessment
 
         # Analyze each vault
+        if ($UseParallelProcessing -and $PSVersionTable.PSVersion.Major -lt 7) {
+            Write-Log "Parallel processing requires PowerShell 7.x or higher. Falling back to sequential processing." -Level "WARNING"
+            $UseParallelProcessing = $false
+        }
         if ($UseParallelProcessing -and $env:OS -notlike "*Windows*") {
             Write-Log "Parallel processing is only supported on Windows. Falling back to sequential processing." -Level "WARNING"
             $UseParallelProcessing = $false
